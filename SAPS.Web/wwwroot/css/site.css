@@ -1,3 +1,61 @@
+/* ---------- Identidad visual de RecyPlast ---------- */
+:root {
+  --rp-verde: #BCD005;
+  --rp-azul: #03A4D2;
+  --rp-blanco: #FFFFFF;
+  --rp-gris: #32373C;
+}
+
+.navbar-recyplast {
+  background-color: var(--rp-gris) !important;
+}
+.navbar-recyplast .navbar-brand,
+.navbar-recyplast .nav-link {
+  color: var(--rp-blanco) !important;
+}
+.navbar-recyplast .nav-link:hover,
+.navbar-recyplast .nav-link.active {
+  color: var(--rp-verde) !important;
+}
+
+.btn-recyplast {
+  background-color: var(--rp-verde);
+  border-color: var(--rp-verde);
+  color: var(--rp-gris);
+  font-weight: 600;
+}
+.btn-recyplast:hover,
+.btn-recyplast:focus {
+  background-color: #a5b804;
+  border-color: #a5b804;
+  color: var(--rp-gris);
+}
+
+.alert-recyplast {
+  background-color: #eef4c9;
+  border-color: var(--rp-verde);
+  color: var(--rp-gris);
+}
+
+.nav-tabs .nav-link {
+  color: var(--rp-gris);
+}
+.nav-tabs .nav-link.active {
+  border-bottom: 3px solid var(--rp-azul);
+  color: var(--rp-azul);
+  font-weight: 600;
+}
+
+.badge-activo {
+  background-color: var(--rp-verde);
+  color: var(--rp-gris);
+}
+.badge-inactivo {
+  background-color: var(--rp-gris);
+  color: var(--rp-blanco);
+}
+/* ---------------------------------------------------- */
+
 html {
   font-size: 14px;
 }

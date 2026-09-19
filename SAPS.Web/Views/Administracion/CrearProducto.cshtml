@@ -1,0 +1,88 @@
+@model SAPS.Web.Models.Catalogo.ProductoFormViewModel
+@{ ViewData["Title"] = "Nuevo producto"; }
+
+<h1>Nuevo producto</h1>
+<div class="row">
+    <div class="col-md-7">
+        <form asp-action="CrearProducto" method="post">
+            <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="NombreProducto" class="form-control" placeholder="Nombre del producto" autofocus />
+                <label asp-for="NombreProducto">Nombre del producto</label>
+                <span asp-validation-for="NombreProducto" class="text-danger"></span>
+            </div>
+
+            <div class="form-floating mb-3">
+                <select asp-for="IdCategoria" class="form-select">
+                    <option value="">-- Seleccione --</option>
+                    @foreach (var c in Model.CategoriasDisponibles)
+                    {
+                        <option value="@c.IdCategoria">@c.NombreCategoria</option>
+                    }
+                </select>
+                <label asp-for="IdCategoria">Categoría</label>
+                <span asp-validation-for="IdCategoria" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-2">
+                <input asp-for="EsEspecial" class="form-check-input" />
+                <label asp-for="EsEspecial" class="form-check-label">Es un producto especial (precio diferenciado)</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="RequiereTamano" class="form-check-input" id="requiereTamano" onchange="alternarPrecios()" />
+                <label asp-for="RequiereTamano" class="form-check-label">Se vende en distintos tamaños</label>
+            </div>
+
+            <div id="bloquePrecioUnico" class="mb-3">
+                <label asp-for="PrecioUnico" class="form-label">Precio (₡)</label>
+                <input asp-for="PrecioUnico" class="form-control" style="max-width:200px" />
+                <span asp-validation-for="PrecioUnico" class="text-danger"></span>
+            </div>
+
+            <div id="bloquePreciosPorTamano" class="mb-3">
+                <label class="form-label">Precio por cada tamaño (marque los que apliquen)</label>
+                @if (!Model.PreciosPorTamano.Any())
+                {
+                    <p class="text-muted">No hay tamaños activos registrados todavía. Cree al menos un tamaño primero.</p>
+                }
+                <table class="table table-sm w-auto">
+                    <tbody>
+                    @for (int i = 0; i < Model.PreciosPorTamano.Count; i++)
+                    {
+                        <tr>
+                            <td class="align-middle">
+                                <input type="hidden" asp-for="PreciosPorTamano[i].IdTamano" />
+                                <input type="hidden" asp-for="PreciosPorTamano[i].NombreTamano" />
+                                <div class="form-check">
+                                    <input asp-for="PreciosPorTamano[i].Incluir" class="form-check-input" />
+                                    <label asp-for="PreciosPorTamano[i].Incluir" class="form-check-label">@Model.PreciosPorTamano[i].NombreTamano</label>
+                                </div>
+                            </td>
+                            <td class="align-middle">
+                                <input asp-for="PreciosPorTamano[i].Monto" class="form-control" placeholder="₡" style="max-width:140px" />
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="submit" class="btn btn-recyplast">Guardar</button>
+            <a asp-action="Catalogo" asp-route-tab="productos" class="btn btn-outline-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function alternarPrecios() {
+            const requiereTamano = document.getElementById('requiereTamano').checked;
+            document.getElementById('bloquePrecioUnico').style.display = requiereTamano ? 'none' : 'block';
+            document.getElementById('bloquePreciosPorTamano').style.display = requiereTamano ? 'block' : 'none';
+        }
+        document.addEventListener('DOMContentLoaded', alternarPrecios);
+    </script>
+}
