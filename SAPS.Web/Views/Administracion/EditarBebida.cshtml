@@ -1,0 +1,53 @@
+@model SAPS.Web.Models.Catalogo.BebidaFormViewModel
+@{ ViewData["Title"] = "Editar bebida"; }
+
+<h1>Editar bebida</h1>
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="EditarBebida" method="post">
+            <input type="hidden" asp-for="IdBebida" />
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="NombreBebida" class="form-control" placeholder="Nombre de la bebida" autofocus />
+                <label asp-for="NombreBebida">Nombre de la bebida</label>
+                <span asp-validation-for="NombreBebida" class="text-danger"></span>
+            </div>
+
+            <div class="form-floating mb-3">
+                <select asp-for="TipoBebida" class="form-select">
+                    <option value="Gaseosa">Gaseosa</option>
+                    <option value="Embotellada">Embotellada</option>
+                    <option value="Energizante">Energizante</option>
+                    <option value="Jugo">Jugo</option>
+                </select>
+                <label asp-for="TipoBebida">Tipo de bebida</label>
+                <span asp-validation-for="TipoBebida" class="text-danger"></span>
+            </div>
+
+            <div class="form-floating mb-3">
+                <select asp-for="IdTamano" class="form-select">
+                    <option value="">-- Sin tamaño específico --</option>
+                    @foreach (var t in Model.TamanosDisponibles)
+                    {
+                        <option value="@t.IdTamano">@t.NombreTamano</option>
+                    }
+                </select>
+                <label asp-for="IdTamano">Presentación / tamaño</label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="Precio" class="form-control" style="max-width:200px" />
+                <label asp-for="Precio">Precio (₡)</label>
+                <span asp-validation-for="Precio" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-recyplast">Guardar cambios</button>
+            <a asp-action="Catalogo" asp-route-tab="bebidas" class="btn btn-outline-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
