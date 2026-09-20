@@ -7,7 +7,7 @@ using SAPS.Web.Models.Catalogo;
 
 namespace SAPS.Web.Controllers;
 
-[Authorize(Roles = "Administrador")]
+[Authorize(Roles = "Administrador,RecursosHumanos")]
 public class AdministracionController(ApplicationDbContext db) : Controller
 {
     public IActionResult Index() => View();
@@ -185,16 +185,16 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     // ==================================================================
     public async Task<IActionResult> CrearProducto()
     {
-        var vm = new ProductoFormViewModel();
-        await RecargarListasProducto(vm, forzarTamanos: true);
-        return View(vm);
+        var modelo = new ProductoFormViewModel();
+        await RecargarListasProducto(modelo);
+        return View(modelo);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearProducto(ProductoFormViewModel modelo)
     {
-        await RecargarListasProducto(modelo, forzarTamanos: false);
+        await RecargarListasProducto(modelo);
         ValidarPreciosProducto(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
@@ -205,21 +205,12 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             EsEspecial = modelo.EsEspecial,
             RequiereTamano = modelo.RequiereTamano,
         };
+        foreach (var precio in PreciosSeleccionados(modelo))
+        {
+            producto.Precios.Add(new Precio { IdTamano = precio.IdTamano, MontoPrecio = precio.Monto });
+        }
+        // EF guarda el producto y sus precios juntos, en una sola transacción.
         db.Productos.Add(producto);
-        await db.SaveChangesAsync(); // necesitamos el IdProducto antes de crear los precios
-
-        if (modelo.RequiereTamano)
-        {
-            foreach (var entrada in modelo.PreciosPorTamano.Where(p => p.Incluir && p.Monto is > 0))
-            {
-                db.Precios.Add(new Precio { IdProducto = producto.IdProducto, IdTamano = entrada.IdTamano, MontoPrecio = entrada.Monto!.Value });
-            }
-        }
-        else if (modelo.PrecioUnico is > 0)
-        {
-            db.Precios.Add(new Precio { IdProducto = producto.IdProducto, IdTamano = null, MontoPrecio = modelo.PrecioUnico.Value });
-        }
-
         await db.SaveChangesAsync();
         TempData["Mensaje"] = $"Producto \"{producto.NombreProducto}\" creado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
@@ -232,111 +223,78 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             .FirstOrDefaultAsync(p => p.IdProducto == id);
         if (producto == null) return NotFound();
 
-        var vm = new ProductoFormViewModel
+        var modelo = new ProductoFormViewModel
         {
             IdProducto = producto.IdProducto,
             NombreProducto = producto.NombreProducto,
             IdCategoria = producto.IdCategoria,
             EsEspecial = producto.EsEspecial,
             RequiereTamano = producto.RequiereTamano,
+            PrecioUnico = producto.Precios.FirstOrDefault(p => p.IdTamano == null)?.MontoPrecio,
         };
-
-        await RecargarListasProducto(vm, forzarTamanos: false, incluirCategoriaActual: producto.IdCategoria);
-
-        if (producto.RequiereTamano)
-        {
-            var tamanos = await db.Tamanos.Where(t => t.Activo).OrderBy(t => t.NombreTamano).ToListAsync();
-            vm.PreciosPorTamano = tamanos.Select(t =>
-            {
-                var precioActual = producto.Precios.FirstOrDefault(pr => pr.IdTamano == t.IdTamano);
-                return new PrecioPorTamanoInput
-                {
-                    IdTamano = t.IdTamano,
-                    NombreTamano = t.NombreTamano,
-                    Incluir = precioActual != null,
-                    Monto = precioActual?.MontoPrecio,
-                };
-            }).ToList();
-        }
-        else
-        {
-            vm.PrecioUnico = producto.Precios.FirstOrDefault(pr => pr.IdTamano == null)?.MontoPrecio;
-        }
-
-        return View(vm);
+        // También carga tamaños si actualmente usa precio único.
+        await RecargarListasProducto(modelo, producto, cargarPreciosActuales: true);
+        return View(modelo);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarProducto(ProductoFormViewModel modelo)
     {
-        await RecargarListasProducto(modelo, forzarTamanos: false, incluirCategoriaActual: modelo.IdCategoria);
-        ValidarPreciosProducto(modelo);
-        if (!ModelState.IsValid) return View(modelo);
-
         var producto = await db.Productos
             .Include(p => p.Precios.Where(pr => pr.Activo))
             .FirstOrDefaultAsync(p => p.IdProducto == modelo.IdProducto);
         if (producto == null) return NotFound();
 
+        await RecargarListasProducto(modelo, producto);
+        ValidarPreciosProducto(modelo);
+        if (!ModelState.IsValid) return View(modelo);
+
+        var seleccionados = PreciosSeleccionados(modelo);
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var nuevos = seleccionados.Where(n => !producto.Precios.Any(p =>
+            p.Activo && p.IdTamano == n.IdTamano && p.MontoPrecio == n.Monto)).ToList();
+
+        // Cierra tanto precios reemplazados como los del modo que se deja de usar.
+        foreach (var precio in producto.Precios.Where(p => p.Activo))
+        {
+            if (!seleccionados.Any(n => n.IdTamano == precio.IdTamano && n.Monto == precio.MontoPrecio))
+            {
+                precio.Activo = false;
+                precio.FechaVigenciaHasta = hoy;
+            }
+        }
         producto.NombreProducto = modelo.NombreProducto;
         producto.IdCategoria = modelo.IdCategoria;
         producto.EsEspecial = modelo.EsEspecial;
         producto.RequiereTamano = modelo.RequiereTamano;
 
-        var hoy = DateOnly.FromDateTime(DateTime.Today);
-
-        if (modelo.RequiereTamano)
-        {
-            foreach (var entrada in modelo.PreciosPorTamano)
-            {
-                var precioActual = producto.Precios.FirstOrDefault(pr => pr.IdTamano == entrada.IdTamano);
-
-                if (!entrada.Incluir || entrada.Monto is not > 0)
-                {
-                    // Este tamaño se quitó del producto: cerramos su precio activo, si tenía uno.
-                    if (precioActual != null)
-                    {
-                        precioActual.Activo = false;
-                        precioActual.FechaVigenciaHasta = hoy;
-                    }
-                    continue;
-                }
-
-                if (precioActual == null)
-                {
-                    db.Precios.Add(new Precio { IdProducto = producto.IdProducto, IdTamano = entrada.IdTamano, MontoPrecio = entrada.Monto!.Value });
-                }
-                else if (precioActual.MontoPrecio != entrada.Monto!.Value)
-                {
-                    // Cambió el precio: cerramos la fila anterior y abrimos una nueva (historial).
-                    precioActual.Activo = false;
-                    precioActual.FechaVigenciaHasta = hoy;
-                    db.Precios.Add(new Precio { IdProducto = producto.IdProducto, IdTamano = entrada.IdTamano, MontoPrecio = entrada.Monto.Value });
-                }
-            }
-        }
-        else
-        {
-            var precioActual = producto.Precios.FirstOrDefault(pr => pr.IdTamano == null);
-            if (modelo.PrecioUnico is > 0)
-            {
-                if (precioActual == null)
-                {
-                    db.Precios.Add(new Precio { IdProducto = producto.IdProducto, IdTamano = null, MontoPrecio = modelo.PrecioUnico.Value });
-                }
-                else if (precioActual.MontoPrecio != modelo.PrecioUnico.Value)
-                {
-                    precioActual.Activo = false;
-                    precioActual.FechaVigenciaHasta = hoy;
-                    db.Precios.Add(new Precio { IdProducto = producto.IdProducto, IdTamano = null, MontoPrecio = modelo.PrecioUnico.Value });
-                }
-            }
-        }
-
+        // Primero libera el índice de precio activo por producto/tamaño.
+        // Si falla cualquiera de los dos guardados, se revierte toda la edición.
+        await using var transaccion = await db.Database.BeginTransactionAsync();
         await db.SaveChangesAsync();
+        foreach (var precio in nuevos)
+        {
+            db.Precios.Add(new Precio
+            {
+                IdProducto = producto.IdProducto,
+                IdTamano = precio.IdTamano,
+                MontoPrecio = precio.Monto,
+                FechaVigenciaDesde = hoy,
+            });
+        }
+        await db.SaveChangesAsync();
+        await transaccion.CommitAsync();
         TempData["Mensaje"] = "Producto actualizado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
+    }
+
+    private static List<(int? IdTamano, int Monto)> PreciosSeleccionados(ProductoFormViewModel modelo)
+    {
+        return modelo.RequiereTamano
+            ? modelo.PreciosPorTamano.Where(p => p.Incluir)
+                .Select(p => ((int?)p.IdTamano, p.Monto!.Value)).ToList()
+            : new List<(int?, int)> { (null, modelo.PrecioUnico!.Value) };
     }
 
     [HttpPost]
@@ -353,16 +311,45 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
     }
 
-    private async Task RecargarListasProducto(ProductoFormViewModel modelo, bool forzarTamanos, int? incluirCategoriaActual = null)
+    private async Task RecargarListasProducto(ProductoFormViewModel modelo, Producto? producto = null,
+        bool cargarPreciosActuales = false)
     {
-        var categorias = db.Categorias.Where(c => c.Activo || c.IdCategoria == incluirCategoriaActual);
-        modelo.CategoriasDisponibles = await categorias.OrderBy(c => c.NombreCategoria).ToListAsync();
+        var categoriaActual = producto?.IdCategoria;
+        modelo.CategoriasDisponibles = await db.Categorias
+            .Where(c => c.Activo || c.IdCategoria == categoriaActual)
+            .OrderBy(c => c.NombreCategoria).ToListAsync();
+        if (!modelo.CategoriasDisponibles.Any(c => c.IdCategoria == modelo.IdCategoria) && HttpContext.Request.Method == "POST")
+            ModelState.AddModelError(nameof(modelo.IdCategoria), "Seleccione una categoría activa o conserve la categoría actual.");
 
-        if (modelo.RequiereTamano && (forzarTamanos || modelo.PreciosPorTamano.Count == 0))
+        var tamanosAsignados = producto?.Precios.Where(p => p.Activo && p.IdTamano.HasValue)
+            .Select(p => p.IdTamano!.Value).ToList() ?? new List<int>();
+        var tamanos = await db.Tamanos
+            .Where(t => t.Activo || tamanosAsignados.Contains(t.IdTamano))
+            .OrderBy(t => t.NombreTamano).ToListAsync();
+
+        // Conserva los índices de los campos enviados cuando hay errores de validación.
+        foreach (var entrada in modelo.PreciosPorTamano)
         {
-            modelo.PreciosPorTamano = await db.Tamanos.Where(t => t.Activo).OrderBy(t => t.NombreTamano)
-                .Select(t => new PrecioPorTamanoInput { IdTamano = t.IdTamano, NombreTamano = t.NombreTamano })
-                .ToListAsync();
+            var tamano = tamanos.FirstOrDefault(t => t.IdTamano == entrada.IdTamano);
+            entrada.NombreTamano = tamano?.NombreTamano ?? "Tamaño no disponible";
+            entrada.TamanoActivo = tamano?.Activo ?? false;
+            if (modelo.RequiereTamano && entrada.Incluir && tamano == null)
+                ModelState.AddModelError(string.Empty, "Uno de los tamaños seleccionados ya no está disponible.");
+        }
+        foreach (var tamano in tamanos)
+        {
+            if (modelo.PreciosPorTamano.Any(p => p.IdTamano == tamano.IdTamano)) continue;
+            var precioActual = cargarPreciosActuales
+                ? producto?.Precios.FirstOrDefault(p => p.Activo && p.IdTamano == tamano.IdTamano)
+                : null;
+            modelo.PreciosPorTamano.Add(new PrecioPorTamanoInput
+            {
+                IdTamano = tamano.IdTamano,
+                NombreTamano = tamano.NombreTamano,
+                TamanoActivo = tamano.Activo,
+                Incluir = precioActual != null,
+                Monto = precioActual?.MontoPrecio,
+            });
         }
     }
 
@@ -370,14 +357,13 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         if (modelo.RequiereTamano)
         {
-            if (!modelo.PreciosPorTamano.Any(p => p.Incluir && p.Monto is > 0))
-            {
+            var seleccionados = modelo.PreciosPorTamano.Where(p => p.Incluir).ToList();
+            if (seleccionados.Count == 0)
                 ModelState.AddModelError(string.Empty, "Debe indicar el precio de al menos un tamaño.");
-            }
-            if (modelo.PreciosPorTamano.Any(p => p.Incluir && p.Monto is <= 0))
-            {
-                ModelState.AddModelError(string.Empty, "Los precios deben ser mayores a cero.");
-            }
+            if (seleccionados.Any(p => p.Monto is null or <= 0))
+                ModelState.AddModelError(string.Empty, "Cada tamaño seleccionado debe tener un precio entero mayor a cero.");
+            if (seleccionados.GroupBy(p => p.IdTamano).Any(g => g.Count() > 1))
+                ModelState.AddModelError(string.Empty, "No se puede repetir un tamaño en el producto.");
         }
         else if (modelo.PrecioUnico is null or <= 0)
         {
@@ -402,6 +388,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     public async Task<IActionResult> CrearBebida(BebidaFormViewModel modelo)
     {
         modelo.TamanosDisponibles = await db.Tamanos.Where(t => t.Activo).OrderBy(t => t.NombreTamano).ToListAsync();
+        ValidarTamanoBebida(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
         db.Bebidas.Add(new Bebida
@@ -427,7 +414,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             TipoBebida = bebida.TipoBebida,
             IdTamano = bebida.IdTamano,
             Precio = bebida.Precio,
-            TamanosDisponibles = await db.Tamanos.Where(t => t.Activo).OrderBy(t => t.NombreTamano).ToListAsync(),
+            TamanosDisponibles = await db.Tamanos.Where(t => t.Activo || t.IdTamano == bebida.IdTamano)
+                .OrderBy(t => t.NombreTamano).ToListAsync(),
         });
     }
 
@@ -435,11 +423,12 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarBebida(BebidaFormViewModel modelo)
     {
-        modelo.TamanosDisponibles = await db.Tamanos.Where(t => t.Activo).OrderBy(t => t.NombreTamano).ToListAsync();
-        if (!ModelState.IsValid) return View(modelo);
-
         var bebida = await db.Bebidas.FindAsync(modelo.IdBebida);
         if (bebida == null) return NotFound();
+        modelo.TamanosDisponibles = await db.Tamanos.Where(t => t.Activo || t.IdTamano == bebida.IdTamano)
+            .OrderBy(t => t.NombreTamano).ToListAsync();
+        ValidarTamanoBebida(modelo);
+        if (!ModelState.IsValid) return View(modelo);
 
         bebida.NombreBebida = modelo.NombreBebida;
         bebida.TipoBebida = modelo.TipoBebida;
@@ -449,6 +438,14 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         await db.SaveChangesAsync();
         TempData["Mensaje"] = "Bebida actualizada correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
+    }
+
+    private void ValidarTamanoBebida(BebidaFormViewModel modelo)
+    {
+        if (modelo.IdTamano.HasValue && !modelo.TamanosDisponibles.Any(t => t.IdTamano == modelo.IdTamano))
+            ModelState.AddModelError(nameof(modelo.IdTamano), "Seleccione un tamaño activo o conserve el tamaño actual.");
+        if (!new[] { "Gaseosa", "Embotellada", "Energizante", "Jugo" }.Contains(modelo.TipoBebida))
+            ModelState.AddModelError(nameof(modelo.TipoBebida), "Seleccione un tipo de bebida válido.");
     }
 
     [HttpPost]
