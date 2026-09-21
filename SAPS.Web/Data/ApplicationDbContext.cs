@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Models.Catalogo;
+using SAPS.Web.Models.Pedidos;
 
 namespace SAPS.Web.Data;
 
@@ -12,9 +13,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Precio> Precios => Set<Precio>();
     public DbSet<Bebida> Bebidas => Set<Bebida>();
 
+    public DbSet<Pedido> Pedidos => Set<Pedido>();
+    public DbSet<DetallePedido> DetallesPedido => Set<DetallePedido>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.ConfigurarPedidos();
 
         // ---------- tb_Categoria ----------
         builder.Entity<Categoria>(entity =>
