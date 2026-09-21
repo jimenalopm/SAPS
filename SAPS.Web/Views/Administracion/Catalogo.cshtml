@@ -128,15 +128,15 @@
             {
                 <tr>
                     <td>@p.NombreProducto @(p.EsEspecial ? Html.Raw("<span class=\"badge bg-info text-dark ms-1\">Especial</span>") : Html.Raw(""))</td>
-                    <td>@p.Categoria?.NombreCategoria</td>
+                    <td>@p.Categoria?.NombreCategoria@(p.Categoria?.Activo == false ? " (inactiva)" : "")</td>
                     <td>
                         @if (p.RequiereTamano)
                         {
-                            @string.Join(" · ", p.Precios.Where(pr => pr.Activo).Select(pr => $"{pr.Tamano?.NombreTamano}: ₡{pr.MontoPrecio}"))
+                            @string.Join(" · ", p.Precios.Where(pr => pr.Activo && pr.IdTamano != null).Select(pr => $"{pr.Tamano?.NombreTamano}{(pr.Tamano?.Activo == false ? " (inactivo)" : "")}: ₡{pr.MontoPrecio}"))
                         }
                         else
                         {
-                            var precio = p.Precios.FirstOrDefault(pr => pr.Activo);
+                            var precio = p.Precios.FirstOrDefault(pr => pr.Activo && pr.IdTamano == null);
                             @(precio != null ? $"₡{precio.MontoPrecio}" : "Sin precio")
                         }
                     </td>
@@ -182,7 +182,7 @@
                 <tr>
                     <td>@b.NombreBebida</td>
                     <td>@b.TipoBebida</td>
-                    <td>@(b.Tamano?.NombreTamano ?? "—")</td>
+                    <td>@(b.Tamano?.NombreTamano ?? "—")@(b.Tamano?.Activo == false ? " (inactivo)" : "")</td>
                     <td>₡@b.Precio</td>
                     <td><span class="badge @(b.Activo ? "badge-activo" : "badge-inactivo")">@(b.Activo ? "Activa" : "Inactiva")</span></td>
                     <td class="text-end">

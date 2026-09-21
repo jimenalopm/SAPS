@@ -29,6 +29,7 @@ public class PrecioPorTamanoInput
 {
     public int IdTamano { get; set; }
     public string NombreTamano { get; set; } = "";
+    public bool TamanoActivo { get; set; } = true;
     public bool Incluir { get; set; }
     public int? Monto { get; set; }
 }

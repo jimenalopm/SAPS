@@ -30,7 +30,7 @@
                     <option value="">-- Sin tamaño específico --</option>
                     @foreach (var t in Model.TamanosDisponibles)
                     {
-                        <option value="@t.IdTamano">@t.NombreTamano</option>
+                        <option value="@t.IdTamano">@t.NombreTamano@(t.Activo ? "" : " (inactivo)")</option>
                     }
                 </select>
                 <label asp-for="IdTamano">Presentación / tamaño</label>

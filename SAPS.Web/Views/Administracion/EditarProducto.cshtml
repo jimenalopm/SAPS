@@ -19,7 +19,7 @@
                     <option value="">-- Seleccione --</option>
                     @foreach (var c in Model.CategoriasDisponibles)
                     {
-                        <option value="@c.IdCategoria">@c.NombreCategoria</option>
+                        <option value="@c.IdCategoria">@c.NombreCategoria@(c.Activo ? "" : " (inactiva)")</option>
                     }
                 </select>
                 <label asp-for="IdCategoria">Categoría</label>
@@ -58,7 +58,7 @@
                                 <input type="hidden" asp-for="PreciosPorTamano[i].NombreTamano" />
                                 <div class="form-check">
                                     <input asp-for="PreciosPorTamano[i].Incluir" class="form-check-input" />
-                                    <label asp-for="PreciosPorTamano[i].Incluir" class="form-check-label">@Model.PreciosPorTamano[i].NombreTamano</label>
+                                    <label asp-for="PreciosPorTamano[i].Incluir" class="form-check-label">@Model.PreciosPorTamano[i].NombreTamano@(Model.PreciosPorTamano[i].TamanoActivo ? "" : " (inactivo)")</label>
                                 </div>
                             </td>
                             <td class="align-middle">
@@ -83,6 +83,9 @@
             const requiereTamano = document.getElementById('requiereTamano').checked;
             document.getElementById('bloquePrecioUnico').style.display = requiereTamano ? 'none' : 'block';
             document.getElementById('bloquePreciosPorTamano').style.display = requiereTamano ? 'block' : 'none';
+            // Solo se envían los campos del modo seleccionado.
+            document.querySelectorAll('#bloquePrecioUnico input').forEach(input => input.disabled = requiereTamano);
+            document.querySelectorAll('#bloquePreciosPorTamano input').forEach(input => input.disabled = !requiereTamano);
         }
         document.addEventListener('DOMContentLoaded', alternarPrecios);
     </script>
