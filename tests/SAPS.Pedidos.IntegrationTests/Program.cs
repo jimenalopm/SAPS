@@ -138,6 +138,33 @@ try
     resultado = await pedidos.RegistrarAsync(Solicitud(), usuarioId);
     Verificar(resultado.Total == 3700, "Se puede registrar de madrugada sin restricción horaria");
 
+    // Regresión: no debe existir un límite de dos tamaños por producto en pedidos.
+    var pequenoTres = new Tamano { NombreTamano = "Pequeño" };
+    var medianoTres = new Tamano { NombreTamano = "Mediano" };
+    var productoTres = new Producto { NombreProducto = "Producto con tres tamaños", IdCategoria = categoriaId, RequiereTamano = true };
+    var variantes = new[]
+    {
+        new Precio { Producto = productoTres, Tamano = pequenoTres, MontoPrecio = 350, FechaVigenciaDesde = new(2026, 1, 1) },
+        new Precio { Producto = productoTres, Tamano = medianoTres, MontoPrecio = 500, FechaVigenciaDesde = new(2026, 1, 1) },
+        new Precio { Producto = productoTres, IdTamano = tamanoId, MontoPrecio = 700, FechaVigenciaDesde = new(2026, 1, 1) }
+    };
+    db.Precios.AddRange(variantes); await db.SaveChangesAsync();
+    var opcionesTres = (await pedidos.CatalogoAsync()).Where(a => a.Nombre == productoTres.NombreProducto).ToList();
+    Verificar(opcionesTres.Count == 3 && opcionesTres.Select(a => a.Tamano).ToHashSet().SetEquals(["Pequeño", "Mediano", "Grande"]),
+        "Los tres tamaños activos con precio vigente se ofrecen simultáneamente");
+    var solicitudTres = new RegistrarPedidoRequest
+    {
+        TokenRegistro = Guid.NewGuid(), CodigoColaborador = "DEMO001", TipoComida = "Merienda",
+        Lineas = opcionesTres.Select(a => new LineaPedidoRequest { Clave = a.Clave, Cantidad = 1, PrecioMostrado = a.Precio }).ToList()
+    };
+    var compraTres = await pedidos.RegistrarAsync(solicitudTres, usuarioId);
+    Verificar(compraTres.Total == 1550 && await db.DetallesPedido.CountAsync(d => d.IdPedido == compraTres.IdPedido) == 3,
+        "Se pueden registrar los tres tamaños en un mismo pedido con el valor interno de Café");
+    await db.Tamanos.Where(t => t.IdTamano == medianoTres.IdTamano).ExecuteUpdateAsync(s => s.SetProperty(t => t.Activo, false));
+    Verificar((await pedidos.CatalogoAsync()).Count(a => a.Nombre == productoTres.NombreProducto) == 2,
+        "Solo se oculta el tamaño desactivado y se mantienen los otros dos");
+    await db.Tamanos.Where(t => t.IdTamano == medianoTres.IdTamano).ExecuteUpdateAsync(s => s.SetProperty(t => t.Activo, true));
+
     // Pruebas HTTP reales: autenticación, permisos, antifalsificación y model binding.
     var puertoLibre = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
     puertoLibre.Start();

@@ -21,7 +21,7 @@ Los nombres y fotos no pertenecen a colaboradores reales. Los pedidos creados co
 
 - Utiliza HU-001 para sesión, HU-003 para permisos y HU-007 para catálogo.
 - Para este sprint se consulta el catálogo activo de HU-007. La planificación del menú diario de HU-005 no se implementa aquí.
-- El tipo de comida se elige explícitamente: Desayuno, Almuerzo o Merienda. Los acompañamientos se agregan como artículos del catálogo.
+- El tipo de comida se elige explícitamente: Desayuno, Almuerzo o Café. El nombre visible Café conserva el valor interno `Merienda` para compatibilidad con la base de datos y los pedidos existentes. Los acompañamientos se agregan como artículos del catálogo.
 - Solo se ofrecen productos activos de categorías activas, precios vigentes del modo correspondiente y tamaños activos. Las bebidas con tamaño inactivo tampoco se venden.
 - Desactivar una categoría o tamaño impide nuevas ventas de esas opciones y conserva los pedidos ya registrados.
 - No se agregan restricciones horarias ni topes comerciales de consumo. Las cantidades deben ser enteros positivos dentro de la capacidad técnica del tipo INT.
@@ -159,3 +159,11 @@ Imagen generada mediante la herramienta integrada imagegen; no usa fotos de la e
 Prompt utilizado:
 
 > Use case: photorealistic-natural. Create a single square asset consisting of two employee ID portrait photographs side by side in exact equal left and right halves, no gap. Left half fictional adult woman age 35, dark curly hair, neutral green shirt. Right half fictional adult man age 40, short dark hair, blue shirt. Each face centered within its own half, head and shoulders, neutral pale gray background, even realistic studio light. Entirely fictional people for a university cafeteria software demo, not actual employees. No text, no logo, no watermark. Each portrait must fit entirely in its half with generous head margins.
+
+## Ajuste de la pantalla de Soda: Café y tamaños
+
+El tiempo de comida se muestra como **Café**. El valor enviado al servidor continúa siendo `Merienda`, por lo que este cambio no requiere migraciones ni modifica compras anteriores.
+
+No hay un límite de dos tamaños en el selector: se muestran todas las variantes activas con precio vigente asignado al producto. Para ofrecer Pequeño, Mediano y Grande, los tres tamaños deben estar activos y seleccionados con su respectivo precio en la edición del producto. Crear un tamaño por sí solo no le asigna precio a cada producto.
+
+Se agregó una prueba de regresión que ofrece y registra tres tamaños del mismo producto, y comprueba que desactivar uno deje disponibles los otros dos.

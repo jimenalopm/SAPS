@@ -30,7 +30,8 @@
                 <div class="card h-100"><div class="card-body">
                     <h2 class="h4" id="titulo-articulos">2. Agregar artículos</h2>
                     <label class="form-label" for="tipo-comida">Tipo de comida</label>
-                    <select id="tipo-comida" class="form-select mb-3"><option value="">Seleccione…</option><option>Desayuno</option><option>Almuerzo</option><option>Merienda</option></select>
+                    @* Se conserva el valor interno para compatibilidad con los pedidos existentes. *@
+                    <select id="tipo-comida" class="form-select mb-3"><option value="">Seleccione…</option><option>Desayuno</option><option>Almuerzo</option><option value="Merienda">Café</option></select>
                     <form id="agregar-articulo">
                         <label class="form-label" for="articulo">Producto, adicional o bebida</label>
                         <select id="articulo" class="form-select mb-2" required><option value="">Cargando catálogo…</option></select>
