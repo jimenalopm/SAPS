@@ -1,0 +1,23 @@
+@model SAPS.Web.Models.Catalogo.TamanoFormViewModel
+@{ ViewData["Title"] = "Editar tamaño"; }
+
+<h1>Editar tamaño</h1>
+<div class="row">
+    <div class="col-md-5">
+        <form asp-action="EditarTamano" method="post">
+            <input type="hidden" asp-for="IdTamano" />
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div class="form-floating mb-3">
+                <input asp-for="NombreTamano" class="form-control" placeholder="Nombre del tamaño" autofocus />
+                <label asp-for="NombreTamano">Nombre del tamaño</label>
+                <span asp-validation-for="NombreTamano" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-recyplast">Guardar cambios</button>
+            <a asp-action="Catalogo" asp-route-tab="tamanos" class="btn btn-outline-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
