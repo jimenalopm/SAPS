@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Data;
+using SAPS.Web.Services.Pedidos;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,13 @@ builder.Services.AddDefaultIdentity<IdentityUser>(IdentityConfig.Configurar)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddScoped<DbInitializer>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ServicioPedidos>();
+// Los datos ficticios nunca se habilitan automáticamente fuera de Development.
+if (builder.Environment.IsDevelopment())
+    builder.Services.AddSingleton<IColaboradores, ColaboradoresDePrueba>();
+else
+    builder.Services.AddSingleton<IColaboradores, ColaboradoresSinConexion>();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
@@ -35,6 +43,20 @@ if (app.Environment.IsDevelopment())
     {
         var user = new IdentityUser { UserName = "EMP001" };
         await userManager.CreateAsync(user, "Prueba123");
+    }
+
+    // Operadora ficticia: no es el colaborador al que se carga el pedido.
+    var sodaUser = await userManager.FindByNameAsync("SODA001");
+    if (sodaUser == null)
+    {
+        sodaUser = new IdentityUser { UserName = "SODA001" };
+        var resultado = await userManager.CreateAsync(sodaUser, "Prueba123");
+        if (!resultado.Succeeded) throw new InvalidOperationException("No se pudo crear la operadora de prueba.");
+    }
+    if (!await userManager.IsInRoleAsync(sodaUser, "Soda"))
+    {
+        var resultado = await userManager.AddToRoleAsync(sodaUser, "Soda");
+        if (!resultado.Succeeded) throw new InvalidOperationException("No se pudo asignar el rol de la operadora de prueba.");
     }
 
     // Usuario de prueba SOLO para desarrollo, con rol Administrador, para poder
@@ -64,6 +86,7 @@ else
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

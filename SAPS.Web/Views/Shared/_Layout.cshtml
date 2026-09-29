@@ -1,5 +1,5 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -37,6 +37,12 @@
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-controller="Administracion" asp-action="Catalogo">Catálogo</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Soda") || User.IsInRole("Usuario") || User.IsInRole("Administrador"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Pedidos" asp-action="Index">Registrar pedido</a>
                             </li>
                         }
                     </ul>

@@ -87,3 +87,13 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+/* HU-008: la imagen contiene dos retratos ficticios de prueba. */
+.foto-colaborador {
+  width: 110px;
+  height: 160px;
+  background-size: 200% auto;
+  background-repeat: no-repeat;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.cantidad-pedido { min-width: 75px; max-width: 105px; }
