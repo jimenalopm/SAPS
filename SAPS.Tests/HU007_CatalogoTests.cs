@@ -1,7 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using SAPS.Tests.Helpers;
+using SAPS.Web.Controllers;
+using SAPS.Web.Data;
 using SAPS.Web.Models.Catalogo;
 
 namespace SAPS.Tests;
@@ -12,7 +16,8 @@ namespace SAPS.Tests;
 /// enteros positivos (RNF-003); productos con varios tamaños tienen un precio por
 /// tamaño; un único precio activo por producto+tamaño, conservando el historial;
 /// bebidas en catálogo separado con tipos permitidos; no se pierden datos al
-/// borrar categorías/tamaños en uso.
+/// borrar categorías/tamaños en uso; el administrador crea, edita, busca y
+/// activa/desactiva categorías, tamaños, productos y bebidas sin perder historial.
 /// </summary>
 public class HU007_CatalogoTests
 {
@@ -231,5 +236,385 @@ public class HU007_CatalogoTests
     public void Entidades_SeMapeanALasTablasDelDiseno(Type entidad, string tabla)
     {
         Assert.Equal(tabla, ModeloSqlServer().FindEntityType(entidad)!.GetTableName());
+    }
+
+    // ---------- CRUD del catálogo (AdministracionController) ----------
+
+    private static AdministracionController Controlador(ApplicationDbContext db, string metodo = "POST") =>
+        TestServices.ConContexto(new AdministracionController(db), metodo);
+
+    private static async Task<(Categoria cat, Tamano pequeno, Tamano grande)> SembrarBaseAsync(ApplicationDbContext db)
+    {
+        var cat = new Categoria { NombreCategoria = "Almuerzo" };
+        var pequeno = new Tamano { NombreTamano = "Pequeño" };
+        var grande = new Tamano { NombreTamano = "Grande" };
+        db.AddRange(cat, pequeno, grande);
+        await db.SaveChangesAsync();
+        return (cat, pequeno, grande);
+    }
+
+    private static async Task<Producto> SembrarProductoPrecioUnicoAsync(ApplicationDbContext db, Categoria cat, int monto)
+    {
+        var producto = new Producto { NombreProducto = "Casado", IdCategoria = cat.IdCategoria };
+        producto.Precios.Add(new Precio { MontoPrecio = monto, FechaVigenciaDesde = new DateOnly(2026, 1, 1) });
+        db.Productos.Add(producto);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        return producto;
+    }
+
+    [Fact]
+    public async Task CrearCategoria_Valida_SeGuardaYRedirigeAlCatalogo()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+
+        var resultado = await Controlador(db).CrearCategoria(new CategoriaFormViewModel { NombreCategoria = "Desayuno" });
+
+        var redirect = Assert.IsType<RedirectToActionResult>(resultado);
+        Assert.Equal(nameof(AdministracionController.Catalogo), redirect.ActionName);
+        Assert.Equal("categorias", redirect.RouteValues!["tab"]);
+        var guardada = await db.Categorias.SingleAsync();
+        Assert.Equal("Desayuno", guardada.NombreCategoria);
+        Assert.True(guardada.Activo);
+    }
+
+    [Fact]
+    public async Task CrearCategoria_NombreDuplicado_EsRechazada()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        db.Categorias.Add(new Categoria { NombreCategoria = "Desayuno" });
+        await db.SaveChangesAsync();
+        var controlador = Controlador(db);
+
+        var resultado = await controlador.CrearCategoria(new CategoriaFormViewModel { NombreCategoria = "Desayuno" });
+
+        Assert.IsType<ViewResult>(resultado);
+        Assert.True(controlador.ModelState.ContainsKey(nameof(CategoriaFormViewModel.NombreCategoria)));
+        Assert.Equal(1, await db.Categorias.CountAsync());
+    }
+
+    [Fact]
+    public async Task EditarCategoria_NombreDeOtraCategoria_EsRechazada()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var desayuno = new Categoria { NombreCategoria = "Desayuno" };
+        db.Categorias.AddRange(desayuno, new Categoria { NombreCategoria = "Almuerzo" });
+        await db.SaveChangesAsync();
+        var controlador = Controlador(db);
+
+        var resultado = await controlador.EditarCategoria(
+            new CategoriaFormViewModel { IdCategoria = desayuno.IdCategoria, NombreCategoria = "Almuerzo" });
+
+        Assert.IsType<ViewResult>(resultado);
+        Assert.False(controlador.ModelState.IsValid);
+        Assert.Equal("Desayuno", (await db.Categorias.FindAsync(desayuno.IdCategoria))!.NombreCategoria);
+    }
+
+    [Fact]
+    public async Task EditarCategoria_Inexistente_DevuelveNotFound()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+
+        var resultado = await Controlador(db, "GET").EditarCategoria(999);
+
+        Assert.IsType<NotFoundResult>(resultado);
+    }
+
+    [Fact]
+    public async Task CambiarEstadoCategoria_DesactivaSinBorrarYLuegoReactiva()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var cat = new Categoria { NombreCategoria = "Fresco" };
+        db.Categorias.Add(cat);
+        await db.SaveChangesAsync();
+        var controlador = Controlador(db);
+
+        await controlador.CambiarEstadoCategoria(cat.IdCategoria);
+        Assert.False((await db.Categorias.SingleAsync()).Activo);
+
+        await controlador.CambiarEstadoCategoria(cat.IdCategoria);
+        Assert.True((await db.Categorias.SingleAsync()).Activo);
+    }
+
+    [Fact]
+    public async Task CrearTamano_NombreDuplicado_EsRechazado()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        db.Tamanos.Add(new Tamano { NombreTamano = "Grande" });
+        await db.SaveChangesAsync();
+
+        var resultado = await Controlador(db).CrearTamano(new TamanoFormViewModel { NombreTamano = "Grande" });
+
+        Assert.IsType<ViewResult>(resultado);
+        Assert.Equal(1, await db.Tamanos.CountAsync());
+    }
+
+    [Fact]
+    public async Task CrearProducto_ConPrecioUnico_GuardaProductoYUnPrecioSinTamano()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var (cat, _, _) = await SembrarBaseAsync(db);
+
+        var resultado = await Controlador(db).CrearProducto(new ProductoFormViewModel
+        {
+            NombreProducto = "Casado con pollo", IdCategoria = cat.IdCategoria, PrecioUnico = 2800
+        });
+
+        Assert.IsType<RedirectToActionResult>(resultado);
+        var producto = await db.Productos.Include(p => p.Precios).SingleAsync();
+        var precio = Assert.Single(producto.Precios);
+        Assert.Null(precio.IdTamano);
+        Assert.Equal(2800, precio.MontoPrecio);
+        Assert.True(precio.Activo);
+    }
+
+    [Fact]
+    public async Task CrearProducto_ConTamanos_GuardaUnPrecioPorCadaTamanoSeleccionado()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var (cat, pequeno, grande) = await SembrarBaseAsync(db);
+
+        await Controlador(db).CrearProducto(new ProductoFormViewModel
+        {
+            NombreProducto = "Fresco de cas", IdCategoria = cat.IdCategoria, RequiereTamano = true,
+            PreciosPorTamano =
+            [
+                new PrecioPorTamanoInput { IdTamano = pequeno.IdTamano, Incluir = true, Monto = 600 },
+                new PrecioPorTamanoInput { IdTamano = grande.IdTamano, Incluir = true, Monto = 1000 },
+            ]
+        });
+
+        var precios = await db.Precios.OrderBy(p => p.MontoPrecio).ToListAsync();
+        Assert.Equal(2, precios.Count);
+        Assert.Equal(pequeno.IdTamano, precios[0].IdTamano);
+        Assert.Equal(grande.IdTamano, precios[1].IdTamano);
+    }
+
+    [Theory]
+    [InlineData(false, null, false, null)]   // precio único vacío
+    [InlineData(false, 0, false, null)]      // precio único cero
+    [InlineData(false, -500, false, null)]   // precio único negativo
+    [InlineData(true, null, false, null)]    // requiere tamaño pero ninguno seleccionado
+    [InlineData(true, null, true, null)]     // tamaño seleccionado sin precio
+    [InlineData(true, null, true, 0)]        // tamaño seleccionado con precio cero
+    public async Task CrearProducto_ConPreciosInvalidos_NoSeGuarda(bool requiereTamano, int? precioUnico, bool incluirTamano, int? montoTamano)
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var (cat, pequeno, _) = await SembrarBaseAsync(db);
+        var controlador = Controlador(db);
+
+        var resultado = await controlador.CrearProducto(new ProductoFormViewModel
+        {
+            NombreProducto = "Lasaña", IdCategoria = cat.IdCategoria, RequiereTamano = requiereTamano,
+            PrecioUnico = precioUnico,
+            PreciosPorTamano = [new PrecioPorTamanoInput { IdTamano = pequeno.IdTamano, Incluir = incluirTamano, Monto = montoTamano }]
+        });
+
+        Assert.IsType<ViewResult>(resultado);
+        Assert.False(controlador.ModelState.IsValid);
+        Assert.Empty(db.Productos);
+        Assert.Empty(db.Precios);
+    }
+
+    [Fact]
+    public async Task CrearProducto_ConTamanoRepetido_NoSeGuarda()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var (cat, pequeno, _) = await SembrarBaseAsync(db);
+
+        var resultado = await Controlador(db).CrearProducto(new ProductoFormViewModel
+        {
+            NombreProducto = "Fresco", IdCategoria = cat.IdCategoria, RequiereTamano = true,
+            PreciosPorTamano =
+            [
+                new PrecioPorTamanoInput { IdTamano = pequeno.IdTamano, Incluir = true, Monto = 600 },
+                new PrecioPorTamanoInput { IdTamano = pequeno.IdTamano, Incluir = true, Monto = 700 },
+            ]
+        });
+
+        Assert.IsType<ViewResult>(resultado);
+        Assert.Empty(db.Productos);
+    }
+
+    [Fact]
+    public async Task CrearProducto_EnCategoriaInactiva_NoSeGuarda()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var cat = new Categoria { NombreCategoria = "Vieja", Activo = false };
+        db.Categorias.Add(cat);
+        await db.SaveChangesAsync();
+        var controlador = Controlador(db);
+
+        var resultado = await controlador.CrearProducto(new ProductoFormViewModel
+        {
+            NombreProducto = "X", IdCategoria = cat.IdCategoria, PrecioUnico = 1000
+        });
+
+        Assert.IsType<ViewResult>(resultado);
+        Assert.True(controlador.ModelState.ContainsKey(nameof(ProductoFormViewModel.IdCategoria)));
+        Assert.Empty(db.Productos);
+    }
+
+    [Fact]
+    public async Task EditarProducto_CambioDePrecio_CierraElAnteriorYCreaUnoNuevoActivo()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var (cat, _, _) = await SembrarBaseAsync(db);
+        var producto = await SembrarProductoPrecioUnicoAsync(db, cat, 2500);
+
+        var resultado = await Controlador(db).EditarProducto(new ProductoFormViewModel
+        {
+            IdProducto = producto.IdProducto, NombreProducto = "Casado", IdCategoria = cat.IdCategoria, PrecioUnico = 2800
+        });
+
+        Assert.IsType<RedirectToActionResult>(resultado);
+        var precios = await db.Precios.AsNoTracking().ToListAsync();
+        Assert.Equal(2, precios.Count);
+        var cerrado = Assert.Single(precios, p => !p.Activo);
+        Assert.Equal(2500, cerrado.MontoPrecio);
+        Assert.Equal(DateOnly.FromDateTime(DateTime.Today), cerrado.FechaVigenciaHasta);
+        var vigente = Assert.Single(precios, p => p.Activo);
+        Assert.Equal(2800, vigente.MontoPrecio);
+        Assert.Null(vigente.FechaVigenciaHasta);
+    }
+
+    [Fact]
+    public async Task EditarProducto_SinCambioDePrecio_NoGeneraHistorial()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var (cat, _, _) = await SembrarBaseAsync(db);
+        var producto = await SembrarProductoPrecioUnicoAsync(db, cat, 2500);
+
+        await Controlador(db).EditarProducto(new ProductoFormViewModel
+        {
+            IdProducto = producto.IdProducto, NombreProducto = "Casado típico", IdCategoria = cat.IdCategoria, PrecioUnico = 2500
+        });
+
+        var precio = Assert.Single(await db.Precios.AsNoTracking().ToListAsync());
+        Assert.True(precio.Activo);
+        Assert.Equal("Casado típico", (await db.Productos.AsNoTracking().SingleAsync()).NombreProducto);
+    }
+
+    [Fact]
+    public async Task EditarProducto_DePrecioUnicoATamanos_CierraElPrecioUnico()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var (cat, pequeno, grande) = await SembrarBaseAsync(db);
+        var producto = await SembrarProductoPrecioUnicoAsync(db, cat, 2500);
+
+        await Controlador(db).EditarProducto(new ProductoFormViewModel
+        {
+            IdProducto = producto.IdProducto, NombreProducto = "Casado", IdCategoria = cat.IdCategoria, RequiereTamano = true,
+            PreciosPorTamano =
+            [
+                new PrecioPorTamanoInput { IdTamano = pequeno.IdTamano, Incluir = true, Monto = 2000 },
+                new PrecioPorTamanoInput { IdTamano = grande.IdTamano, Incluir = true, Monto = 3000 },
+            ]
+        });
+
+        var activos = await db.Precios.AsNoTracking().Where(p => p.Activo).ToListAsync();
+        Assert.Equal(2, activos.Count);
+        Assert.All(activos, p => Assert.NotNull(p.IdTamano));
+        var unico = Assert.Single(await db.Precios.AsNoTracking().Where(p => p.IdTamano == null).ToListAsync());
+        Assert.False(unico.Activo);
+        Assert.True((await db.Productos.AsNoTracking().SingleAsync()).RequiereTamano);
+    }
+
+    [Fact]
+    public async Task CambiarEstadoProducto_DesactivaSinTocarSusPrecios()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var (cat, _, _) = await SembrarBaseAsync(db);
+        var producto = await SembrarProductoPrecioUnicoAsync(db, cat, 2500);
+
+        await Controlador(db).CambiarEstadoProducto(producto.IdProducto);
+
+        Assert.False((await db.Productos.AsNoTracking().SingleAsync()).Activo);
+        Assert.True((await db.Precios.AsNoTracking().SingleAsync()).Activo);
+    }
+
+    [Fact]
+    public async Task CrearBebida_Valida_SeGuarda()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var (_, pequeno, _) = await SembrarBaseAsync(db);
+
+        var resultado = await Controlador(db).CrearBebida(new BebidaFormViewModel
+        {
+            NombreBebida = "Agua Cristal", TipoBebida = "Embotellada", IdTamano = pequeno.IdTamano, Precio = 900
+        });
+
+        Assert.IsType<RedirectToActionResult>(resultado);
+        var bebida = await db.Bebidas.SingleAsync();
+        Assert.Equal(900, bebida.Precio);
+        Assert.Equal(pequeno.IdTamano, bebida.IdTamano);
+    }
+
+    [Fact]
+    public async Task CrearBebida_TipoNoPermitido_EsRechazada()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var controlador = Controlador(db);
+
+        var resultado = await controlador.CrearBebida(new BebidaFormViewModel { NombreBebida = "Cerveza", TipoBebida = "Licor", Precio = 1500 });
+
+        Assert.IsType<ViewResult>(resultado);
+        Assert.True(controlador.ModelState.ContainsKey(nameof(BebidaFormViewModel.TipoBebida)));
+        Assert.Empty(db.Bebidas);
+    }
+
+    [Fact]
+    public async Task CrearBebida_ConTamanoInactivo_EsRechazada()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var inactivo = new Tamano { NombreTamano = "3L", Activo = false };
+        db.Tamanos.Add(inactivo);
+        await db.SaveChangesAsync();
+        var controlador = Controlador(db);
+
+        var resultado = await controlador.CrearBebida(new BebidaFormViewModel
+        {
+            NombreBebida = "Coca-Cola", TipoBebida = "Gaseosa", IdTamano = inactivo.IdTamano, Precio = 2500
+        });
+
+        Assert.IsType<ViewResult>(resultado);
+        Assert.True(controlador.ModelState.ContainsKey(nameof(BebidaFormViewModel.IdTamano)));
+        Assert.Empty(db.Bebidas);
+    }
+
+    [Fact]
+    public async Task Catalogo_PorDefectoOcultaInactivosYPermiteIncluirlosYBuscar()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        db.Categorias.AddRange(
+            new Categoria { NombreCategoria = "Desayuno" },
+            new Categoria { NombreCategoria = "Almuerzo" },
+            new Categoria { NombreCategoria = "Antigua", Activo = false });
+        await db.SaveChangesAsync();
+        var controlador = Controlador(db, "GET");
+
+        var soloActivas = (CatalogoIndexViewModel)Assert.IsType<ViewResult>(await controlador.Catalogo()).Model!;
+        var todas = (CatalogoIndexViewModel)Assert.IsType<ViewResult>(await controlador.Catalogo(catInc: true)).Model!;
+        var busqueda = (CatalogoIndexViewModel)Assert.IsType<ViewResult>(await controlador.Catalogo(catQ: "Desa")).Model!;
+
+        Assert.Equal(new[] { "Almuerzo", "Desayuno" }, soloActivas.Categorias.Select(c => c.NombreCategoria));
+        Assert.Equal(3, todas.Categorias.Count);
+        Assert.Equal("Desayuno", Assert.Single(busqueda.Categorias).NombreCategoria);
+    }
+
+    [Theory]
+    [InlineData(typeof(CategoriaFormViewModel), nameof(CategoriaFormViewModel.NombreCategoria))]
+    [InlineData(typeof(TamanoFormViewModel), nameof(TamanoFormViewModel.NombreTamano))]
+    [InlineData(typeof(ProductoFormViewModel), nameof(ProductoFormViewModel.NombreProducto))]
+    [InlineData(typeof(BebidaFormViewModel), nameof(BebidaFormViewModel.NombreBebida))]
+    public void Formularios_NombreEsObligatorio(Type tipoFormulario, string propiedad)
+    {
+        var modelo = Activator.CreateInstance(tipoFormulario)!;
+        tipoFormulario.GetProperty(propiedad)!.SetValue(modelo, "");
+        var errores = new List<ValidationResult>();
+
+        Validator.TryValidateObject(modelo, new ValidationContext(modelo), errores, validateAllProperties: true);
+
+        Assert.Contains(errores, e => e.MemberNames.Contains(propiedad));
     }
 }

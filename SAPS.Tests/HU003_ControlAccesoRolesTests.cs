@@ -12,8 +12,9 @@ namespace SAPS.Tests;
 /// <summary>
 /// HU-003 | Controlar acceso según rol de usuario.
 /// Criterios: existen los roles del sistema (Administrador, RecursosHumanos, Soda, Usuario);
-/// cada usuario tiene un rol asignado; solo el Administrador entra a Administración;
-/// Recursos Humanos y Administrador entran a Recursos Humanos; los demás son rechazados.
+/// cada usuario tiene un rol asignado; Administrador y Recursos Humanos gestionan el
+/// catálogo (Administración) y entran a Recursos Humanos; Soda, Usuario y Administrador
+/// registran pedidos; los demás roles y los anónimos son rechazados.
 /// </summary>
 public class HU003_ControlAccesoRolesTests
 {
@@ -75,23 +76,17 @@ public class HU003_ControlAccesoRolesTests
 
     // ---------- Atributos de autorización en controladores ----------
 
-    [Fact]
-    public void AdministracionController_RequiereRolAdministrador()
+    [Theory]
+    [InlineData(typeof(AdministracionController), new[] { "Administrador", "RecursosHumanos" })]
+    [InlineData(typeof(RecursosHumanosController), new[] { "Administrador", "RecursosHumanos" })]
+    [InlineData(typeof(PedidosController), new[] { "Administrador", "Soda", "Usuario" })]
+    public void Controlador_DeclaraLosRolesPermitidos(Type controlador, string[] rolesEsperados)
     {
-        var attr = typeof(AdministracionController).GetCustomAttribute<AuthorizeAttribute>();
+        var attr = controlador.GetCustomAttribute<AuthorizeAttribute>();
 
         Assert.NotNull(attr);
-        Assert.Equal("Administrador", attr!.Roles);
-    }
-
-    [Fact]
-    public void RecursosHumanosController_RequiereRolRecursosHumanosOAdministrador()
-    {
-        var attr = typeof(RecursosHumanosController).GetCustomAttribute<AuthorizeAttribute>();
-
-        Assert.NotNull(attr);
-        var roles = attr!.Roles!.Split(',').Select(r => r.Trim());
-        Assert.Equal(new[] { "Administrador", "RecursosHumanos" }, roles.Order());
+        var roles = attr!.Roles!.Split(',').Select(r => r.Trim()).Order();
+        Assert.Equal(rolesEsperados.Order(), roles);
     }
 
     [Fact]
@@ -105,7 +100,7 @@ public class HU003_ControlAccesoRolesTests
     public static TheoryData<Type, string?, bool> MatrizDeAcceso => new()
     {
         { typeof(AdministracionController), "Administrador",   true  },
-        { typeof(AdministracionController), "RecursosHumanos", false },
+        { typeof(AdministracionController), "RecursosHumanos", true  },
         { typeof(AdministracionController), "Soda",            false },
         { typeof(AdministracionController), "Usuario",         false },
         { typeof(AdministracionController), null,              false },
@@ -114,6 +109,11 @@ public class HU003_ControlAccesoRolesTests
         { typeof(RecursosHumanosController), "Soda",            false },
         { typeof(RecursosHumanosController), "Usuario",         false },
         { typeof(RecursosHumanosController), null,              false },
+        { typeof(PedidosController), "Administrador",   true  },
+        { typeof(PedidosController), "Soda",            true  },
+        { typeof(PedidosController), "Usuario",         true  },
+        { typeof(PedidosController), "RecursosHumanos", false },
+        { typeof(PedidosController), null,              false },
     };
 
     [Theory]
