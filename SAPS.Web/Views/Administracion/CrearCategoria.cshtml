@@ -1,10 +1,20 @@
 @model SAPS.Web.Models.Catalogo.CategoriaFormViewModel
 @{ ViewData["Title"] = "Nueva categoría"; }
 
+@* [H1] Ruta de navegación: muestra dónde está la persona y permite volver a cualquier nivel. *@
+<nav aria-label="Ruta de navegación">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+        <li class="breadcrumb-item"><a asp-action="Catalogo">Catálogo</a></li>
+        <li class="breadcrumb-item"><a asp-action="Catalogo" asp-route-tab="categorias">Categorías</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Nueva categoría</li>
+    </ol>
+</nav>
+
 <h1>Nueva categoría</h1>
 <div class="row">
     <div class="col-md-5">
-        <form asp-action="CrearCategoria" method="post">
+        <form asp-action="CrearCategoria" method="post" data-bloquear-envio>
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
             <div class="form-floating mb-3">
                 <input asp-for="NombreCategoria" class="form-control" placeholder="Nombre de la categoría" autofocus />

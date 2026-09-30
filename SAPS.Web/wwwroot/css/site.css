@@ -54,6 +54,68 @@
   background-color: var(--rp-gris);
   color: var(--rp-blanco);
 }
+
+/* [H2] Marca RecyPlast en la barra superior */
+.marca-recyplast {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  text-align: left;
+  word-break: normal;
+}
+.logo-recyplast {
+  height: 36px;
+  width: auto;
+  background-color: var(--rp-blanco);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.marca-texto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.marca-empresa {
+  color: var(--rp-verde);
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+.marca-sistema {
+  color: var(--rp-blanco);
+  font-size: .8rem;
+}
+
+/* [H1] Ruta de navegación (breadcrumbs) */
+.breadcrumb {
+  font-size: .9rem;
+  margin-bottom: .75rem;
+}
+.breadcrumb a {
+  color: var(--rp-azul);
+  text-decoration: none;
+}
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* [H5] Tablas del catálogo en pantallas pequeñas (breakpoint de Estándares: 991px) */
+.tabla-catalogo .precios-tamano li {
+  line-height: 1.4;
+}
+@media (max-width: 991.98px) {
+  .tabla-catalogo {
+    font-size: .9rem;
+  }
+  .tabla-catalogo td,
+  .tabla-catalogo th {
+    white-space: nowrap;
+  }
+  /* Botones más separados para tocarlos con el dedo sin equivocarse */
+  .tabla-catalogo td.text-end .btn {
+    margin-left: .25rem;
+    padding: .35rem .6rem;
+  }
+}
 /* ---------------------------------------------------- */
 
 html {

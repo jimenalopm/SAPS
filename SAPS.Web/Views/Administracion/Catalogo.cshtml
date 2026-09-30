@@ -39,7 +39,9 @@
             <a asp-action="CrearCategoria" class="btn btn-recyplast">+ Nueva categoría</a>
         </div>
 
-        <table class="table table-hover align-middle">
+        @* [H5] table-responsive: en pantallas angostas la tabla se desplaza dentro de su recuadro y no desborda la página. *@
+        <div class="table-responsive">
+        <table class="table table-hover align-middle tabla-catalogo">
             <thead><tr><th>Nombre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var c in Model.Categorias)
@@ -47,10 +49,11 @@
                 <tr>
                     <td>@c.NombreCategoria</td>
                     <td><span class="badge @(c.Activo ? "badge-activo" : "badge-inactivo")">@(c.Activo ? "Activa" : "Inactiva")</span></td>
-                    <td class="text-end">
+                    <td class="text-end text-nowrap">
                         <a asp-action="EditarCategoria" asp-route-id="@c.IdCategoria" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <form asp-action="CambiarEstadoCategoria" asp-route-id="@c.IdCategoria" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm @(c.Activo ? "btn-outline-danger" : "btn-outline-success")">
+                        <form asp-action="CambiarEstadoCategoria" asp-route-id="@c.IdCategoria" method="post" class="d-inline" data-bloquear-envio
+                              data-confirmar="@(c.Activo ? $"¿Desea desactivar la categoría «{c.NombreCategoria}»? Dejará de estar disponible para nuevos pedidos. Podrá activarla de nuevo cuando lo necesite." : null)">
+                            <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm @(c.Activo ? "btn-outline-danger" : "btn-outline-success")">
                                 @(c.Activo ? "Desactivar" : "Activar")
                             </button>
                         </form>
@@ -63,6 +66,7 @@
             }
             </tbody>
         </table>
+        </div>
     </div>
 
     @* ================= TAMAÑOS ================= *@
@@ -80,7 +84,9 @@
             <a asp-action="CrearTamano" class="btn btn-recyplast">+ Nuevo tamaño</a>
         </div>
 
-        <table class="table table-hover align-middle">
+        @* [H5] table-responsive: en pantallas angostas la tabla se desplaza dentro de su recuadro y no desborda la página. *@
+        <div class="table-responsive">
+        <table class="table table-hover align-middle tabla-catalogo">
             <thead><tr><th>Nombre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var t in Model.Tamanos)
@@ -88,10 +94,11 @@
                 <tr>
                     <td>@t.NombreTamano</td>
                     <td><span class="badge @(t.Activo ? "badge-activo" : "badge-inactivo")">@(t.Activo ? "Activo" : "Inactivo")</span></td>
-                    <td class="text-end">
+                    <td class="text-end text-nowrap">
                         <a asp-action="EditarTamano" asp-route-id="@t.IdTamano" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <form asp-action="CambiarEstadoTamano" asp-route-id="@t.IdTamano" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm @(t.Activo ? "btn-outline-danger" : "btn-outline-success")">
+                        <form asp-action="CambiarEstadoTamano" asp-route-id="@t.IdTamano" method="post" class="d-inline" data-bloquear-envio
+                              data-confirmar="@(t.Activo ? $"¿Desea desactivar el tamaño «{t.NombreTamano}»? Dejará de estar disponible para nuevos pedidos. Podrá activarlo de nuevo cuando lo necesite." : null)">
+                            <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm @(t.Activo ? "btn-outline-danger" : "btn-outline-success")">
                                 @(t.Activo ? "Desactivar" : "Activar")
                             </button>
                         </form>
@@ -104,6 +111,7 @@
             }
             </tbody>
         </table>
+        </div>
     </div>
 
     @* ================= PRODUCTOS ================= *@
@@ -121,7 +129,9 @@
             <a asp-action="CrearProducto" class="btn btn-recyplast">+ Nuevo producto</a>
         </div>
 
-        <table class="table table-hover align-middle">
+        @* [H5] table-responsive: en pantallas angostas la tabla se desplaza dentro de su recuadro y no desborda la página. *@
+        <div class="table-responsive">
+        <table class="table table-hover align-middle tabla-catalogo">
             <thead><tr><th>Nombre</th><th>Categoría</th><th>Precio(s)</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var p in Model.Productos)
@@ -132,7 +142,12 @@
                     <td>
                         @if (p.RequiereTamano)
                         {
-                            @string.Join(" · ", p.Precios.Where(pr => pr.Activo && pr.IdTamano != null).Select(pr => $"{pr.Tamano?.NombreTamano}{(pr.Tamano?.Activo == false ? " (inactivo)" : "")}: ₡{pr.MontoPrecio}"))
+                            <ul class="list-unstyled mb-0 precios-tamano">
+                            @foreach (var pr in p.Precios.Where(x => x.Activo && x.IdTamano != null))
+                            {
+                                <li class="text-nowrap">@pr.Tamano?.NombreTamano@(pr.Tamano?.Activo == false ? " (inactivo)" : ""): <strong>₡@pr.MontoPrecio</strong></li>
+                            }
+                            </ul>
                         }
                         else
                         {
@@ -141,10 +156,11 @@
                         }
                     </td>
                     <td><span class="badge @(p.Activo ? "badge-activo" : "badge-inactivo")">@(p.Activo ? "Activo" : "Inactivo")</span></td>
-                    <td class="text-end">
+                    <td class="text-end text-nowrap">
                         <a asp-action="EditarProducto" asp-route-id="@p.IdProducto" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <form asp-action="CambiarEstadoProducto" asp-route-id="@p.IdProducto" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm @(p.Activo ? "btn-outline-danger" : "btn-outline-success")">
+                        <form asp-action="CambiarEstadoProducto" asp-route-id="@p.IdProducto" method="post" class="d-inline" data-bloquear-envio
+                              data-confirmar="@(p.Activo ? $"¿Desea desactivar el producto «{p.NombreProducto}»? Dejará de estar disponible para nuevos pedidos. Podrá activarlo de nuevo cuando lo necesite." : null)">
+                            <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm @(p.Activo ? "btn-outline-danger" : "btn-outline-success")">
                                 @(p.Activo ? "Desactivar" : "Activar")
                             </button>
                         </form>
@@ -157,6 +173,7 @@
             }
             </tbody>
         </table>
+        </div>
     </div>
 
     @* ================= BEBIDAS ================= *@
@@ -174,7 +191,9 @@
             <a asp-action="CrearBebida" class="btn btn-recyplast">+ Nueva bebida</a>
         </div>
 
-        <table class="table table-hover align-middle">
+        @* [H5] table-responsive: en pantallas angostas la tabla se desplaza dentro de su recuadro y no desborda la página. *@
+        <div class="table-responsive">
+        <table class="table table-hover align-middle tabla-catalogo">
             <thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño</th><th>Precio</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var b in Model.Bebidas)
@@ -185,10 +204,11 @@
                     <td>@(b.Tamano?.NombreTamano ?? "—")@(b.Tamano?.Activo == false ? " (inactivo)" : "")</td>
                     <td>₡@b.Precio</td>
                     <td><span class="badge @(b.Activo ? "badge-activo" : "badge-inactivo")">@(b.Activo ? "Activa" : "Inactiva")</span></td>
-                    <td class="text-end">
+                    <td class="text-end text-nowrap">
                         <a asp-action="EditarBebida" asp-route-id="@b.IdBebida" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <form asp-action="CambiarEstadoBebida" asp-route-id="@b.IdBebida" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm @(b.Activo ? "btn-outline-danger" : "btn-outline-success")">
+                        <form asp-action="CambiarEstadoBebida" asp-route-id="@b.IdBebida" method="post" class="d-inline" data-bloquear-envio
+                              data-confirmar="@(b.Activo ? $"¿Desea desactivar la bebida «{b.NombreBebida}»? Dejará de estar disponible para nuevos pedidos. Podrá activarla de nuevo cuando lo necesite." : null)">
+                            <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm @(b.Activo ? "btn-outline-danger" : "btn-outline-success")">
                                 @(b.Activo ? "Desactivar" : "Activar")
                             </button>
                         </form>
@@ -201,6 +221,7 @@
             }
             </tbody>
         </table>
+        </div>
     </div>
 
 </div>

@@ -31,6 +31,8 @@ public class PrecioPorTamanoInput
     public string NombreTamano { get; set; } = "";
     public bool TamanoActivo { get; set; } = true;
     public bool Incluir { get; set; }
+
+    [Display(Name = "Precio")]
     public int? Monto { get; set; }
 }
 
@@ -49,6 +51,7 @@ public class ProductoFormViewModel
     public bool RequiereTamano { get; set; }
 
     /// <summary>Precio único, solo cuando RequiereTamano = false.</summary>
+    [Display(Name = "Precio")]
     public int? PrecioUnico { get; set; }
 
     /// <summary>Un precio por cada tamaño activo, solo cuando RequiereTamano = true. Se cargan todos a la vez.</summary>
@@ -71,7 +74,11 @@ public class BebidaFormViewModel
 
     public int? IdTamano { get; set; }
 
+    // [H9] Required explícito: sin él, ASP.NET agrega uno implícito con el mensaje
+    // en inglés "The Precio field is required.".
+    [Required(ErrorMessage = "El precio es obligatorio.")]
     [Range(1, int.MaxValue, ErrorMessage = "El precio debe ser mayor a cero.")]
+    [Display(Name = "Precio")]
     public int Precio { get; set; }
 
     public List<Tamano> TamanosDisponibles { get; set; } = [];
