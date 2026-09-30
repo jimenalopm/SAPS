@@ -22,7 +22,24 @@ if (builder.Environment.IsDevelopment())
     builder.Services.AddSingleton<IColaboradores, ColaboradoresDePrueba>();
 else
     builder.Services.AddSingleton<IColaboradores, ColaboradoresSinConexion>();
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // [H9] Mensajes de conversión de datos en español (antes salían en inglés, por ejemplo
+    // "The value '1500.5' is not valid for Precio."). ValueMustBeANumber también se usa
+    // como mensaje de validación en el navegador (data-val-number).
+    var m = options.ModelBindingMessageProvider;
+    m.SetAttemptedValueIsInvalidAccessor((valor, campo) => $"El valor «{valor}» no es válido para {campo}.");
+    m.SetMissingBindRequiredValueAccessor(campo => $"Falta un valor para {campo}.");
+    m.SetMissingKeyOrValueAccessor(() => "El valor es obligatorio.");
+    m.SetMissingRequestBodyRequiredValueAccessor(() => "La solicitud no contiene datos.");
+    m.SetNonPropertyAttemptedValueIsInvalidAccessor(valor => $"El valor «{valor}» no es válido.");
+    m.SetNonPropertyUnknownValueIsInvalidAccessor(() => "El valor ingresado no es válido.");
+    m.SetNonPropertyValueMustBeANumberAccessor(() => "El valor debe ser un número.");
+    m.SetUnknownValueIsInvalidAccessor(campo => $"El valor ingresado no es válido para {campo}.");
+    m.SetValueIsInvalidAccessor(valor => $"El valor «{valor}» no es válido.");
+    m.SetValueMustBeANumberAccessor(campo => $"El campo {campo} debe ser un número entero.");
+    m.SetValueMustNotBeNullAccessor(campo => $"El campo {campo} es obligatorio.");
+});
 
 var app = builder.Build();
 

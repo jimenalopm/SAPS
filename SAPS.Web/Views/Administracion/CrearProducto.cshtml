@@ -1,10 +1,20 @@
 @model SAPS.Web.Models.Catalogo.ProductoFormViewModel
 @{ ViewData["Title"] = "Nuevo producto"; }
 
+@* [H1] Ruta de navegación: muestra dónde está la persona y permite volver a cualquier nivel. *@
+<nav aria-label="Ruta de navegación">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+        <li class="breadcrumb-item"><a asp-action="Catalogo">Catálogo</a></li>
+        <li class="breadcrumb-item"><a asp-action="Catalogo" asp-route-tab="productos">Productos</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Nuevo producto</li>
+    </ol>
+</nav>
+
 <h1>Nuevo producto</h1>
 <div class="row">
     <div class="col-md-7">
-        <form asp-action="CrearProducto" method="post">
+        <form asp-action="CrearProducto" method="post" data-bloquear-envio>
             <div asp-validation-summary="All" class="text-danger" role="alert"></div>
 
             <div class="form-floating mb-3">
@@ -37,7 +47,7 @@
 
             <div id="bloquePrecioUnico" class="mb-3">
                 <label asp-for="PrecioUnico" class="form-label">Precio (₡)</label>
-                <input asp-for="PrecioUnico" class="form-control" style="max-width:200px" />
+                <input asp-for="PrecioUnico" class="form-control" min="1" step="1" inputmode="numeric" style="max-width:200px" />
                 <span asp-validation-for="PrecioUnico" class="text-danger"></span>
             </div>
 
@@ -61,7 +71,7 @@
                                 </div>
                             </td>
                             <td class="align-middle">
-                                <input asp-for="PreciosPorTamano[i].Monto" class="form-control" placeholder="₡" style="max-width:140px" />
+                                <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" step="1" inputmode="numeric" placeholder="₡" style="max-width:140px" />
                             </td>
                         </tr>
                     }

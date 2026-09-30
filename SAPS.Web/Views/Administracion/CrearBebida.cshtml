@@ -1,10 +1,20 @@
 @model SAPS.Web.Models.Catalogo.BebidaFormViewModel
 @{ ViewData["Title"] = "Nueva bebida"; }
 
+@* [H1] Ruta de navegación: muestra dónde está la persona y permite volver a cualquier nivel. *@
+<nav aria-label="Ruta de navegación">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+        <li class="breadcrumb-item"><a asp-action="Catalogo">Catálogo</a></li>
+        <li class="breadcrumb-item"><a asp-action="Catalogo" asp-route-tab="bebidas">Bebidas</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Nueva bebida</li>
+    </ol>
+</nav>
+
 <h1>Nueva bebida</h1>
 <div class="row">
     <div class="col-md-6">
-        <form asp-action="CrearBebida" method="post">
+        <form asp-action="CrearBebida" method="post" data-bloquear-envio>
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
             <div class="form-floating mb-3">
@@ -36,7 +46,7 @@
             </div>
 
             <div class="form-floating mb-3">
-                <input asp-for="Precio" class="form-control" style="max-width:200px" />
+                <input asp-for="Precio" class="form-control" min="1" step="1" inputmode="numeric" style="max-width:200px" />
                 <label asp-for="Precio">Precio (₡)</label>
                 <span asp-validation-for="Precio" class="text-danger"></span>
             </div>

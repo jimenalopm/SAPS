@@ -1,10 +1,20 @@
 @model SAPS.Web.Models.Catalogo.TamanoFormViewModel
 @{ ViewData["Title"] = "Nuevo tamaño"; }
 
+@* [H1] Ruta de navegación: muestra dónde está la persona y permite volver a cualquier nivel. *@
+<nav aria-label="Ruta de navegación">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+        <li class="breadcrumb-item"><a asp-action="Catalogo">Catálogo</a></li>
+        <li class="breadcrumb-item"><a asp-action="Catalogo" asp-route-tab="tamanos">Tamaños</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Nuevo tamaño</li>
+    </ol>
+</nav>
+
 <h1>Nuevo tamaño</h1>
 <div class="row">
     <div class="col-md-5">
-        <form asp-action="CrearTamano" method="post">
+        <form asp-action="CrearTamano" method="post" data-bloquear-envio>
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
             <div class="form-floating mb-3">
                 <input asp-for="NombreTamano" class="form-control" placeholder="Nombre del tamaño" autofocus />

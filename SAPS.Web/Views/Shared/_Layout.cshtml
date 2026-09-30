@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SAPS.Web</title>
+    @* [Otras] Título de pestaña en español y con el nombre del sistema, no el del proyecto técnico. *@
+    <title>@ViewData["Title"] - SAPS RecyPlast</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -11,20 +12,26 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-recyplast navbar-expand-sm navbar-toggleable-sm border-bottom box-shadow mb-3">
+        @* [H5] navbar-expand-lg: el menú se colapsa por debajo de 991px (breakpoint definido en Estándares). *@
+        <nav class="navbar navbar-recyplast navbar-expand-lg navbar-toggleable-lg border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SAPS.Web</a>
+                @* [H2] Marca de RecyPlast. Si existe wwwroot/images/logo-recyplast.png se muestra el logo;
+                   si no existe, la imagen se oculta y queda el nombre en texto. *@
+                <a class="navbar-brand marca-recyplast" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="~/images/logo-recyplast.png" alt="Logo de RecyPlast" class="logo-recyplast" onerror="this.remove()" />
+                    <span class="marca-texto">
+                        <span class="marca-empresa">RecyPlast</span>
+                        <span class="marca-sistema">SAPS · Soda</span>
+                    </span>
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                        aria-expanded="false" aria-label="Abrir o cerrar el menú de navegación">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
                         </li>
 
                         @if (User.IsInRole("RecursosHumanos") || User.IsInRole("Administrador"))
@@ -57,11 +64,31 @@
         </main>
     </div>
 
+    @* [H2] Pie de página en español, con el nombre de la empresa y del sistema. *@
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2026 - SAPS.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; @DateTime.Now.Year RecyPlast · SAPS – Sistema de Administración para la Soda ·
+            <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacidad</a>
         </div>
     </footer>
+
+    @* [H3] Ventana de confirmación reutilizable. La usan los formularios que tengan el atributo data-confirmar. *@
+    <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="modalConfirmarTitulo">Confirmar acción</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="modalConfirmarMensaje"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="modalConfirmarAceptar">Sí, continuar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
