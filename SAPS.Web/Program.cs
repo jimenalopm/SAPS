@@ -6,8 +6,10 @@ using SAPS.Web.Services.Pedidos;
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// El servidor de RecyPlast usa SQL Server 2012 (nivel de compatibilidad 110). Sin esto,
+// EF Core 8+ traduce consultas como lista.Contains(x) con OPENJSON, que no existe en 2012.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sql => sql.UseCompatibilityLevel(110)));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(IdentityConfig.Configurar)

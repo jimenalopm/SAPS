@@ -44,8 +44,8 @@ Cerrar sesión después de pulsar Registrar pedido no anula una compra que ya se
 
 | Tabla | Contenido |
 |---|---|
-| `tb_Pedido` | Número de pedido, comprador, operadora, fecha UTC, tipo de comida, observación, total, marca de prueba e identificador para evitar duplicados. |
-| `tb_DetallePedido` | Artículo, tamaño, cantidad, precio cobrado y subtotal de cada renglón. |
+| `soda.tb_Pedido` | Número de pedido, comprador, operadora, fecha UTC, tipo de comida, observación, total, marca de prueba e identificador para evitar duplicados. |
+| `soda.tb_DetallePedido` | Artículo, tamaño, cantidad, precio cobrado y subtotal de cada renglón. |
 
 Los nombres y precios se copian al detalle como constancia de lo cobrado. Cambiar el catálogo después no cambia los pedidos antiguos. Las relaciones impiden eliminar físicamente un precio o bebida que esté referenciado por un pedido.
 
@@ -115,8 +115,8 @@ dotnet run
 10. En la extensión SQL Server, refrescar la lista de tablas. Se pueden consultar sin modificar datos:
 
 ```sql
-SELECT TOP (20) * FROM dbo.tb_Pedido ORDER BY IdPedido DESC;
-SELECT TOP (50) * FROM dbo.tb_DetallePedido ORDER BY IdDetallePedido DESC;
+SELECT TOP (20) * FROM soda.tb_Pedido ORDER BY idPedido DESC;
+SELECT TOP (50) * FROM soda.tb_DetallePedido ORDER BY idDetallePedido DESC;
 ```
 
 Si no hay opciones para comprar, revisar con ADM001 que existan productos activos, categorías activas, tamaños activos cuando corresponda y precios vigentes. HU-008 no crea automáticamente productos en tu catálogo.

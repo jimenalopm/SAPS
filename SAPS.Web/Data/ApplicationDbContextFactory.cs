@@ -22,7 +22,7 @@ public sealed class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Ap
         // Identity debe configurarse igual que en Program para conservar el modelo existente.
         var servicios = new ServiceCollection();
         servicios.AddLogging();
-        servicios.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer(conexion));
+        servicios.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer(conexion, sql => sql.UseCompatibilityLevel(110)));
         servicios.AddDefaultIdentity<IdentityUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
         return servicios.BuildServiceProvider().GetRequiredService<ApplicationDbContext>();
     }

@@ -124,13 +124,13 @@ try
     guardado = await db.Pedidos.AsNoTracking().Include(p => p.Detalles).SingleAsync();
     Verificar(guardado.Total == 3700 && guardado.Detalles.Single(d => d.IdBebida != null).PrecioUnitario == 700, "Cambio de catálogo conserva precio y total históricos");
     await db.Bebidas.Where(b => b.IdBebida == bebidaId).ExecuteUpdateAsync(s => s.SetProperty(b => b.Precio, 700));
-    await db.Database.ExecuteSqlRawAsync("ALTER TABLE tb_DetallePedido ADD CONSTRAINT CK_PruebaFallo CHECK (Cantidad <> 7777)");
+    await db.Database.ExecuteSqlRawAsync("ALTER TABLE soda.tb_DetallePedido ADD CONSTRAINT CK_PruebaFallo CHECK (Cantidad <> 7777)");
     solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 7777;
     var antes = await db.Pedidos.CountAsync(); var fallo = false;
     try { await pedidos.RegistrarAsync(solicitud, usuarioId); } catch (DbUpdateException) { fallo = true; }
     db.ChangeTracker.Clear();
     Verificar(fallo && await db.Pedidos.CountAsync() == antes, "Fallo de detalle revierte cabecera y todos los renglones");
-    await db.Database.ExecuteSqlRawAsync("ALTER TABLE tb_DetallePedido DROP CONSTRAINT CK_PruebaFallo");
+    await db.Database.ExecuteSqlRawAsync("ALTER TABLE soda.tb_DetallePedido DROP CONSTRAINT CK_PruebaFallo");
     solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 1_000_000;
     resultado = await pedidos.RegistrarAsync(solicitud, usuarioId);
     Verificar(resultado.Total == 1_500_000_700, "No hay tope comercial de consumo");
