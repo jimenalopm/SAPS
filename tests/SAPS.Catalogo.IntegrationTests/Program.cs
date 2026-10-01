@@ -135,7 +135,7 @@ try
     activos = await Activos(id);
     Verificar(activos.Count == 1 && activos[0].IdTamano == null && activos[0].MontoPrecio == 1300, "Reparar mezcla anterior de precios al guardar producto");
 
-    await db.Database.ExecuteSqlRawAsync("ALTER TABLE tb_Precio ADD CONSTRAINT CK_PruebaRollback CHECK (precio <> 7777)");
+    await db.Database.ExecuteSqlRawAsync("ALTER TABLE soda.tb_Precio ADD CONSTRAINT CK_PruebaRollback CHECK (Monto <> 7777)");
     modelo = await Editar(id); modelo.PrecioUnico = 7777;
     var falloEsperado = false;
     try { await Controlador().EditarProducto(modelo); }

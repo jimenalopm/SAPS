@@ -30,14 +30,14 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Motor activo y autenticado. Verificando / Creando la base de datos SAPS_Db...
-docker exec -i saps-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "GarfieldPapuPro1234!" -C -Q "IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'SAPS_Db') BEGIN CREATE DATABASE [SAPS_Db]; PRINT 'Base de datos SAPS_Db creada exitosamente.'; END ELSE BEGIN PRINT 'La base de datos SAPS_Db ya existe.'; END"
+echo Motor activo y autenticado. Verificando / Creando la base de datos SAPS_DB...
+docker exec -i saps-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "GarfieldPapuPro1234!" -C -Q "IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'SAPS_DB') BEGIN CREATE DATABASE [SAPS_DB]; PRINT 'Base de datos SAPS_DB creada exitosamente.'; END ELSE BEGIN PRINT 'La base de datos SAPS_DB ya existe.'; END"
 
 echo.
 echo ========================================
 echo  SQL Server iniciado y listo para usar
 echo  Servidor:      localhost,1433
-echo  Base de datos: SAPS_Db
+echo  Base de datos: SAPS_DB
 echo  Usuario:       sa
 echo  Password:      GarfieldPapuPro1234!
 echo ========================================

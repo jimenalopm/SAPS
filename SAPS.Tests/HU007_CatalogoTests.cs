@@ -172,8 +172,8 @@ public class HU007_CatalogoTests
     [Fact]
     public void Precio_TieneRestriccionDeMontoPositivo()
     {
-        var ck = Entidad<Precio>().GetCheckConstraints().Single(c => c.Name == "CK_Precio_PrecioPositivo");
-        Assert.Equal("[precio] > 0", ck.Sql);
+        var ck = Entidad<Precio>().GetCheckConstraints().Single(c => c.Name == "CK_Precio_Monto");
+        Assert.Equal("[Monto] > 0", ck.Sql);
     }
 
     [Fact]
@@ -181,26 +181,26 @@ public class HU007_CatalogoTests
     {
         var checks = Entidad<Bebida>().GetCheckConstraints().ToDictionary(c => c.Name!, c => c.Sql);
 
-        Assert.Equal("[precio] > 0", checks["CK_Bebida_PrecioPositivo"]);
+        Assert.Equal("[Precio] > 0", checks["CK_Bebida_Precio"]);
         foreach (var tipo in new[] { "Gaseosa", "Embotellada", "Energizante", "Jugo" })
-            Assert.Contains($"'{tipo}'", checks["CK_Bebida_TipoBebida"]);
+            Assert.Contains($"'{tipo}'", checks["CK_Bebida_Tipo"]);
     }
 
     [Fact]
     public void Precio_SoloUnPrecioActivoPorProductoYTamano()
     {
-        var indice = Entidad<Precio>().GetIndexes().Single(i => i.GetDatabaseName() == "IX_Precio_Producto_Tamano");
+        var indice = Entidad<Precio>().GetIndexes().Single(i => i.GetDatabaseName() == "IX_Precio_idProducto_idTamano");
 
         Assert.True(indice.IsUnique);
         Assert.Equal(new[] { nameof(Precio.IdProducto), nameof(Precio.IdTamano) }, indice.Properties.Select(p => p.Name));
-        Assert.Equal("[activo] = 1", indice.GetFilter());
+        Assert.Equal("[EstaActivo] = 1", indice.GetFilter());
     }
 
     [Fact]
     public void Categoria_YTamano_TienenNombreUnico()
     {
-        Assert.Contains(Entidad<Categoria>().GetIndexes(), i => i.IsUnique && i.GetDatabaseName() == "UQ_Categoria_NombreCategoria");
-        Assert.Contains(Entidad<Tamano>().GetIndexes(), i => i.IsUnique && i.GetDatabaseName() == "UQ_Tamano_NombreTamano");
+        Assert.Contains(Entidad<Categoria>().GetIndexes(), i => i.IsUnique && i.GetDatabaseName() == "UQ_Categoria_Nombre");
+        Assert.Contains(Entidad<Tamano>().GetIndexes(), i => i.IsUnique && i.GetDatabaseName() == "UQ_Tamano_Nombre");
     }
 
     [Theory]
@@ -233,9 +233,13 @@ public class HU007_CatalogoTests
     [InlineData(typeof(Producto), "tb_Producto")]
     [InlineData(typeof(Precio), "tb_Precio")]
     [InlineData(typeof(Bebida), "tb_Bebida")]
+    [InlineData(typeof(SAPS.Web.Models.Pedidos.Pedido), "tb_Pedido")]
+    [InlineData(typeof(SAPS.Web.Models.Pedidos.DetallePedido), "tb_DetallePedido")]
     public void Entidades_SeMapeanALasTablasDelDiseno(Type entidad, string tabla)
     {
-        Assert.Equal(tabla, ModeloSqlServer().FindEntityType(entidad)!.GetTableName());
+        var tipo = ModeloSqlServer().FindEntityType(entidad)!;
+        Assert.Equal(tabla, tipo.GetTableName());
+        Assert.Equal("soda", tipo.GetSchema()); // EBD13: tablas del módulo soda
     }
 
     // ---------- CRUD del catálogo (AdministracionController) ----------

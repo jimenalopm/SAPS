@@ -49,7 +49,7 @@ Asegúrate de que el archivo `appsettings.json`, ubicado en la raíz de `SAPS.We
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost,1433;Database=SAPS_Db;User Id=sa;Password=GarfieldPapuPro1234!;TrustServerCertificate=True;"
+    "DefaultConnection": "Server=localhost,1433;Database=SAPS_DB;User Id=sa;Password=GarfieldPapuPro1234!;Encrypt=False;TrustServerCertificate=True;"
   },
   "Logging": {
     "LogLevel": {
@@ -65,7 +65,7 @@ Asegúrate de que el archivo `appsettings.json`, ubicado en la raíz de `SAPS.We
 
 ## 5. Aplicar las migraciones de la base de datos
 
-Como el proyecto ya cuenta con la carpeta `Migrations`, ejecuta el siguiente comando para construir el esquema de tablas dentro de la base de datos `SAPS_Db`:
+Ejecuta el siguiente comando para construir el esquema de tablas dentro de la base de datos `SAPS_DB` (esquemas `soda` y `rrhh`, ver `docs/BaseDatos-Estandares-SQL2012.md`):
 
 ```powershell
 dotnet ef database update
