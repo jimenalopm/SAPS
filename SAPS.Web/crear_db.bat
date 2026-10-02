@@ -1,5 +1,6 @@
 @echo off
 title SAPS - SQL Server Docker
+if "%SAPS_SA_PASSWORD%"=="" set /p SAPS_SA_PASSWORD=Contrasena de sa: 
 echo ========================================
 echo     Iniciando SQL Server - SAPS
 echo ========================================
@@ -13,7 +14,7 @@ if %errorlevel% neq 0 (
     echo.
 
     docker run -e "ACCEPT_EULA=Y" ^
-    -e "MSSQL_SA_PASSWORD=GarfieldPapuPro1234!" ^
+    -e "MSSQL_SA_PASSWORD=%SAPS_SA_PASSWORD%" ^
     -p 1433:1433 ^
     --name saps-sqlserver ^
     -d mcr.microsoft.com/mssql/server:2022-latest
@@ -23,7 +24,7 @@ echo Esperando a que el motor de SQL Server este totalmente listo...
 
 :WAIT_LOOP
 timeout /t 4 /nobreak >nul
-docker exec -i saps-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "GarfieldPapuPro1234!" -C -Q "SELECT 1" >nul 2>&1
+docker exec -i saps-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "%SAPS_SA_PASSWORD%" -C -Q "SELECT 1" >nul 2>&1
 if %errorlevel% neq 0 (
     echo  - Inicializando servicio de autenticacion...
     goto WAIT_LOOP
@@ -31,7 +32,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo Motor activo y autenticado. Verificando / Creando la base de datos SAPS_DB...
-docker exec -i saps-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "GarfieldPapuPro1234!" -C -Q "IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'SAPS_DB') BEGIN CREATE DATABASE [SAPS_DB]; PRINT 'Base de datos SAPS_DB creada exitosamente.'; END ELSE BEGIN PRINT 'La base de datos SAPS_DB ya existe.'; END"
+docker exec -i saps-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "%SAPS_SA_PASSWORD%" -C -Q "IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'SAPS_DB') BEGIN CREATE DATABASE [SAPS_DB]; PRINT 'Base de datos SAPS_DB creada exitosamente.'; END ELSE BEGIN PRINT 'La base de datos SAPS_DB ya existe.'; END"
 
 echo.
 echo ========================================
@@ -39,7 +40,6 @@ echo  SQL Server iniciado y listo para usar
 echo  Servidor:      localhost,1433
 echo  Base de datos: SAPS_DB
 echo  Usuario:       sa
-echo  Password:      GarfieldPapuPro1234!
 echo ========================================
 echo.
 pause
