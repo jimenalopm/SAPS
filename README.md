@@ -34,13 +34,13 @@ cd SAPS.Web
 
 ```
 dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=TU_SERVIDOR;Database=SapsDb;User Id=sa;Password=TU_PASSWORD;TrustServerCertificate=True;"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=TU_SERVIDOR;Database=SAPS_DB;User Id=sa;Password=TU_PASSWORD;TrustServerCertificate=True;"
 ```
 
 Si usan SQL Server Express con autenticación de Windows (instalación por defecto), la cadena cambia a este formato:
 
 ```
-Server=localhost\SQLEXPRESS;Database=SapsDb;Trusted_Connection=True;TrustServerCertificate=True;
+Server=localhost\SQLEXPRESS;Database=SAPS_DB;Trusted_Connection=True;TrustServerCertificate=True;
 ```
 
 3. Instalar la herramienta de migraciones:

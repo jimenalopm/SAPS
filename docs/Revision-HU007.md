@@ -27,7 +27,7 @@ Desde la raíz del repositorio:
 dotnet run --project tests/SAPS.Catalogo.IntegrationTests -- SAPS.Web/appsettings.json
 ```
 
-Requiere .NET 10 y SQL Server local en el puerto 1433, con permisos para crear y eliminar una base temporal. Lee la conexión de ese archivo, sustituye únicamente el nombre de base por uno único de pruebas y no modifica SAPS_Db. No imprime la contraseña.
+Requiere .NET 10 y SQL Server local en el puerto 1433, con permisos para crear y eliminar una base temporal. Lee la conexión de ese archivo, sustituye únicamente el nombre de base por uno único de pruebas y no modifica SAPS_DB. No imprime la contraseña.
 
 El ejecutable invoca los controladores y comprueba los registros en SQL Server. No sustituye las pruebas del navegador ni reproduce automáticamente la autenticación HTTP, la protección antifalsificación y la conversión de texto a números del formulario.
 

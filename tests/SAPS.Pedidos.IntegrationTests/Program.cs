@@ -12,7 +12,7 @@ using SAPS.Web.Models.Catalogo;
 using SAPS.Web.Models.Pedidos;
 using SAPS.Web.Services.Pedidos;
 
-// Crea y elimina una base independiente; nunca utiliza SAPS_Db para las pruebas.
+// Crea y elimina una base independiente; nunca utiliza SAPS_DB para las pruebas.
 if (args.Length is < 1 or > 2) throw new ArgumentException("Indique la ruta local de SAPS.Web/appsettings.json.");
 var archivo = Path.GetFullPath(args[0]);
 using var config = JsonDocument.Parse(await File.ReadAllTextAsync(archivo));

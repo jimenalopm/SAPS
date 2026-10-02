@@ -14,7 +14,7 @@
 -- > Catálogo que ya quedó implementada (para eso se construyó).
 --
 -- Cómo ejecutarlo (con el contenedor de crear_db.bat ya corriendo):
---   sqlcmd -S localhost,1433 -U sa -P "GarfieldPapuPro1234!" -C -d SAPS_DB -i seed_catalogo.sql
+--   sqlcmd -S localhost,1433 -U sa -P "TU_CLAVE" -C -d SAPS_DB -i seed_catalogo.sql
 -- ============================================================================
 
 SET NOCOUNT ON;

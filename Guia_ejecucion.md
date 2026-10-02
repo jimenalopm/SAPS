@@ -42,24 +42,17 @@ Si el sistema indica que la herramienta ya está instalada, puedes continuar sin
 
 ---
 
-## 4. Confirmar la cadena de conexión
+## 4. Configurar la cadena de conexión
 
-Asegúrate de que el archivo `appsettings.json`, ubicado en la raíz de `SAPS.Web`, tenga exactamente esta cadena de conexión con la contraseña `GarfieldPapuPro1234!`:
+La cadena de conexión con la contraseña no se guarda en `appsettings.json`, sino en los *user secrets* de .NET (son individuales por máquina y no se suben al repo). Desde la carpeta `SAPS.Web`, ejecuta:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost,1433;Database=SAPS_DB;User Id=sa;Password=GarfieldPapuPro1234!;Encrypt=False;TrustServerCertificate=True;"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*"
-}
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=SAPS_DB;User Id=sa;Password=TU_CLAVE;Encrypt=False;TrustServerCertificate=True;"
 ```
+
+Reemplaza `TU_CLAVE` por la contraseña de `sa` que elegiste al crear el contenedor. El script `crear_db.bat` la pide al ejecutarse.
+
+> **Importante:** la contraseña nunca se escribe en archivos del repo. El valor `CONFIGURAR_EN_USER_SECRETS` que aparece en `appsettings.json` es solo un marcador; el valor real lo toma la aplicación de los *user secrets*.
 
 ---
 

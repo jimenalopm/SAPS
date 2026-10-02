@@ -59,7 +59,7 @@ El catálogo existente ya utiliza precios enteros. Esta historia no requiere con
 
 1. Los archivos C# describen cómo funciona el sistema.
 2. La migración `AgregarRegistroPedidos` describe cómo agregar las dos tablas.
-3. Preparar esa migración crea archivos en el repositorio; no la aplica a SAPS_Db.
+3. Preparar esa migración crea archivos en el repositorio; no la aplica a SAPS_DB.
 4. Ejecutar `dotnet-ef database update` aplica las migraciones pendientes a la conexión configurada.
 
 En esta implementación, el método `Up` de la migración nueva solo crea las dos tablas, sus índices y restricciones. No contiene eliminación ni modificación de tablas de catálogo o usuarios. El método `Down` es la operación inversa que EF genera para una eventual reversión; no se ejecuta al actualizar hacia esta migración.
@@ -68,7 +68,7 @@ En esta implementación, el método `Up` de la migración nueva solo crea las do
 
 Las pruebas automatizadas crean una base distinta, con nombre `SAPS_HU008_Pruebas_` seguido de un identificador aleatorio. Cambian el nombre de la base en la conexión antes de ejecutar cualquier migración o insertar datos. Al terminar, comprueban que el destino todavía sea esa base temporal antes de eliminarla.
 
-**No utilizan SAPS_Db para las compras de prueba.** También inician una aplicación separada en un puerto libre, conectada exclusivamente a la base temporal. La aplicación que el estudiante tiene abierta no se detiene.
+**No utilizan SAPS_DB para las compras de prueba.** También inician una aplicación separada en un puerto libre, conectada exclusivamente a la base temporal. La aplicación que el estudiante tiene abierta no se detiene.
 
 Resultado: **54 verificaciones de HU-008 y 24 verificaciones de regresión de HU-007 correctas**. La compilación no presenta errores. Persisten las dos advertencias NU1901 de NuGet.Packaging y NuGet.Protocol que ya existían en el proyecto; no se actualizaron esas dependencias como parte de esta historia.
 
@@ -86,7 +86,7 @@ El argumento opcional `--browser` mantiene abierta la aplicación de prueba y mu
 
 ## Cómo probar con tu catálogo local
 
-Al momento de entregar la implementación, la migración nueva **no se ha aplicado a SAPS_Db**. Estas instrucciones son el siguiente paso para hacerlo.
+Al momento de entregar la implementación, la migración nueva **no se ha aplicado a SAPS_DB**. Estas instrucciones son el siguiente paso para hacerlo.
 
 1. Mantener Docker y SQL Server encendidos.
 2. Si la aplicación anterior sigue ejecutándose en una terminal, presionar Ctrl+C en esa terminal. Esto detiene la web, no borra la base.
@@ -131,7 +131,7 @@ Si no hay opciones para comprar, revisar con ADM001 que existan productos activo
 | 4. Seleccionar productos y bebidas | Implementado y probado. |
 | 5. Armar y editar carrito temporal | Implementado y probado en navegador. |
 | 6. Calcular subtotales y total | Implementado y probado en servidor y pantalla. |
-| 7. Persistir pedido y detalle | Implementado; migración probada en SQL Server temporal. Aplicación a SAPS_Db pendiente del paso local explicado arriba. |
+| 7. Persistir pedido y detalle | Implementado; migración probada en SQL Server temporal. Aplicación a SAPS_DB pendiente del paso local explicado arriba. |
 | 8. Registrar con validaciones | Implementado y probado. |
 | 9. Descartar borrador y manejar errores | Implementado y probado. |
 | 10. Pruebas y preparación de integración | Pruebas locales realizadas. Falta revisión del estudiante/equipo, publicación y PR. |

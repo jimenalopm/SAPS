@@ -11,7 +11,7 @@ using SAPS.Web.Controllers;
 using SAPS.Web.Data;
 using SAPS.Web.Models.Catalogo;
 
-// Ejecutar contra SQL Server local. No modifica SAPS_Db: crea y elimina su propia base.
+// Ejecutar contra SQL Server local. No modifica SAPS_DB: crea y elimina su propia base.
 if (args.Length != 1) throw new ArgumentException("Indique la ruta de appsettings.json del entorno local.");
 using var config = JsonDocument.Parse(await File.ReadAllTextAsync(args[0]));
 var connection = new SqlConnectionStringBuilder(config.RootElement.GetProperty("ConnectionStrings").GetProperty("DefaultConnection").GetString());
