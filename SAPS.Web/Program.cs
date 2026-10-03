@@ -6,6 +6,9 @@ using SAPS.Web.Services.Pedidos;
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// Los datos de prueba (usuarios EMP001/SODA001/ADM001, colaboradores DEMO) solo se siembran en
+// Development Y contra un servidor local. Cualquier otra base (p. ej. la de RecyPlast) se considera real.
+var sembrarPrueba = SembradoPrueba.Permitido(builder.Environment, connectionString);
 // El servidor de RecyPlast usa SQL Server 2012 (nivel de compatibilidad 110). Sin esto,
 // EF Core 8+ traduce consultas como lista.Contains(x) con OPENJSON, que no existe en 2012.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -19,8 +22,8 @@ builder.Services.AddDefaultIdentity<IdentityUser>(IdentityConfig.Configurar)
 builder.Services.AddScoped<DbInitializer>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ServicioPedidos>();
-// Los datos ficticios nunca se habilitan automáticamente fuera de Development.
-if (builder.Environment.IsDevelopment())
+// Los datos ficticios nunca se habilitan fuera de Development ni contra una base no local.
+if (sembrarPrueba)
     builder.Services.AddSingleton<IColaboradores, ColaboradoresDePrueba>();
 else
     builder.Services.AddSingleton<IColaboradores, ColaboradoresSinConexion>();
@@ -52,7 +55,12 @@ using (var scope = app.Services.CreateScope())
     await initializer.SeedRolesAsync();
 }
 
-if (app.Environment.IsDevelopment())
+if (!sembrarPrueba)
+{
+    if (app.Environment.IsDevelopment())
+        app.Logger.LogWarning("Sembrado de datos de prueba omitido: la base no es local.");
+}
+else
 {
     using var scope = app.Services.CreateScope();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
