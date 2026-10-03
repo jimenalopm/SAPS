@@ -97,3 +97,13 @@ info: Microsoft.Hosting.Lifetime[14]
 ```
 http://localhost:5120
 ```
+
+---
+
+## 8. Protección: datos de prueba solo en base local
+
+Al iniciar en Development, la aplicación siembra datos de prueba (usuarios `EMP001`, `SODA001` y `ADM001` con clave de desarrollo, y los colaboradores ficticios `DEMO001` a `DEMO003`). Para no contaminar una base real, **solo lo hace si el entorno es Development y el servidor de `DefaultConnection` es local** (`localhost`, `127.0.0.1`, `.`, `(local)`, `(localdb)` o el contenedor Docker de la sección 2, que usa `localhost,1433`). Cualquier otro servidor, como el de RecyPlast (`10.195.13.2`), se considera base real.
+
+Si la base no es local, la aplicación no crea ni modifica usuarios, no habilita los colaboradores DEMO y escribe en el log: `Sembrado de datos de prueba omitido: la base no es local.` Los roles (`Administrador`, `RecursosHumanos`, `Soda`, `Usuario`) se siguen creando solo si faltan, porque la aplicación los necesita para funcionar; esto no toca usuarios ni borra datos existentes.
+
+La lógica está en `SAPS.Web/Data/SembradoPrueba.cs` y sus pruebas en `SAPS.Tests/SembradoPruebaTests.cs`. El script `seed_catalogo.sql` es manual y no lo ejecuta la aplicación: no lo corra contra una base real.
