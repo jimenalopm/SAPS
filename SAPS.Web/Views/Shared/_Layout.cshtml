@@ -134,8 +134,17 @@
             @* [H2] Pie de página en español, con el nombre de la empresa y del sistema. *@
             <footer class="app-footer">
                 <div class="app-footer-contenido">
-                    <span><strong>SAPS</strong> · Sistema de Administración para la Soda</span>
-                    <span>
+                    <div class="app-footer-marca">
+                        <partial name="_Marca" view-data='new ViewDataDictionary(ViewData) { { "MarcaSoloLogo", true } }' />
+                        <p><strong>SAPS</strong><br />Sistema de Administración para la Soda</p>
+                    </div>
+                    <address class="app-footer-contacto">
+                        <p class="app-footer-titulo">Contacto</p>
+                        <a href="tel:+50627680700"><partial name="_Iconos" model="@("telefono icono-sm")" /> (+506) 2768-0700</a>
+                        <a href="mailto:info@recyplast.cr"><partial name="_Iconos" model="@("correo icono-sm")" /> info@recyplast.cr</a>
+                        <span><partial name="_Iconos" model="@("ubicacion icono-sm")" /> Siquirres, Limón, Costa Rica</span>
+                    </address>
+                    <span class="app-footer-legal">
                         &copy; @DateTime.Now.Year RecyPlast ·
                         <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacidad</a>
                     </span>

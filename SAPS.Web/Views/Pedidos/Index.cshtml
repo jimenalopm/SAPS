@@ -2,6 +2,11 @@
     ViewData["Title"] = "Registrar pedido";
 }
 
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador actual" aria-current="page">Registrar pedido</span>
+</nav>
+
 <div class="page-header">
     <div>
         <h1 class="h1">Registrar pedido</h1>
@@ -11,7 +16,7 @@
 
 @if (ViewData["EsPrueba"] is true)
 {
-    <div class="alert alert-recyplast">Entorno de prueba: nombres y fotos ficticios. Códigos: <strong>DEMO001</strong> y <strong>DEMO002</strong> (activos); <strong>DEMO003</strong> (inactivo).</div>
+    <div class="alert alert-recyplast aviso-prueba" role="note">Entorno de prueba: nombres y fotos ficticios. Códigos: <strong>DEMO001</strong> y <strong>DEMO002</strong> (activos); <strong>DEMO003</strong> (inactivo).</div>
 }
 
 @* Indicador de pasos. Solo presentación: lo actualiza wwwroot/js/pedidos-pasos.js observando la pantalla. *@
@@ -72,7 +77,7 @@
                         <div><dt>Colaborador</dt><dd id="resumen-colaborador">—</dd></div>
                         <div><dt>Tipo de comida</dt><dd id="resumen-comida">—</dd></div>
                     </dl>
-                    <p id="pedido-vacio" class="texto-suave">Todavía no hay artículos en el pedido.</p>
+                    <div id="pedido-vacio" class="estado-vacio estado-vacio-compacto"><partial name="_Iconos" model="@("pedidos")" /><p class="mb-0">Todavía no hay artículos en el pedido.</p></div>
                     <div class="tabla-contenedor mb-3"><table class="table table-recyplast tabla-apilable align-middle" id="tabla-detalle" hidden>
                         <thead><tr><th>Artículo</th><th>Precio</th><th>Cantidad</th><th>Subtotal</th><th><span class="visually-hidden">Acciones</span></th></tr></thead>
                         <tbody id="lineas-pedido"></tbody>

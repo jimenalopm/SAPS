@@ -10,6 +10,17 @@
 
     string Comida(string tipo) => tipo == "Merienda" ? "Café" : tipo;   // mismo criterio que la pantalla de pedidos
     string Colones(long monto) => "₡" + monto.ToString("N0", cultura);
+
+    // Hora relativa ("hace 3 horas"); pasadas 7 días se muestra la fecha completa. El detalle exacto va en el title.
+    string Relativo(DateTime local)
+    {
+        var d = DateTime.Now - local;
+        if (d.TotalMinutes < 1) return "hace un momento";
+        if (d.TotalMinutes < 60) return $"hace {(int)d.TotalMinutes} min";
+        if (d.TotalHours < 24) { var h = (int)d.TotalHours; return h == 1 ? "hace 1 hora" : $"hace {h} horas"; }
+        if (d.TotalDays < 7) { var n = (int)d.TotalDays; return n == 1 ? "hace 1 día" : $"hace {n} días"; }
+        return local.ToString("dd/MM/yyyy HH:mm", cultura);
+    }
 }
 
 @if (!autenticado)
@@ -104,7 +115,7 @@
                                     Pedido #@p.IdPedido · @p.NombreColaborador
                                     @if (p.EsPrueba) { <span class="badge-recyplast gris ms-1">Prueba</span> }
                                 </p>
-                                <p class="lista-actividad-detalle">@p.CodigoColaborador · @Comida(p.TipoComida) · @local.ToString("dd/MM/yyyy HH:mm", cultura)</p>
+                                <p class="lista-actividad-detalle">@p.CodigoColaborador · @Comida(p.TipoComida) · <time datetime="@p.FechaRegistroUtc.ToString("o")" title="@local.ToString("dd/MM/yyyy HH:mm", cultura)">@Relativo(local)</time></p>
                             </div>
                             <strong class="lista-actividad-monto">@Colones(p.Total)</strong>
                         </li>
@@ -122,15 +133,15 @@
                 <div class="accesos-rapidos">
                     @if (vePedidos)
                     {
-                        <a class="btn btn-recyplast" asp-controller="Pedidos" asp-action="Index"><partial name="_Iconos" model="@("pedidos")" /> Registrar pedido</a>
+                        <a class="btn btn-recyplast" asp-controller="Pedidos" asp-action="Index"><partial name="_Iconos" model="@("pedidos")" /> Registrar pedido <partial name="_Iconos" model="@("flecha icono-sm ms-auto")" /></a>
                     }
                     @if (veCatalogo)
                     {
-                        <a class="btn btn-recyplast-secondary" asp-controller="Administracion" asp-action="Catalogo"><partial name="_Iconos" model="@("catalogo")" /> Administrar catálogo</a>
+                        <a class="btn btn-recyplast-secondary" asp-controller="Administracion" asp-action="Catalogo"><partial name="_Iconos" model="@("catalogo")" /> Administrar catálogo <partial name="_Iconos" model="@("flecha icono-sm ms-auto")" /></a>
                     }
                     @if (veRrhh)
                     {
-                        <a class="btn btn-recyplast-outline" asp-controller="RecursosHumanos" asp-action="Index"><partial name="_Iconos" model="@("rrhh")" /> Recursos Humanos</a>
+                        <a class="btn btn-recyplast-azul-suave" asp-controller="RecursosHumanos" asp-action="Index"><partial name="_Iconos" model="@("rrhh")" /> Recursos Humanos <partial name="_Iconos" model="@("flecha icono-sm ms-auto")" /></a>
                     }
                 </div>
             </div>

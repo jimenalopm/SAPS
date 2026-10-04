@@ -264,10 +264,10 @@ a.stat-card:hover { border-color: var(--rp-verde); box-shadow: var(--rp-sombra-m
 .breadcrumb-recyplast .actual { color: var(--rp-gris); }
 
 .estado-vacio { text-align: center; padding: 2.5rem 1rem; color: var(--rp-gris-texto-suave); }
-.estado-vacio .icono { width: 2.5rem; height: 2.5rem; margin-bottom: .5rem; color: var(--rp-gris-borde); }
+.estado-vacio .icono { width: 3rem; height: 3rem; margin-bottom: .5rem; color: var(--rp-gris-borde); }
 
 /* Marca (partial _Marca): imagen real si existe, placeholder si no */
-.marca-logo { height: 40px; width: auto; }
+.marca-logo { height: 44px; width: auto; flex: 0 0 auto; }
 .marca-placeholder {
   height: 40px; width: 40px; border-radius: 10px; display: grid; place-items: center; flex: 0 0 auto;
   background: linear-gradient(135deg, var(--rp-verde) 0%, var(--rp-azul) 100%); color: var(--rp-blanco);
@@ -336,7 +336,7 @@ body { margin-bottom: 0; }
 
 .auth-formulario { flex: 1 1 50%; display: flex; align-items: center; justify-content: center; padding: 2rem 1.5rem; }
 .auth-formulario-caja { width: 100%; max-width: 400px; }
-.auth-marca-movil { display: none; align-items: center; gap: .6rem; margin-bottom: 1.5rem; }
+.auth-marca-movil { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.5rem; }
 .auth-titulo { font-size: 1.6rem; font-weight: 700; margin: 0 0 .25rem; }
 .auth-subtitulo { color: var(--rp-gris-texto-suave); margin-bottom: 1.75rem; }
 .auth-pie { text-align: center; color: var(--rp-gris-texto-suave); font-size: .8rem; margin: 2rem 0 0; }
@@ -364,7 +364,9 @@ body { margin-bottom: 0; }
 }
 
 /* ---------- 13. Dashboard ---------- */
-.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; }
+.dashboard-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+@media (max-width: 991.98px) { .dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 575.98px) { .dashboard-grid { grid-template-columns: minmax(0, 1fr); } }
 .lista-actividad { list-style: none; margin: 0; padding: 0; }
 .lista-actividad li { display: flex; align-items: center; gap: .85rem; padding: .75rem 0; border-bottom: 1px solid var(--rp-gris-borde); }
 .lista-actividad li:last-child { border-bottom: 0; }
@@ -579,3 +581,58 @@ body { margin-bottom: 0; }
   .auth-formulario-caja .form-check-input { width: 1.25rem; height: 1.25rem; }
 }
 .input-grupo-boton { min-width: 44px; }
+
+/* ---------- 21. Logo oficial y footer con contacto ---------- */
+/* Panel de acceso: el logo oficial es oscuro, se muestra en blanco sobre la foto */
+.auth-panel .marca-logo { height: 72px; filter: brightness(0) invert(1); }
+.auth-panel .marca-texto { display: none; }
+/* Logo a color encima del formulario de acceso */
+.auth-marca-movil { justify-content: center; margin-bottom: 1.25rem; }
+.auth-marca-movil .marca-logo { height: 84px; }
+.auth-marca-movil .marca-texto { display: none; }
+.app-footer-contenido { align-items: flex-start; }
+.app-footer-marca { display: flex; align-items: center; gap: .75rem; }
+.app-footer-marca p { margin: 0; line-height: 1.35; }
+.app-footer-marca .marca-logo { height: 40px; }
+.app-footer-contacto { display: flex; flex-direction: column; gap: .2rem; margin: 0; font-style: normal; }
+.app-footer-titulo { margin: 0 0 .1rem; font-weight: 600; color: var(--rp-gris); }
+.app-footer-contacto a, .app-footer-contacto span { display: inline-flex; align-items: center; gap: .4rem; }
+.app-footer-contacto .icono { color: var(--rp-verde-oscuro); }
+.app-footer-legal { align-self: flex-end; }
+@media (max-width: 575.98px) {
+  .app-footer-legal { align-self: flex-start; }
+  .app-footer-contacto a { min-height: 44px; }
+}
+.sidebar-marca .marca-logo { height: 52px; }
+.sidebar-marca .marca-sistema { font-size: 1.05rem; font-weight: 700; color: var(--rp-gris); }
+
+/* ---------- 22. Acabado visual según boceto ---------- */
+/* Sidebar: línea divisoria bajo la marca */
+.sidebar-marca { border-bottom: 1px solid var(--rp-gris-borde); margin-bottom: .75rem; padding-bottom: .9rem; }
+
+/* Dashboard: accesos rápidos con flecha y botón azul suave */
+.accesos-rapidos .btn .ms-auto { margin-left: auto; }
+.btn-recyplast-azul-suave {
+  background: var(--rp-azul-suave); border: 1px solid var(--rp-azul); color: #14587F; font-weight: 600;
+  display: inline-flex; align-items: center; gap: .5rem;
+}
+.btn-recyplast-azul-suave:hover, .btn-recyplast-azul-suave:focus { background: #D3EEF7; border-color: var(--rp-azul-oscuro); color: #14587F; }
+
+/* Pedidos: aviso de entorno de prueba discreto, conectores de pasos más visibles, resumen vacío y total destacado */
+.aviso-prueba { background: var(--rp-azul-suave); border-color: #BFE6F2; color: var(--rp-gris); font-size: .85rem; padding: .5rem .85rem; margin-bottom: 1rem; }
+.paso + .paso::before { width: clamp(40px, 12vw, 160px); height: 3px; border-radius: 2px; }
+.estado-vacio-compacto { padding: 1.25rem 1rem; margin-bottom: 1rem; background: var(--rp-gris-fondo); border-radius: var(--rp-radio-sm); }
+.estado-vacio-compacto .icono { width: 2rem; height: 2rem; }
+.total-pedido { background: var(--rp-verde-suave); border-radius: var(--rp-radio-sm); padding: .85rem 1.1rem; margin-top: .5rem; }
+.total-pedido strong { font-size: 2rem; }
+
+/* Catálogo: botón Buscar a la altura del campo */
+.catalogo-filtros .btn { align-self: stretch; }
+
+/* Login: título y subtítulo centrados bajo el logo */
+.auth-formulario-caja.centrado .auth-titulo, .auth-formulario-caja.centrado .auth-subtitulo { text-align: center; }
+
+/* Transiciones suaves (se respetan las preferencias de movimiento reducido) */
+.form-control, .form-select, .btn { transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease, color .15s ease; }
+@media (prefers-reduced-motion: reduce) { .form-control, .form-select, .btn { transition: none; } }
+@media (max-width: 575.98px) { .paso + .paso::before { width: 12px; } }
