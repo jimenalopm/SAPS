@@ -41,7 +41,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
         public class InputModel
         {
             [Required]
-            [Display(Name = "Código de empleado")]
+            [Display(Name = "Correo de empleado")]
             public string CodigoEmpleado { get; set; }
 
             [Required]
