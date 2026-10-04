@@ -1,15 +1,18 @@
-@* Marca RecyPlast. Aquí (y solo aquí) vive el placeholder del logo.
-   Para usar el logo oficial basta con copiar el archivo a wwwroot/images/logo-recyplast.png:
-   esta vista lo detecta sola y deja de mostrar el placeholder. No hay lógica de negocio en esta vista. *@
+@* Marca RecyPlast. Aquí (y solo aquí) vive la lógica del logo.
+   Usa wwwroot/images/logo-recyplast.svg (o .png) si existe; si no, muestra un placeholder.
+   Con el logo oficial solo se agrega la sigla "SAPS", porque el nombre de la empresa ya va dentro del logo.
+   No hay lógica de negocio en esta vista. *@
 @using Microsoft.AspNetCore.Hosting
 @inject IWebHostEnvironment Entorno
 @{
-    var hayLogo = Entorno.WebRootFileProvider.GetFileInfo("images/logo-recyplast.png").Exists;
+    var archivoLogo = Entorno.WebRootFileProvider.GetFileInfo("images/logo-recyplast.svg").Exists ? "logo-recyplast.svg"
+                    : Entorno.WebRootFileProvider.GetFileInfo("images/logo-recyplast.png").Exists ? "logo-recyplast.png"
+                    : null;
     var mostrarTexto = ViewData["MarcaSoloLogo"] as bool? != true;
 }
-@if (hayLogo)
+@if (archivoLogo != null)
 {
-    <img src="~/images/logo-recyplast.png" alt="RecyPlast" class="marca-logo" />
+    <img src="~/images/@archivoLogo" alt="RecyPlast" class="marca-logo" />
 }
 else
 {
@@ -22,7 +25,10 @@ else
 @if (mostrarTexto)
 {
     <span class="marca-texto">
-        <span class="marca-empresa">RecyPlast</span>
+        @if (archivoLogo == null)
+        {
+            <span class="marca-empresa">RecyPlast</span>
+        }
         <span class="marca-sistema">SAPS</span>
     </span>
 }

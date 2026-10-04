@@ -1,7 +1,8 @@
 @* Iconos SVG inline (trazo simple, 24x24, heredan el color con currentColor).
    Uso: <partial name="_Iconos" model='"dashboard"' />  (clases opcionales: model='"dashboard icono-lg"')
    Nombres: dashboard catalogo productos bebidas categorias tamanos pedidos usuarios rrhh configuracion
-            salir candado alerta ojo ojo-cerrado editar eliminar buscar agregar menu cerrar flecha volver ayuda *@
+            salir candado alerta ojo ojo-cerrado editar eliminar buscar agregar menu cerrar flecha volver ayuda
+            telefono correo ubicacion *@
 @model string
 @{
     var partes = (Model ?? "").Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
@@ -33,6 +34,9 @@
         "candado"       => "<rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 018 0v4'/><path d='M12 15v2'/>",
         "alerta"        => "<path d='M12 3l10 18H2L12 3z'/><path d='M12 10v5'/><path d='M12 18v.01'/>",
         "ayuda"         => "<circle cx='12' cy='12' r='9'/><path d='M12 17v.01M12 13.5a2.5 2.5 0 10-2.5-2.5'/>",
+        "telefono"     => "<path d='M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z'/>",
+        "correo"       => "<rect x='3' y='5' width='18' height='14' rx='2'/><path d='M3 7l9 6 9-6'/>",
+        "ubicacion"    => "<path d='M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z'/><circle cx='12' cy='10' r='2.5'/>",
         _               => "<circle cx='12' cy='12' r='9'/>"
     };
 }
