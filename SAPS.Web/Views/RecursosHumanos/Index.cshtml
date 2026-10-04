@@ -1,0 +1,90 @@
+@using SAPS.Web.Services.Pedidos
+@inject IColaboradores Colaboradores
+@{
+    ViewData["Title"] = "Recursos Humanos";
+
+    // Estado real de la única fuente de colaboradores que existe en el sistema (solo lectura).
+    var esPrueba = Colaboradores.EsPrueba;
+    var sinConexion = Colaboradores is ColaboradoresSinConexion;
+    var veCatalogo = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos");
+    var vePedidos = User.IsInRole("Administrador") || User.IsInRole("Soda") || User.IsInRole("Usuario");
+}
+
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Dashboard</a>
+    <span class="separador actual" aria-current="page">Recursos Humanos</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Recursos Humanos</h1>
+        <p>Información de colaboradores de RecyPlast.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <section class="col-xl-8" aria-labelledby="titulo-colaboradores">
+        <div class="card-recyplast h-100">
+            <h3 class="card-recyplast-titulo" id="titulo-colaboradores">Colaboradores</h3>
+            <div class="estado-vacio">
+                <partial name="_Iconos" model="@("rrhh")" />
+                <h4 class="h5">Todavía no hay colaboradores para mostrar</h4>
+                <p class="mb-0">Este módulo aún no cuenta con una fuente de datos de colaboradores integrada, por lo que no puede listar ni administrar personas. Cuando la empresa habilite el acceso a esos datos, aparecerán aquí.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="col-xl-4" aria-labelledby="titulo-fuente">
+        <div class="card-recyplast h-100">
+            <h3 class="card-recyplast-titulo" id="titulo-fuente">Fuente de colaboradores</h3>
+            <dl class="estado-fuente">
+                <div>
+                    <dt>Estado</dt>
+                    <dd>
+                        @if (sinConexion)
+                        {
+                            <span class="badge-recyplast error con-punto">Sin conexión configurada</span>
+                        }
+                        else if (esPrueba)
+                        {
+                            <span class="badge-recyplast azul con-punto">Datos de prueba</span>
+                        }
+                        else
+                        {
+                            <span class="badge-recyplast con-punto">Fuente corporativa</span>
+                        }
+                    </dd>
+                </div>
+            </dl>
+            <p class="texto-suave small">
+                @if (sinConexion)
+                {
+                    <text>La consulta de colaboradores todavía no está configurada. Contacte al administrador del sistema.</text>
+                }
+                else if (esPrueba)
+                {
+                    <text>El entorno usa colaboradores ficticios, solo para desarrollo y pruebas. No son datos reales de la empresa.</text>
+                }
+                else
+                {
+                    <text>La fuente de colaboradores está disponible para consultas por código desde el registro de pedidos.</text>
+                }
+            </p>
+
+            @if (veCatalogo || vePedidos)
+            {
+                <h4 class="estado-fuente-subtitulo">Mientras tanto</h4>
+                <div class="accesos-rapidos">
+                    @if (veCatalogo)
+                    {
+                        <a class="btn btn-recyplast-outline" asp-controller="Administracion" asp-action="Catalogo"><partial name="_Iconos" model="@("catalogo")" /> Administrar catálogo</a>
+                    }
+                    @if (vePedidos)
+                    {
+                        <a class="btn btn-recyplast-outline" asp-controller="Pedidos" asp-action="Index"><partial name="_Iconos" model="@("pedidos")" /> Registrar pedido</a>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</div>

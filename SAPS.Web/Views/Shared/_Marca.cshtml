@@ -1,0 +1,28 @@
+@* Marca RecyPlast. Aquí (y solo aquí) vive el placeholder del logo.
+   Para usar el logo oficial basta con copiar el archivo a wwwroot/images/logo-recyplast.png:
+   esta vista lo detecta sola y deja de mostrar el placeholder. No hay lógica de negocio en esta vista. *@
+@using Microsoft.AspNetCore.Hosting
+@inject IWebHostEnvironment Entorno
+@{
+    var hayLogo = Entorno.WebRootFileProvider.GetFileInfo("images/logo-recyplast.png").Exists;
+    var mostrarTexto = ViewData["MarcaSoloLogo"] as bool? != true;
+}
+@if (hayLogo)
+{
+    <img src="~/images/logo-recyplast.png" alt="RecyPlast" class="marca-logo" />
+}
+else
+{
+    <span class="marca-placeholder" role="img" aria-label="RecyPlast">
+        <svg class="icono icono-lg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M7 4l-4 7h4M17 20l4-7h-4M4 17l3 3 3-3M20 7l-3-3-3 3"/>
+        </svg>
+    </span>
+}
+@if (mostrarTexto)
+{
+    <span class="marca-texto">
+        <span class="marca-empresa">RecyPlast</span>
+        <span class="marca-sistema">SAPS</span>
+    </span>
+}

@@ -1,0 +1,21 @@
+@* Panel izquierdo de las pantallas de acceso. Aquí vive el placeholder de la imagen:
+   para usar una imagen real basta con copiarla a wwwroot/images/login-fondo.jpg
+   (se detecta sola). Sin lógica de negocio. *@
+@using Microsoft.AspNetCore.Hosting
+@inject IWebHostEnvironment Entorno
+@{
+    var hayImagen = Entorno.WebRootFileProvider.GetFileInfo("images/login-fondo.jpg").Exists;
+    var estilo = hayImagen ? $"background-image:url('{Url.Content("~/images/login-fondo.jpg")}')" : null;
+}
+<aside class="auth-panel @(hayImagen ? "con-imagen" : "")" style="@estilo">
+    <div class="auth-panel-velo"></div>
+    <div class="auth-panel-contenido">
+        <div class="sidebar-marca p-0"><partial name="_Marca" /></div>
+        <div>
+            <p class="auth-panel-sigla">SAPS</p>
+            <p class="auth-panel-nombre">Sistema de Administración<br />para la Soda</p>
+            <p class="auth-panel-texto">Gestión eficiente de productos, pedidos y colaboradores.</p>
+        </div>
+        <p class="auth-panel-pie">&copy; @DateTime.Now.Year RecyPlast</p>
+    </div>
+</aside>

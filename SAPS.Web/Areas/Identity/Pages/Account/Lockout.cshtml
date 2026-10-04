@@ -1,0 +1,24 @@
+@page
+@model LockoutModel
+@using SAPS.Web.Data
+@{
+    ViewData["Title"] = "Cuenta bloqueada";
+    Layout = "/Views/Shared/_LayoutAuth.cshtml";
+}
+
+<div class="auth-shell">
+    <partial name="_AuthPanel" />
+
+    <main class="auth-formulario" id="contenido-principal" tabindex="-1">
+        <div class="auth-formulario-caja">
+            <div class="auth-marca-movil"><partial name="_Marca" /></div>
+            <span class="pagina-estado-icono alerta"><partial name="_Iconos" model="@("candado icono-lg")" /></span>
+            <h1 class="auth-titulo">Cuenta bloqueada temporalmente</h1>
+            <p class="auth-subtitulo">Por seguridad, la cuenta se bloqueó después de @IdentityConfig.MaxIntentosFallidos intentos fallidos de inicio de sesión.</p>
+
+            <p>Espere @((int)IdentityConfig.TiempoBloqueo.TotalMinutes) minutos e inténtelo de nuevo. Si necesita acceso de inmediato, comuníquese con el administrador del sistema.</p>
+
+            <a class="btn btn-recyplast btn-lg w-100 mt-3" asp-page="./Login">Volver al inicio de sesión</a>
+        </div>
+    </main>
+</div>

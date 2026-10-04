@@ -1,12 +1,139 @@
+@using System.Globalization
+@model SAPS.Web.Models.DashboardViewModel
 @{
-    ViewData["Title"] = "Inicio";
+    var autenticado = User.Identity?.IsAuthenticated == true;
+    ViewData["Title"] = autenticado ? "Dashboard" : "Inicio";
+    var cultura = CultureInfo.GetCultureInfo("es-CR");
+    var veCatalogo = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos");
+    var vePedidos = User.IsInRole("Administrador") || User.IsInRole("Soda") || User.IsInRole("Usuario");
+    var veRrhh = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos");
+
+    string Comida(string tipo) => tipo == "Merienda" ? "Café" : tipo;   // mismo criterio que la pantalla de pedidos
+    string Colones(long monto) => "₡" + monto.ToString("N0", cultura);
 }
 
-<div class="text-center">
-    <h1 class="display-5">Bienvenido a SAPS</h1>
-    <p class="lead">Sistema de Administración para la Soda de RecyPlast.</p>
-    @if (!(User.Identity?.IsAuthenticated ?? false))
-    {
+@if (!autenticado)
+{
+    <div class="text-center">
+        <h2 class="display-5">Bienvenido a SAPS</h2>
+        <p class="lead">Sistema de Administración para la Soda de RecyPlast.</p>
         <a class="btn btn-recyplast" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a>
+    </div>
+    return;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Bienvenido, @User.Identity!.Name</h1>
+        <p>Aquí tienes un resumen del sistema.</p>
+    </div>
+</div>
+
+<section aria-label="Indicadores" class="dashboard-grid">
+    <div class="stat-card">
+        <span class="stat-icono"><partial name="_Iconos" model="@("productos icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Productos</p>
+            <p class="stat-valor">@Model.ProductosActivos.ToString("N0", cultura)</p>
+            <p class="stat-detalle">@(Model.ProductosActivos == Model.ProductosTotal ? "activos" : $"activos de {Model.ProductosTotal.ToString("N0", cultura)}")</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icono azul"><partial name="_Iconos" model="@("bebidas icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Bebidas</p>
+            <p class="stat-valor">@Model.BebidasActivas.ToString("N0", cultura)</p>
+            <p class="stat-detalle">@(Model.BebidasActivas == Model.BebidasTotal ? "activas" : $"activas de {Model.BebidasTotal.ToString("N0", cultura)}")</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icono"><partial name="_Iconos" model="@("categorias icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Categorías</p>
+            <p class="stat-valor">@Model.CategoriasActivas.ToString("N0", cultura)</p>
+            <p class="stat-detalle">@(Model.CategoriasActivas == Model.CategoriasTotal ? "activas" : $"activas de {Model.CategoriasTotal.ToString("N0", cultura)}")</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icono azul"><partial name="_Iconos" model="@("tamanos icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Tamaños</p>
+            <p class="stat-valor">@Model.TamanosActivos.ToString("N0", cultura)</p>
+            <p class="stat-detalle">@(Model.TamanosActivos == Model.TamanosTotal ? "activos" : $"activos de {Model.TamanosTotal.ToString("N0", cultura)}")</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icono"><partial name="_Iconos" model="@("catalogo icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Precios vigentes</p>
+            <p class="stat-valor">@Model.PreciosActivos.ToString("N0", cultura)</p>
+            <p class="stat-detalle">precios activos</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icono azul"><partial name="_Iconos" model="@("pedidos icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Pedidos</p>
+            <p class="stat-valor">@Model.PedidosTotal.ToString("N0", cultura)</p>
+            <p class="stat-detalle">registrados</p>
+        </div>
+    </div>
+</section>
+
+<div class="row g-3 mt-1">
+    <section class="col-xl-8" aria-labelledby="titulo-recientes">
+        <div class="card-recyplast h-100">
+            <h3 class="card-recyplast-titulo" id="titulo-recientes">Actividad reciente</h3>
+            @if (!Model.PedidosRecientes.Any())
+            {
+                <div class="estado-vacio">
+                    <partial name="_Iconos" model="@("pedidos")" />
+                    <p class="mb-0">No hay pedidos recientes</p>
+                </div>
+            }
+            else
+            {
+                <ul class="lista-actividad">
+                    @foreach (var p in Model.PedidosRecientes)
+                    {
+                        var local = DateTime.SpecifyKind(p.FechaRegistroUtc, DateTimeKind.Utc).ToLocalTime();
+                        <li>
+                            <span class="stat-icono azul"><partial name="_Iconos" model="@("pedidos")" /></span>
+                            <div class="lista-actividad-texto">
+                                <p class="lista-actividad-titulo">
+                                    Pedido #@p.IdPedido · @p.NombreColaborador
+                                    @if (p.EsPrueba) { <span class="badge-recyplast gris ms-1">Prueba</span> }
+                                </p>
+                                <p class="lista-actividad-detalle">@p.CodigoColaborador · @Comida(p.TipoComida) · @local.ToString("dd/MM/yyyy HH:mm", cultura)</p>
+                            </div>
+                            <strong class="lista-actividad-monto">@Colones(p.Total)</strong>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </section>
+
+    @if (veCatalogo || vePedidos || veRrhh)
+    {
+        <section class="col-xl-4" aria-labelledby="titulo-accesos">
+            <div class="card-recyplast h-100">
+                <h3 class="card-recyplast-titulo" id="titulo-accesos">Accesos rápidos</h3>
+                <div class="accesos-rapidos">
+                    @if (vePedidos)
+                    {
+                        <a class="btn btn-recyplast" asp-controller="Pedidos" asp-action="Index"><partial name="_Iconos" model="@("pedidos")" /> Registrar pedido</a>
+                    }
+                    @if (veCatalogo)
+                    {
+                        <a class="btn btn-recyplast-secondary" asp-controller="Administracion" asp-action="Catalogo"><partial name="_Iconos" model="@("catalogo")" /> Administrar catálogo</a>
+                    }
+                    @if (veRrhh)
+                    {
+                        <a class="btn btn-recyplast-outline" asp-controller="RecursosHumanos" asp-action="Index"><partial name="_Iconos" model="@("rrhh")" /> Recursos Humanos</a>
+                    }
+                </div>
+            </div>
+        </section>
     }
 </div>

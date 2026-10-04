@@ -1,0 +1,75 @@
+@* Campos compartidos de Crear/Editar producto. Solo presentación: los nombres de campo (asp-for),
+   los ids requiereTamano / bloquePrecioUnico / bloquePreciosPorTamano y el onchange son los mismos de antes. *@
+@model SAPS.Web.Models.Catalogo.ProductoFormViewModel
+
+<div asp-validation-summary="All" class="alerta-error-recyplast" role="alert"></div>
+
+<section aria-labelledby="titulo-info-producto">
+    <h2 class="form-card-titulo" id="titulo-info-producto">Información del producto</h2>
+
+    <div class="mb-3">
+        <label asp-for="NombreProducto" class="form-label">Nombre del producto <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+        <input asp-for="NombreProducto" class="form-control" placeholder="Ej. Pinto con 2 acomp." autofocus />
+        <span asp-validation-for="NombreProducto" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="IdCategoria" class="form-label">Categoría <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+        <select asp-for="IdCategoria" class="form-select" data-val-required="Debe seleccionar una categoría.">
+            <option value="">-- Seleccione --</option>
+            @foreach (var c in Model.CategoriasDisponibles)
+            {
+                <option value="@c.IdCategoria">@c.NombreCategoria@(c.Activo ? "" : " (inactiva)")</option>
+            }
+        </select>
+        <span asp-validation-for="IdCategoria" class="text-danger small"></span>
+    </div>
+
+    <div class="form-check mb-2">
+        <input asp-for="EsEspecial" class="form-check-input" />
+        <label asp-for="EsEspecial" class="form-check-label">Es un producto especial (precio diferenciado)</label>
+    </div>
+
+    <div class="form-check">
+        <input asp-for="RequiereTamano" class="form-check-input" id="requiereTamano" onchange="alternarPrecios()" />
+        <label for="requiereTamano" class="form-check-label">Se vende en distintos tamaños</label>
+    </div>
+</section>
+
+<section class="seccion-precio" aria-labelledby="titulo-precio-producto">
+    <h2 class="form-card-titulo" id="titulo-precio-producto">Precio</h2>
+
+    <div id="bloquePrecioUnico" class="mb-1">
+        <label asp-for="PrecioUnico" class="form-label">Precio único <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+        <div class="input-group campo-monto">
+            <span class="input-group-text" aria-hidden="true">₡</span>
+            <input asp-for="PrecioUnico" class="form-control" min="1" step="1" inputmode="numeric" />
+        </div>
+        <span asp-validation-for="PrecioUnico" class="text-danger small"></span>
+    </div>
+
+    <div id="bloquePreciosPorTamano" class="mb-1">
+        <p class="form-label mb-2">Precio por cada tamaño (marque los que apliquen)</p>
+        @if (!Model.PreciosPorTamano.Any())
+        {
+            <p class="text-muted">No hay tamaños activos registrados todavía. Cree al menos un tamaño primero.</p>
+        }
+        <div class="precios-tamano-lista">
+        @for (int i = 0; i < Model.PreciosPorTamano.Count; i++)
+        {
+            <div class="precio-tamano-fila">
+                <input type="hidden" asp-for="PreciosPorTamano[i].IdTamano" />
+                <input type="hidden" asp-for="PreciosPorTamano[i].NombreTamano" />
+                <div class="form-check">
+                    <input asp-for="PreciosPorTamano[i].Incluir" class="form-check-input" />
+                    <label asp-for="PreciosPorTamano[i].Incluir" class="form-check-label">@Model.PreciosPorTamano[i].NombreTamano@(Model.PreciosPorTamano[i].TamanoActivo ? "" : " (inactivo)")</label>
+                </div>
+                <div class="input-group campo-monto">
+                    <span class="input-group-text" aria-hidden="true">₡</span>
+                    <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" step="1" inputmode="numeric" aria-label="Precio del tamaño @Model.PreciosPorTamano[i].NombreTamano" />
+                </div>
+            </div>
+        }
+        </div>
+    </div>
+</section>

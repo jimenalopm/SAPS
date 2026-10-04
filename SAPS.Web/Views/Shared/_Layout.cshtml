@@ -1,3 +1,26 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@{
+    var autenticado = SignInManager.IsSignedIn(User);
+    var controlador = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var area = ViewContext.RouteData.Values["area"]?.ToString() ?? "";
+    var esRrhh = User.IsInRole("RecursosHumanos");
+    var esAdmin = User.IsInRole("Administrador");
+    var esSoda = User.IsInRole("Soda");
+    var esUsuario = User.IsInRole("Usuario");
+    // Mismas reglas que los [Authorize] de cada controlador.
+    var veCatalogo = esAdmin || esRrhh;
+    var veRrhh = esAdmin || esRrhh;
+    var vePedidos = esAdmin || esSoda || esUsuario;
+    var veDashboard = esAdmin || esRrhh || esSoda || esUsuario;   // igual que el [Authorize] de HomeController.Index
+    string Activo(bool coincide) => coincide ? "activo" : "";
+    string Actual(bool coincide) => coincide ? "page" : "";
+
+    var nombreUsuario = User.Identity?.Name ?? "";
+    var iniciales = nombreUsuario.Length >= 2 ? nombreUsuario[..2].ToUpperInvariant() : nombreUsuario.ToUpperInvariant();
+    string rolMostrado =
+        esAdmin ? "Administrador" : esRrhh ? "Recursos Humanos" : esSoda ? "Soda" : esUsuario ? "Usuario" : "Sin rol asignado";
+}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,66 +34,115 @@
     <link rel="stylesheet" href="~/SAPS.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        @* [H5] navbar-expand-lg: el menú se colapsa por debajo de 991px (breakpoint definido en Estándares). *@
-        <nav class="navbar navbar-recyplast navbar-expand-lg navbar-toggleable-lg border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                @* [H2] Marca de RecyPlast. Si existe wwwroot/images/logo-recyplast.png se muestra el logo;
-                   si no existe, la imagen se oculta y queda el nombre en texto. *@
-                <a class="navbar-brand marca-recyplast" asp-area="" asp-controller="Home" asp-action="Index">
-                    <img src="~/images/logo-recyplast.png" alt="Logo de RecyPlast" class="logo-recyplast" onerror="this.remove()" />
-                    <span class="marca-texto">
-                        <span class="marca-empresa">RecyPlast</span>
-                        <span class="marca-sistema">SAPS · Soda</span>
-                    </span>
+    <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+    <div class="app-shell @(autenticado ? "" : "sin-sidebar")">
+        @if (autenticado)
+        {
+            <div class="sidebar-fondo" id="sidebar-fondo"></div>
+            @* Escritorio: visible. Móvil/tablet: drawer (se abre con el botón del encabezado). *@
+            <aside class="sidebar-recyplast" id="sidebar" aria-label="Menú principal">
+                <a class="sidebar-marca" asp-area="" asp-controller="Home" asp-action="Index" aria-label="SAPS, ir al inicio">
+                    <partial name="_Marca" />
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Abrir o cerrar el menú de navegación">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
-                        </li>
-
-                        @if (User.IsInRole("RecursosHumanos") || User.IsInRole("Administrador"))
+                <nav aria-label="Navegación principal">
+                    <ul class="sidebar-nav">
+                        @if (veDashboard)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="RecursosHumanos" asp-action="Index">Recursos Humanos</a>
+                            <li>
+                                <a class="sidebar-link @Activo(controlador == "Home" && area == "")" aria-current="@Actual(controlador == "Home" && area == "")"
+                                   asp-area="" asp-controller="Home" asp-action="Index">
+                                    <partial name="_Iconos" model="@("dashboard")" /> Dashboard
+                                </a>
                             </li>
                         }
-                        @if (User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos"))
+                        @if (veCatalogo)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Administracion" asp-action="Catalogo">Catálogo</a>
+                            <li>
+                                <a class="sidebar-link @Activo(controlador == "Administracion")" aria-current="@Actual(controlador == "Administracion")"
+                                   asp-area="" asp-controller="Administracion" asp-action="Catalogo">
+                                    <partial name="_Iconos" model="@("catalogo")" /> Catálogo
+                                </a>
                             </li>
                         }
-                        @if (User.IsInRole("Soda") || User.IsInRole("Usuario") || User.IsInRole("Administrador"))
+                        @if (vePedidos)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Pedidos" asp-action="Index">Registrar pedido</a>
+                            <li>
+                                <a class="sidebar-link @Activo(controlador == "Pedidos")" aria-current="@Actual(controlador == "Pedidos")"
+                                   asp-area="" asp-controller="Pedidos" asp-action="Index">
+                                    <partial name="_Iconos" model="@("pedidos")" /> Registrar pedido
+                                </a>
+                            </li>
+                        }
+                        @if (veRrhh)
+                        {
+                            <li>
+                                <a class="sidebar-link @Activo(controlador == "RecursosHumanos")" aria-current="@Actual(controlador == "RecursosHumanos")"
+                                   asp-area="" asp-controller="RecursosHumanos" asp-action="Index">
+                                    <partial name="_Iconos" model="@("rrhh")" /> Recursos Humanos
+                                </a>
                             </li>
                         }
                     </ul>
-                    <partial name="_LoginPartial" />
+                </nav>
+                <div class="sidebar-pie">
+                    @* Mismo mecanismo de cierre de sesión de Identity que usaba _LoginPartial. *@
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
+                        <button type="submit" class="sidebar-link">
+                            <partial name="_Iconos" model="@("salir")" /> Cerrar sesión
+                        </button>
+                    </form>
                 </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+            </aside>
+        }
 
-    @* [H2] Pie de página en español, con el nombre de la empresa y del sistema. *@
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; @DateTime.Now.Year RecyPlast · SAPS – Sistema de Administración para la Soda ·
-            <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacidad</a>
+        <div class="app-principal">
+            <header class="app-header">
+                @if (autenticado)
+                {
+                    <button type="button" class="btn-menu-movil" id="btn-menu" aria-label="Abrir menú de navegación"
+                            title="Menú" aria-controls="sidebar" aria-expanded="false">
+                        <partial name="_Iconos" model="@("menu icono-lg")" />
+                    </button>
+                }
+                else
+                {
+                    <a class="sidebar-marca p-0" asp-area="" asp-controller="Home" asp-action="Index"><partial name="_Marca" /></a>
+                }
+                <p class="app-header-titulo">@ViewData["Title"]</p>
+                @if (autenticado)
+                {
+                    <div class="app-usuario">
+                        <div class="app-usuario-texto text-end">
+                            <p class="app-usuario-nombre">@nombreUsuario</p>
+                            <p class="app-usuario-rol">@rolMostrado</p>
+                        </div>
+                        <span class="app-usuario-avatar" title="@nombreUsuario" aria-hidden="true">@iniciales</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="app-usuario">
+                        <a class="btn btn-recyplast" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a>
+                    </div>
+                }
+            </header>
+
+            <main role="main" class="app-contenido" id="contenido-principal" tabindex="-1">
+                @RenderBody()
+            </main>
+
+            @* [H2] Pie de página en español, con el nombre de la empresa y del sistema. *@
+            <footer class="app-footer">
+                <div class="app-footer-contenido">
+                    <span><strong>SAPS</strong> · Sistema de Administración para la Soda</span>
+                    <span>
+                        &copy; @DateTime.Now.Year RecyPlast ·
+                        <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacidad</a>
+                    </span>
+                </div>
+            </footer>
         </div>
-    </footer>
+    </div>
 
     @* [H3] Ventana de confirmación reutilizable. La usan los formularios que tengan el atributo data-confirmar. *@
     <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarTitulo" aria-hidden="true">

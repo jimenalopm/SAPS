@@ -1,0 +1,13 @@
+@* Script de Crear/Editar producto: es el mismo que tenían ambas vistas (sin cambios de lógica). *@
+<partial name="_ValidationScriptsPartial" />
+<script>
+    function alternarPrecios() {
+        const requiereTamano = document.getElementById('requiereTamano').checked;
+        document.getElementById('bloquePrecioUnico').style.display = requiereTamano ? 'none' : 'block';
+        document.getElementById('bloquePreciosPorTamano').style.display = requiereTamano ? 'block' : 'none';
+        // Solo se envían los campos del modo seleccionado.
+        document.querySelectorAll('#bloquePrecioUnico input').forEach(input => input.disabled = requiereTamano);
+        document.querySelectorAll('#bloquePreciosPorTamano input').forEach(input => input.disabled = !requiereTamano);
+    }
+    document.addEventListener('DOMContentLoaded', alternarPrecios);
+</script>

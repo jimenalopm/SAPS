@@ -80,3 +80,33 @@
         }
     });
 })();
+
+// Drawer del menú lateral (tablet y móvil). En escritorio el sidebar siempre está visible.
+(function () {
+    'use strict';
+    const boton = document.getElementById('btn-menu');
+    const menu = document.getElementById('sidebar');
+    const fondo = document.getElementById('sidebar-fondo');
+    if (!boton || !menu || !fondo) return;
+    const movil = window.matchMedia('(max-width: 991.98px)');
+
+    function fijar(abierto) {
+        menu.classList.toggle('abierto', abierto);
+        fondo.classList.toggle('abierto', abierto);
+        boton.setAttribute('aria-expanded', String(abierto));
+        boton.setAttribute('aria-label', abierto ? 'Cerrar menú de navegación' : 'Abrir menú de navegación');
+        // Con el drawer cerrado en móvil, su contenido no debe ser alcanzable con el teclado.
+        menu.toggleAttribute('inert', movil.matches && !abierto);
+        document.body.style.overflow = movil.matches && abierto ? 'hidden' : '';
+        if (abierto) menu.querySelector('a, button')?.focus();
+    }
+
+    boton.addEventListener('click', () => fijar(!menu.classList.contains('abierto')));
+    fondo.addEventListener('click', () => { fijar(false); boton.focus(); });
+    menu.addEventListener('click', e => { if (e.target.closest('a')) fijar(false); });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && menu.classList.contains('abierto')) { fijar(false); boton.focus(); }
+    });
+    movil.addEventListener('change', () => fijar(false));
+    fijar(false);
+})();

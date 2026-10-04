@@ -1,0 +1,32 @@
+@page
+@model LogoutModel
+@{
+    ViewData["Title"] = "Cerrar sesión";
+    var autenticado = User.Identity?.IsAuthenticated == true;
+}
+
+<section class="pagina-estado" aria-labelledby="titulo-estado">
+    @if (autenticado)
+    {
+        <span class="pagina-estado-icono azul"><partial name="_Iconos" model="@("salir icono-lg")" /></span>
+        <h1 id="titulo-estado">¿Desea cerrar sesión?</h1>
+        <p>Su sesión se cerrará en este equipo.</p>
+
+        <div class="pagina-estado-acciones">
+            <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                <button type="submit" class="btn btn-recyplast">Cerrar sesión</button>
+            </form>
+            <a class="btn btn-recyplast-outline" asp-area="" asp-controller="Home" asp-action="Index">Cancelar</a>
+        </div>
+    }
+    else
+    {
+        <span class="pagina-estado-icono"><partial name="_Iconos" model="@("salir icono-lg")" /></span>
+        <h1 id="titulo-estado">Sesión cerrada</h1>
+        <p>Cerró sesión correctamente.</p>
+
+        <div class="pagina-estado-acciones">
+            <a class="btn btn-recyplast" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a>
+        </div>
+    }
+</section>
