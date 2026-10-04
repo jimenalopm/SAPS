@@ -18,7 +18,7 @@ namespace SAPS.Tests;
 /// </summary>
 public class HU003_ControlAccesoRolesTests
 {
-    private static readonly string[] RolesEsperados = ["Administrador", "RecursosHumanos", "Soda", "Usuario"];
+    private static readonly string[] RolesEsperados = ["Administrador", "RecursosHumanos", "Soda"];
 
     // ---------- Creación de roles ----------
 
@@ -79,7 +79,7 @@ public class HU003_ControlAccesoRolesTests
     [Theory]
     [InlineData(typeof(AdministracionController), new[] { "Administrador", "RecursosHumanos" })]
     [InlineData(typeof(RecursosHumanosController), new[] { "Administrador", "RecursosHumanos" })]
-    [InlineData(typeof(PedidosController), new[] { "Administrador", "Soda", "Usuario" })]
+    [InlineData(typeof(PedidosController), new[] { "Administrador", "Soda" })]
     public void Controlador_DeclaraLosRolesPermitidos(Type controlador, string[] rolesEsperados)
     {
         var attr = controlador.GetCustomAttribute<AuthorizeAttribute>();
@@ -111,7 +111,7 @@ public class HU003_ControlAccesoRolesTests
         { typeof(RecursosHumanosController), null,              false },
         { typeof(PedidosController), "Administrador",   true  },
         { typeof(PedidosController), "Soda",            true  },
-        { typeof(PedidosController), "Usuario",         true  },
+        { typeof(PedidosController), "Usuario",         false },
         { typeof(PedidosController), "RecursosHumanos", false },
         { typeof(PedidosController), null,              false },
     };

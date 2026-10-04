@@ -14,7 +14,7 @@ public class HomeController(ApplicationDbContext db) : Controller
 
     // El Dashboard muestra datos del negocio: solo para quienes tienen uno de los roles del sistema.
     // (Privacy y Error siguen siendo públicos.)
-    [Authorize(Roles = "Administrador,RecursosHumanos,Soda,Usuario")]
+    [Authorize(Roles = "Administrador,RecursosHumanos,Soda")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         if (User.Identity?.IsAuthenticated != true)

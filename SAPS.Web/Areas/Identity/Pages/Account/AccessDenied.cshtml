@@ -4,7 +4,7 @@
     ViewData["Title"] = "Acceso no autorizado";
     var autenticado = User.Identity?.IsAuthenticated == true;
     // Mismos roles que el [Authorize] del Dashboard (HomeController.Index).
-    var tieneRol = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos") || User.IsInRole("Soda") || User.IsInRole("Usuario");
+    var tieneRol = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos") || User.IsInRole("Soda");
 }
 
 <section class="pagina-estado" aria-labelledby="titulo-estado">

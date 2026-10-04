@@ -16,7 +16,7 @@ namespace SAPS.Tests;
 /// </summary>
 public class Seguridad_Fase91Tests
 {
-    private static readonly string[] RolesDelSistema = ["Administrador", "RecursosHumanos", "Soda", "Usuario"];
+    private static readonly string[] RolesDelSistema = ["Administrador", "RecursosHumanos", "Soda"];
 
     [Fact]
     public void Dashboard_DeclaraLosCuatroRolesDelSistema()
@@ -43,7 +43,7 @@ public class Seguridad_Fase91Tests
         { "Administrador",   true  },
         { "RecursosHumanos", true  },
         { "Soda",            true  },
-        { "Usuario",         true  },
+        { "Usuario",         false  },
         { "SinRolValido",    false },   // autenticado, pero con un rol que no es del sistema
         { "",                false },   // autenticado y sin ningún rol
         { null,              false },   // anónimo

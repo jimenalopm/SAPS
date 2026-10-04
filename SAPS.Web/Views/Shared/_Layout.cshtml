@@ -1,4 +1,4 @@
-@using Microsoft.AspNetCore.Identity
+﻿@using Microsoft.AspNetCore.Identity
 @inject SignInManager<IdentityUser> SignInManager
 @{
     var autenticado = SignInManager.IsSignedIn(User);
@@ -7,19 +7,18 @@
     var esRrhh = User.IsInRole("RecursosHumanos");
     var esAdmin = User.IsInRole("Administrador");
     var esSoda = User.IsInRole("Soda");
-    var esUsuario = User.IsInRole("Usuario");
     // Mismas reglas que los [Authorize] de cada controlador.
     var veCatalogo = esAdmin || esRrhh;
     var veRrhh = esAdmin || esRrhh;
-    var vePedidos = esAdmin || esSoda || esUsuario;
-    var veDashboard = esAdmin || esRrhh || esSoda || esUsuario;   // igual que el [Authorize] de HomeController.Index
+    var vePedidos = esAdmin || esSoda;
+    var veDashboard = esAdmin || esRrhh || esSoda;   // igual que el [Authorize] de HomeController.Index
     string Activo(bool coincide) => coincide ? "activo" : "";
     string Actual(bool coincide) => coincide ? "page" : "";
 
     var nombreUsuario = User.Identity?.Name ?? "";
     var iniciales = nombreUsuario.Length >= 2 ? nombreUsuario[..2].ToUpperInvariant() : nombreUsuario.ToUpperInvariant();
     string rolMostrado =
-        esAdmin ? "Administrador" : esRrhh ? "Recursos Humanos" : esSoda ? "Soda" : esUsuario ? "Usuario" : "Sin rol asignado";
+        esAdmin ? "Administrador" : esRrhh ? "Recursos Humanos" : esSoda ? "Soda" : "Sin rol asignado";
 }
 <!DOCTYPE html>
 <html lang="es">

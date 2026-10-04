@@ -5,7 +5,7 @@ namespace SAPS.Web.Data;
 
 public class DbInitializer(RoleManager<IdentityRole> roleManager)
 {
-    private static readonly string[] Roles = ["Administrador", "RecursosHumanos", "Soda", "Usuario"];
+    private static readonly string[] Roles = ["Administrador", "RecursosHumanos", "Soda"];
 
     public async Task SeedRolesAsync()
     {

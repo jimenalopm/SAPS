@@ -5,7 +5,7 @@
     ViewData["Title"] = autenticado ? "Dashboard" : "Inicio";
     var cultura = CultureInfo.GetCultureInfo("es-CR");
     var veCatalogo = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos");
-    var vePedidos = User.IsInRole("Administrador") || User.IsInRole("Soda") || User.IsInRole("Usuario");
+    var vePedidos = User.IsInRole("Administrador") || User.IsInRole("Soda");
     var veRrhh = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos");
 
     string Comida(string tipo) => tipo == "Merienda" ? "Café" : tipo;   // mismo criterio que la pantalla de pedidos

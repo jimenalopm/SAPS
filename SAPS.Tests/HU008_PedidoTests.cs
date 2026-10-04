@@ -544,7 +544,7 @@ public sealed class HU008_PedidoTests : IDisposable
         var roles = typeof(PedidosController).GetCustomAttribute<AuthorizeAttribute>()!.Roles!
             .Split(',').Select(r => r.Trim()).Order();
 
-        Assert.Equal(new[] { "Administrador", "Soda", "Usuario" }, roles);
+        Assert.Equal(new[] { "Administrador", "Soda"}, roles);
     }
 
     [Fact]
