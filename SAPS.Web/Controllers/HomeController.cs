@@ -12,7 +12,7 @@ public class HomeController(ApplicationDbContext db) : Controller
 {
     private const int PedidosRecientesMax = 5;
 
-    // El Dashboard muestra datos del negocio: solo para quienes tienen uno de los roles del sistema.
+    // El inicio (dashboard) muestra datos del negocio: solo para quienes tienen uno de los roles del sistema.
     // (Privacy y Error siguen siendo públicos.)
     [Authorize(Roles = "Administrador,RecursosHumanos,Soda")]
     public async Task<IActionResult> Index(CancellationToken ct)

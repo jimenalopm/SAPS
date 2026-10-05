@@ -219,7 +219,6 @@ a.stat-card:hover { border-color: var(--rp-verde); box-shadow: var(--rp-sombra-m
   content: ""; position: absolute; left: -.75rem; top: 20%; bottom: 20%; width: 4px;
   border-radius: 0 4px 4px 0; background: var(--rp-verde);
 }
-.sidebar-pie { border-top: 1px solid var(--rp-gris-borde); padding-top: .75rem; margin-top: .75rem; }
 .sidebar-fondo { display: none; }
 
 .app-principal { flex: 1; min-width: 0; margin-left: var(--rp-sidebar-ancho); display: flex; flex-direction: column; }
@@ -237,6 +236,8 @@ a.stat-card:hover { border-color: var(--rp-verde); box-shadow: var(--rp-sombra-m
 }
 .app-usuario-nombre { font-weight: 600; font-size: .9rem; line-height: 1.2; margin: 0; }
 .app-usuario-rol { font-size: .75rem; color: var(--rp-gris-texto-suave); margin: 0; }
+.app-cerrar-sesion { margin: 0; }
+.btn-cerrar-sesion { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
 .btn-menu-movil { display: none; background: none; border: 0; padding: .35rem; color: var(--rp-gris); }
 
 .app-contenido { flex: 1; padding: 1.5rem; width: 100%; max-width: 1400px; margin: 0 auto; }
@@ -287,6 +288,11 @@ a.stat-card:hover { border-color: var(--rp-verde); box-shadow: var(--rp-sombra-m
   .app-header { padding: 0 1rem; }
   .app-contenido { padding: 1rem; }
   .app-usuario-texto { display: none; }
+}
+/* Pantallas muy pequeñas: el botón de cierre de sesión queda solo con ícono (conserva aria-label y title) */
+@media (max-width: 575.98px) {
+  .btn-cerrar-sesion-texto { display: none; }
+  .app-header { gap: .5rem; }
 }
 @media (max-width: 575.98px) {
   h1, .h1 { font-size: 1.4rem; }

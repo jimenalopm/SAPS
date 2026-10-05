@@ -16,7 +16,7 @@
     <div class="pagina-estado-acciones">
         @if (autenticado && tieneRol)
         {
-            <a class="btn btn-recyplast" asp-area="" asp-controller="Home" asp-action="Index"><partial name="_Iconos" model="@("dashboard icono-sm")" /> Volver al Dashboard</a>
+            <a class="btn btn-recyplast" asp-area="" asp-controller="Home" asp-action="Index"><partial name="_Iconos" model="@("dashboard icono-sm")" /> Volver al inicio</a>
         }
         else if (autenticado)
         {

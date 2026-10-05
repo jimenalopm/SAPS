@@ -2,7 +2,7 @@
 @model SAPS.Web.Models.DashboardViewModel
 @{
     var autenticado = User.Identity?.IsAuthenticated == true;
-    ViewData["Title"] = autenticado ? "Dashboard" : "Inicio";
+    ViewData["Title"] = "Inicio";
     var cultura = CultureInfo.GetCultureInfo("es-CR");
     var veCatalogo = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos");
     var vePedidos = User.IsInRole("Administrador") || User.IsInRole("Soda");
