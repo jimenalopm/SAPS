@@ -70,7 +70,7 @@
     @* ================= CATEGORÍAS ================= *@
     <div class="tab-pane @Activa("categorias")">
         <div class="catalogo-barra">
-            <form method="get" class="catalogo-filtros">
+            <form method="get" class="catalogo-filtros" data-bloquear-envio>
                 <input type="hidden" name="tab" value="categorias" />
                 <div class="input-buscar">
                     <partial name="_Iconos" model="@("buscar icono-sm")" />
@@ -80,7 +80,7 @@
                     <input type="checkbox" name="catInc" value="true" class="form-check-input" id="catInc" checked="@Model.CategoriaIncluirInactivos" />
                     <label class="form-check-label" for="catInc">Mostrar inactivas</label>
                 </div>
-                <button type="submit" class="btn btn-recyplast-outline">Buscar</button>
+                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
             <a asp-action="CrearCategoria" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nueva categoría</a>
         </div>
@@ -117,7 +117,7 @@
     @* ================= TAMAÑOS ================= *@
     <div class="tab-pane @Activa("tamanos")">
         <div class="catalogo-barra">
-            <form method="get" class="catalogo-filtros">
+            <form method="get" class="catalogo-filtros" data-bloquear-envio>
                 <input type="hidden" name="tab" value="tamanos" />
                 <div class="input-buscar">
                     <partial name="_Iconos" model="@("buscar icono-sm")" />
@@ -127,7 +127,7 @@
                     <input type="checkbox" name="tamInc" value="true" class="form-check-input" id="tamInc" checked="@Model.TamanoIncluirInactivos" />
                     <label class="form-check-label" for="tamInc">Mostrar inactivos</label>
                 </div>
-                <button type="submit" class="btn btn-recyplast-outline">Buscar</button>
+                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
             <a asp-action="CrearTamano" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nuevo tamaño</a>
         </div>
@@ -164,7 +164,7 @@
     @* ================= PRODUCTOS ================= *@
     <div class="tab-pane @Activa("productos")">
         <div class="catalogo-barra">
-            <form method="get" class="catalogo-filtros">
+            <form method="get" class="catalogo-filtros" data-bloquear-envio>
                 <input type="hidden" name="tab" value="productos" />
                 <div class="input-buscar">
                     <partial name="_Iconos" model="@("buscar icono-sm")" />
@@ -174,7 +174,7 @@
                     <input type="checkbox" name="prodInc" value="true" class="form-check-input" id="prodInc" checked="@Model.ProductoIncluirInactivos" />
                     <label class="form-check-label" for="prodInc">Mostrar inactivos</label>
                 </div>
-                <button type="submit" class="btn btn-recyplast-outline">Buscar</button>
+                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
             <a asp-action="CrearProducto" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nuevo producto</a>
         </div>
@@ -228,7 +228,7 @@
     @* ================= BEBIDAS ================= *@
     <div class="tab-pane @Activa("bebidas")">
         <div class="catalogo-barra">
-            <form method="get" class="catalogo-filtros">
+            <form method="get" class="catalogo-filtros" data-bloquear-envio>
                 <input type="hidden" name="tab" value="bebidas" />
                 <div class="input-buscar">
                     <partial name="_Iconos" model="@("buscar icono-sm")" />
@@ -238,7 +238,7 @@
                     <input type="checkbox" name="bebInc" value="true" class="form-check-input" id="bebInc" checked="@Model.BebidaIncluirInactivos" />
                     <label class="form-check-label" for="bebInc">Mostrar inactivas</label>
                 </div>
-                <button type="submit" class="btn btn-recyplast-outline">Buscar</button>
+                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
             <a asp-action="CrearBebida" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nueva bebida</a>
         </div>
