@@ -587,7 +587,7 @@ public class HU007_CatalogoTests
     }
 
     [Fact]
-    public async Task Catalogo_PorDefectoOcultaInactivosYPermiteIncluirlosYBuscar()
+    public async Task Catalogo_AlternaEntreActivosEInactivosYPermiteBuscar()
     {
         await using var db = TestServices.CrearContextoInMemory();
         db.Categorias.AddRange(
@@ -598,11 +598,11 @@ public class HU007_CatalogoTests
         var controlador = Controlador(db, "GET");
 
         var soloActivas = (CatalogoIndexViewModel)Assert.IsType<ViewResult>(await controlador.Catalogo()).Model!;
-        var todas = (CatalogoIndexViewModel)Assert.IsType<ViewResult>(await controlador.Catalogo(catInc: true)).Model!;
+        var soloInactivas = (CatalogoIndexViewModel)Assert.IsType<ViewResult>(await controlador.Catalogo(catInc: true)).Model!;
         var busqueda = (CatalogoIndexViewModel)Assert.IsType<ViewResult>(await controlador.Catalogo(catQ: "Desa")).Model!;
 
         Assert.Equal(new[] { "Almuerzo", "Desayuno" }, soloActivas.Categorias.Select(c => c.NombreCategoria));
-        Assert.Equal(3, todas.Categorias.Count);
+        Assert.Equal("Antigua", Assert.Single(soloInactivas.Categorias).NombreCategoria);
         Assert.Equal("Desayuno", Assert.Single(busqueda.Categorias).NombreCategoria);
     }
 

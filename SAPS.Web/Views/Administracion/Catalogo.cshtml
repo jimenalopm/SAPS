@@ -77,7 +77,7 @@
                     <input type="search" name="catQ" value="@Model.CategoriaBuscar" class="form-control" placeholder="Buscar categoría..." aria-label="Buscar categoría" />
                 </div>
                 <div class="form-check">
-                    <input type="checkbox" name="catInc" value="true" class="form-check-input" id="catInc" checked="@Model.CategoriaIncluirInactivos" />
+                    <input type="checkbox" name="catInc" value="true" data-filtrar-estado class="form-check-input" id="catInc" checked="@Model.CategoriaIncluirInactivos" />
                     <label class="form-check-label" for="catInc">Mostrar inactivas</label>
                 </div>
                 <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
@@ -124,7 +124,7 @@
                     <input type="search" name="tamQ" value="@Model.TamanoBuscar" class="form-control" placeholder="Buscar tamaño..." aria-label="Buscar tamaño" />
                 </div>
                 <div class="form-check">
-                    <input type="checkbox" name="tamInc" value="true" class="form-check-input" id="tamInc" checked="@Model.TamanoIncluirInactivos" />
+                    <input type="checkbox" name="tamInc" value="true" data-filtrar-estado class="form-check-input" id="tamInc" checked="@Model.TamanoIncluirInactivos" />
                     <label class="form-check-label" for="tamInc">Mostrar inactivos</label>
                 </div>
                 <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
@@ -171,7 +171,7 @@
                     <input type="search" name="prodQ" value="@Model.ProductoBuscar" class="form-control" placeholder="Buscar producto..." aria-label="Buscar producto" />
                 </div>
                 <div class="form-check">
-                    <input type="checkbox" name="prodInc" value="true" class="form-check-input" id="prodInc" checked="@Model.ProductoIncluirInactivos" />
+                    <input type="checkbox" name="prodInc" value="true" data-filtrar-estado class="form-check-input" id="prodInc" checked="@Model.ProductoIncluirInactivos" />
                     <label class="form-check-label" for="prodInc">Mostrar inactivos</label>
                 </div>
                 <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
@@ -235,7 +235,7 @@
                     <input type="search" name="bebQ" value="@Model.BebidaBuscar" class="form-control" placeholder="Buscar bebida..." aria-label="Buscar bebida" />
                 </div>
                 <div class="form-check">
-                    <input type="checkbox" name="bebInc" value="true" class="form-check-input" id="bebInc" checked="@Model.BebidaIncluirInactivos" />
+                    <input type="checkbox" name="bebInc" value="true" data-filtrar-estado class="form-check-input" id="bebInc" checked="@Model.BebidaIncluirInactivos" />
                     <label class="form-check-label" for="bebInc">Mostrar inactivas</label>
                 </div>
                 <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
@@ -276,3 +276,11 @@
     </div>
 
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('[data-filtrar-estado]').forEach(check => {
+            check.addEventListener('change', () => check.form.requestSubmit());
+        });
+    </script>
+}

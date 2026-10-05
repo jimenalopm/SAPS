@@ -36,12 +36,12 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         };
 
         var categorias = db.Categorias.AsQueryable();
-        if (!catInc) categorias = categorias.Where(c => c.Activo);
+        categorias = categorias.Where(c => c.Activo == !catInc);
         if (!string.IsNullOrWhiteSpace(catQ)) categorias = categorias.Where(c => c.NombreCategoria.Contains(catQ));
         vm.Categorias = await categorias.OrderBy(c => c.NombreCategoria).ToListAsync();
 
         var tamanos = db.Tamanos.AsQueryable();
-        if (!tamInc) tamanos = tamanos.Where(t => t.Activo);
+        tamanos = tamanos.Where(t => t.Activo == !tamInc);
         if (!string.IsNullOrWhiteSpace(tamQ)) tamanos = tamanos.Where(t => t.NombreTamano.Contains(tamQ));
         vm.Tamanos = await tamanos.OrderBy(t => t.NombreTamano).ToListAsync();
 
@@ -50,12 +50,12 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             .Include(p => p.Precios.Where(pr => pr.Activo))
                 .ThenInclude(pr => pr.Tamano)
             .AsQueryable();
-        if (!prodInc) productos = productos.Where(p => p.Activo);
+        productos = productos.Where(p => p.Activo == !prodInc);
         if (!string.IsNullOrWhiteSpace(prodQ)) productos = productos.Where(p => p.NombreProducto.Contains(prodQ));
         vm.Productos = await productos.OrderBy(p => p.NombreProducto).ToListAsync();
 
         var bebidas = db.Bebidas.Include(b => b.Tamano).AsQueryable();
-        if (!bebInc) bebidas = bebidas.Where(b => b.Activo);
+        bebidas = bebidas.Where(b => b.Activo == !bebInc);
         if (!string.IsNullOrWhiteSpace(bebQ)) bebidas = bebidas.Where(b => b.NombreBebida.Contains(bebQ));
         vm.Bebidas = await bebidas.OrderBy(b => b.NombreBebida).ToListAsync();
 
@@ -117,7 +117,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         if (categoria == null) return NotFound();
         categoria.Activo = !categoria.Activo;
         await db.SaveChangesAsync();
-        TempData["Mensaje"] = categoria.Activo ? "Categoría activada." : "Categoría desactivada.";
+        TempData["Mensaje"] = categoria.Activo ? $"Categoría «{categoria.NombreCategoria}» activada." : $"Categoría «{categoria.NombreCategoria}» desactivada.";
         return RedirectToAction(nameof(Catalogo), new { tab = "categorias" });
     }
 
@@ -176,7 +176,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         if (tamano == null) return NotFound();
         tamano.Activo = !tamano.Activo;
         await db.SaveChangesAsync();
-        TempData["Mensaje"] = tamano.Activo ? "Tamaño activado." : "Tamaño desactivado.";
+        TempData["Mensaje"] = tamano.Activo ? $"Tamaño «{tamano.NombreTamano}» activado." : $"Tamaño «{tamano.NombreTamano}» desactivado.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
     }
 
@@ -307,7 +307,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         // Nota: no se tocan los precios. Se desactiva solo el producto; sus precios
         // quedan tal cual estaban (según se acordó para este sprint).
         await db.SaveChangesAsync();
-        TempData["Mensaje"] = producto.Activo ? "Producto activado." : "Producto desactivado.";
+        TempData["Mensaje"] = producto.Activo ? $"Producto «{producto.NombreProducto}» activado." : $"Producto «{producto.NombreProducto}» desactivado.";
         return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
     }
 
@@ -359,15 +359,21 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         {
             var seleccionados = modelo.PreciosPorTamano.Where(p => p.Incluir).ToList();
             if (seleccionados.Count == 0)
-                ModelState.AddModelError(string.Empty, "Debe indicar el precio de al menos un tamaño.");
-            if (seleccionados.Any(p => p.Monto is null or <= 0))
-                ModelState.AddModelError(string.Empty, "Cada tamaño seleccionado debe tener un precio entero mayor a cero.");
+                ModelState.AddModelError(nameof(modelo.RequiereTamano), "Seleccione al menos un tamaño e indique su precio.");
+            for (int i = 0; i < modelo.PreciosPorTamano.Count; i++)
+            {
+                var precio = modelo.PreciosPorTamano[i];
+                if (precio.Incluir && precio.Monto is null or <= 0)
+                    ModelState.AddModelError($"PreciosPorTamano[{i}].Monto", precio.Monto is null
+                        ? "Indique el precio de este tamaño."
+                        : "No se pueden colocar valores negativos o iguales a cero.");
+            }
             if (seleccionados.GroupBy(p => p.IdTamano).Any(g => g.Count() > 1))
                 ModelState.AddModelError(string.Empty, "No se puede repetir un tamaño en el producto.");
         }
         else if (modelo.PrecioUnico is null or <= 0)
         {
-            ModelState.AddModelError(nameof(modelo.PrecioUnico), "Debe indicar un precio mayor a cero.");
+            ModelState.AddModelError(nameof(modelo.PrecioUnico), modelo.PrecioUnico is null ? "Indique el precio." : "No se pueden colocar valores negativos o iguales a cero.");
         }
     }
 
@@ -456,7 +462,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         if (bebida == null) return NotFound();
         bebida.Activo = !bebida.Activo;
         await db.SaveChangesAsync();
-        TempData["Mensaje"] = bebida.Activo ? "Bebida activada." : "Bebida desactivada.";
+        TempData["Mensaje"] = bebida.Activo ? $"Bebida «{bebida.NombreBebida}» activada." : $"Bebida «{bebida.NombreBebida}» desactivada.";
         return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
     }
 }
