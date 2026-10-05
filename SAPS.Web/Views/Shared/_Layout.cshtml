@@ -83,14 +83,6 @@
                         }
                     </ul>
                 </nav>
-                <div class="sidebar-pie">
-                    @* Mismo mecanismo de cierre de sesión de Identity que usaba _LoginPartial. *@
-                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
-                        <button type="submit" class="sidebar-link">
-                            <partial name="_Iconos" model="@("salir")" /> Cerrar sesión
-                        </button>
-                    </form>
-                </div>
             </aside>
         }
 
@@ -116,6 +108,12 @@
                             <p class="app-usuario-rol">@rolMostrado</p>
                         </div>
                         <span class="app-usuario-avatar" title="@nombreUsuario" aria-hidden="true">@iniciales</span>
+                        @* [ED03] Cierre de sesión en el Header: mismo formulario de Identity que usaba el menú lateral. *@
+                        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post" class="app-cerrar-sesion">
+                            <button type="submit" class="btn btn-recyplast-outline btn-cerrar-sesion" aria-label="Cerrar sesión" title="Cerrar sesión">
+                                <partial name="_Iconos" model="@("salir icono-sm")" /><span class="btn-cerrar-sesion-texto">Cerrar sesión</span>
+                            </button>
+                        </form>
                     </div>
                 }
                 else
