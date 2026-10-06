@@ -7,11 +7,11 @@
     let catalogo = [], carrito = [], colaborador = null, busqueda = 0;
     let enviando = false, pendiente = null, cargandoCatalogo = false;
     let token = crypto.randomUUID();
-    const mensaje = (texto, tipo = 'danger') => {
+    const mensaje = (texto, tipo = 'danger', enfocar = true) => {
         const caja = byId('mensaje-pedido');
         caja.className = 'alert alert-' + tipo;
         caja.textContent = texto;
-        caja.focus();
+        if (enfocar) caja.focus();
     };
     const limpiarMensaje = () => byId('mensaje-pedido').classList.add('d-none');
     const cantidadValida = valor => /^\d+$/.test(String(valor)) && Number(valor) > 0 && Number(valor) <= 2147483647;
@@ -121,7 +121,12 @@
         finally { cargandoCatalogo = false; bloquear(); }
     }
     byId('codigo-colaborador').addEventListener('input', () => {
-        busqueda++; colaborador = null; byId('datos-colaborador').classList.add('d-none'); bloquear();
+        const teniaBorrador = carrito.length > 0 || byId('tipo-comida').value || byId('observaciones').value;
+        busqueda++; colaborador = null; carrito = []; pendiente = null; token = crypto.randomUUID();
+        byId('tipo-comida').value = ''; byId('observaciones').value = '';
+        byId('articulo').value = ''; byId('cantidad').value = '1';
+        byId('datos-colaborador').classList.add('d-none'); pintar();
+        if (teniaBorrador) mensaje('Se descartó el pedido pendiente porque cambió el código del colaborador. Busque al colaborador y prepare un nuevo pedido.', 'info', false);
     });
     byId('buscar-colaborador').addEventListener('submit', async evento => {
         evento.preventDefault(); limpiarMensaje();

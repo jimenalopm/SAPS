@@ -2,7 +2,7 @@
    los ids requiereTamano / bloquePrecioUnico / bloquePreciosPorTamano y el onchange son los mismos de antes. *@
 @model SAPS.Web.Models.Catalogo.ProductoFormViewModel
 
-<div asp-validation-summary="All" class="alerta-error-recyplast" role="alert"></div>
+<div asp-validation-summary="ModelOnly" class="alerta-error-recyplast" role="alert"></div>
 
 <section aria-labelledby="titulo-info-producto">
     <h2 class="form-card-titulo" id="titulo-info-producto">Información del producto</h2>
@@ -50,6 +50,7 @@
 
     <div id="bloquePreciosPorTamano" class="mb-1">
         <p class="form-label mb-2">Precio por cada tamaño (marque los que apliquen)</p>
+        <span asp-validation-for="RequiereTamano" class="text-danger small d-block mb-2" role="alert"></span>
         @if (!Model.PreciosPorTamano.Any())
         {
             <p class="text-muted">No hay tamaños activos registrados todavía. Cree al menos un tamaño primero.</p>
@@ -64,9 +65,12 @@
                     <input asp-for="PreciosPorTamano[i].Incluir" class="form-check-input" />
                     <label asp-for="PreciosPorTamano[i].Incluir" class="form-check-label">@Model.PreciosPorTamano[i].NombreTamano@(Model.PreciosPorTamano[i].TamanoActivo ? "" : " (inactivo)")</label>
                 </div>
-                <div class="input-group campo-monto">
-                    <span class="input-group-text" aria-hidden="true">₡</span>
-                    <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" step="1" inputmode="numeric" aria-label="Precio del tamaño @Model.PreciosPorTamano[i].NombreTamano" />
+                <div class="precio-tamano-campo">
+                    <div class="input-group campo-monto">
+                        <span class="input-group-text" aria-hidden="true">₡</span>
+                        <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" step="1" inputmode="numeric" aria-label="Precio del tamaño @Model.PreciosPorTamano[i].NombreTamano" />
+                    </div>
+                    <span asp-validation-for="PreciosPorTamano[i].Monto" class="text-danger small d-block" role="alert"></span>
                 </div>
             </div>
         }

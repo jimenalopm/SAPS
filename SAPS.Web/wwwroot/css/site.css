@@ -646,3 +646,8 @@ body { margin-bottom: 0; }
 .form-control, .form-select, .btn { transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease, color .15s ease; }
 @media (prefers-reduced-motion: reduce) { .form-control, .form-select, .btn { transition: none; } }
 @media (max-width: 575.98px) { .paso + .paso::before { width: 12px; } }
+
+/* El mensaje de precio se mantiene debajo del monto de su tamaño. */
+.precio-tamano-campo { flex: 0 1 260px; min-width: 0; }
+.precio-tamano-campo .campo-monto { max-width: none; }
+@media (max-width: 575.98px) { .precio-tamano-campo { flex: 1 1 100%; } }
