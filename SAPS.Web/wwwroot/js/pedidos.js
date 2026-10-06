@@ -5,7 +5,7 @@
     if (!app) return;
     const moneda = valor => '₡' + BigInt(valor).toLocaleString('es-CR');
     let catalogo = [], carrito = [], colaborador = null, busqueda = 0;
-    let enviando = false, pendiente = null, cargandoCatalogo = false;
+    let enviando = false, pendiente = null, cargandoCatalogo = false, confirmando = false;
     let token = crypto.randomUUID();
     const mensaje = (texto, tipo = 'danger', enfocar = true) => {
         const caja = byId('mensaje-pedido');
@@ -35,10 +35,10 @@
     }
     function bloquear() {
         // Ante una respuesta incierta se permite reintentar exactamente el mismo pedido.
-        app.querySelectorAll('input:not([type=hidden]), select, textarea, button').forEach(c => c.disabled = enviando || !!pendiente);
-        byId('registrar-pedido').disabled = enviando || cargandoCatalogo || (!pendiente && (!colaborador || !carrito.length || !byId('tipo-comida').value || [...app.querySelectorAll('.cantidad-pedido')].some(c => !cantidadValida(c.value))));
+        app.querySelectorAll('input:not([type=hidden]), select, textarea, button').forEach(c => c.disabled = enviando || confirmando || !!pendiente);
+        byId('registrar-pedido').disabled = enviando || confirmando || cargandoCatalogo || (!pendiente && (!colaborador || !carrito.length || !byId('tipo-comida').value || [...app.querySelectorAll('.cantidad-pedido')].some(c => !cantidadValida(c.value))));
         byId('registrar-pedido').textContent = enviando ? 'Registrando…' : pendiente ? 'Reintentar registro' : 'Registrar pedido';
-        if (!enviando && !pendiente) { byId('agregar').disabled = cargandoCatalogo || !catalogo.length; byId('actualizar-catalogo').disabled = cargandoCatalogo; }
+        if (!enviando && !confirmando && !pendiente) { byId('agregar').disabled = cargandoCatalogo || !catalogo.length; byId('actualizar-catalogo').disabled = cargandoCatalogo; }
     }
     function pintar() {
         const cuerpo = byId('lineas-pedido');
@@ -160,7 +160,32 @@
     byId('tipo-comida').addEventListener('change', bloquear);
     byId('actualizar-catalogo').addEventListener('click', () => cargarCatalogo(true));
     byId('descartar-pedido').addEventListener('click', () => { reiniciar(); mensaje('Pedido descartado. No se guardó ninguna compra.', 'info'); });
-    byId('registrar-pedido').addEventListener('click', async () => {
+    const modalRegistro = new bootstrap.Modal(byId('confirmar-registro-pedido'));
+    const modalExito = new bootstrap.Modal(byId('pedido-registrado'));
+    byId('pedido-registrado').addEventListener('hidden.bs.modal', () => byId('codigo-colaborador').focus());
+    byId('confirmar-registro-pedido').addEventListener('hidden.bs.modal', () => {
+        confirmando = false;
+        bloquear();
+        if (!enviando) byId('registrar-pedido').focus();
+    });
+    byId('registrar-pedido').addEventListener('click', () => {
+        if (enviando || confirmando || byId('registrar-pedido').disabled) return;
+        byId('confirmar-colaborador').textContent = colaborador.nombre + ' (' + colaborador.codigo + ')';
+        byId('confirmar-total').textContent = byId('total-pedido').textContent;
+        byId('aceptar-registro-pedido').disabled = false;
+        byId('aceptar-registro-pedido').textContent = pendiente ? 'Sí, reintentar registro' : 'Sí, registrar pedido';
+        confirmando = true;
+        bloquear();
+        modalRegistro.show();
+    });
+    byId('aceptar-registro-pedido').addEventListener('click', () => {
+        if (!confirmando || enviando || byId('aceptar-registro-pedido').disabled) return;
+        byId('aceptar-registro-pedido').disabled = true;
+        // Esperar el cierre evita superponer las ventanas si el registro responde rápidamente.
+        byId('confirmar-registro-pedido').addEventListener('hidden.bs.modal', registrarPedido, { once: true });
+        modalRegistro.hide();
+    });
+    async function registrarPedido() {
         if (enviando || cargandoCatalogo || [...app.querySelectorAll('.cantidad-pedido')].some(c => !cantidadValida(c.value))) return;
         if (!pendiente) {
             if (!colaborador || !carrito.length || !byId('tipo-comida').value) return;
@@ -176,12 +201,15 @@
                 method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': app.querySelector('input[name="__RequestVerificationToken"]').value },
                 body: JSON.stringify(pendiente)
             });
-            reiniciar(); mensaje('Pedido #' + resultado.idPedido + ' registrado correctamente. Total: ' + moneda(resultado.total) + '.', 'success');
+            reiniciar();
+            byId('numero-pedido-registrado').textContent = '#' + resultado.idPedido;
+            byId('total-pedido-registrado').textContent = moneda(resultado.total);
+            modalExito.show();
         } catch (error) {
             if (error.estado === 400) pendiente = null;
             mensaje(error.message + (pendiente ? ' Use “Reintentar registro” para comprobar o completar este mismo pedido sin duplicarlo.' : ''));
         } finally { enviando = false; bloquear(); }
-    });
+    }
     // No se usan cookies ni almacenamiento del navegador para conservar borradores.
     // Impide recuperar un pedido sin registrar al volver atrás después de cerrar sesión.
     window.addEventListener('pagehide', reiniciar);

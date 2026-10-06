@@ -90,12 +90,53 @@
                         <button id="registrar-pedido" class="btn btn-recyplast btn-lg" type="button" disabled>Registrar pedido</button>
                         <button id="descartar-pedido" class="btn btn-recyplast-outline btn-lg" type="button">Descartar pedido</button>
                     </div>
-                    <p class="texto-suave small mt-3 mb-0">El pedido se guarda solamente al pulsar “Registrar pedido”. Si cierra sesión o recarga antes de registrarlo, se descarta.</p>
+                    <p class="texto-suave small mt-3 mb-0">El pedido se guarda solamente después de confirmar el registro. Si cierra sesión o recarga antes de registrarlo, se descarta.</p>
                 </div>
             </section>
         </div>
     </fieldset>
 </div>
+<div class="modal fade" id="confirmar-registro-pedido" tabindex="-1" aria-labelledby="titulo-confirmar-registro" aria-describedby="texto-confirmar-registro" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="titulo-confirmar-registro">Confirmar registro del pedido</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cancelar registro"></button>
+            </div>
+            <div class="modal-body">
+                <p id="texto-confirmar-registro">¿Está segura de que desea registrar este pedido?</p>
+                <p class="mb-1">Colaborador: <strong id="confirmar-colaborador"></strong></p>
+                <p class="mb-0">Total: <strong id="confirmar-total"></strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-recyplast-outline" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-recyplast" id="aceptar-registro-pedido">Sí, registrar pedido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pedido-registrado" tabindex="-1" aria-labelledby="titulo-pedido-registrado" aria-describedby="detalle-pedido-registrado" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Cerrar mensaje de registro"></button>
+            </div>
+            <div class="modal-body text-center px-4 pb-4">
+                <h2 id="titulo-pedido-registrado" class="fs-2 fw-bold text-success mb-4">¡Pedido registrado correctamente!</h2>
+                <div id="detalle-pedido-registrado">
+                    <p class="fs-4 mb-3">Número de pedido: <strong id="numero-pedido-registrado"></strong></p>
+                    <p class="fs-3 mb-3">Total: <strong id="total-pedido-registrado"></strong></p>
+                    <p class="fs-5 texto-suave mb-0">El pedido se guardó correctamente. Ya puede preparar otro pedido.</p>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-recyplast btn-lg px-5" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="~/js/pedidos.js" asp-append-version="true"></script>
     <script src="~/js/pedidos-pasos.js" asp-append-version="true"></script>
