@@ -54,7 +54,6 @@ public sealed class HU008_PedidoTests : IDisposable
         _conexion = TestServices.AbrirConexionSqlite();
         _db = TestServices.CrearContextoSqlite(_conexion);
 
-        _colaboradores.SetupGet(c => c.EsPrueba).Returns(true);
         _colaboradores.Setup(c => c.BuscarAsync("DEMO001", It.IsAny<CancellationToken>()))
                       .ReturnsAsync(new Colaborador("DEMO001", "Ana Solís (prueba)", true, "/img.png", "left"));
         _colaboradores.Setup(c => c.BuscarAsync("DEMO003", It.IsAny<CancellationToken>()))
@@ -97,7 +96,7 @@ public sealed class HU008_PedidoTests : IDisposable
 
     private async Task<string> MensajeDeErrorAsync(RegistrarPedidoRequest solicitud, string usuario = UsuarioOperadora)
     {
-        var ex = await Assert.ThrowsAsync<PedidoInvalidoException>(() => _servicio.RegistrarAsync(solicitud, usuario));
+        var ex = await Assert.ThrowsAnyAsync<PedidoInvalidoException>(() => _servicio.RegistrarAsync(solicitud, usuario));
         return ex.Message;
     }
 
@@ -116,11 +115,11 @@ public sealed class HU008_PedidoTests : IDisposable
     [Theory]
     [InlineData(null, "Ingrese el código")]
     [InlineData("   ", "Ingrese el código")]
-    [InlineData("DEMO999", "No se encontró")]
+    [InlineData("DEMO999", "no encontrado")]
     [InlineData("DEMO003", "inactivo")]
     public async Task BuscarColaborador_CodigoInvalidoInexistenteOInactivo_EsRechazado(string? codigo, string mensaje)
     {
-        var ex = await Assert.ThrowsAsync<PedidoInvalidoException>(() => _servicio.BuscarColaboradorAsync(codigo));
+        var ex = await Assert.ThrowsAnyAsync<PedidoInvalidoException>(() => _servicio.BuscarColaboradorAsync(codigo));
 
         Assert.Contains(mensaje, ex.Message);
     }
@@ -131,26 +130,6 @@ public sealed class HU008_PedidoTests : IDisposable
         var ex = await Assert.ThrowsAsync<PedidoInvalidoException>(() => _servicio.BuscarColaboradorAsync(new string('A', 51)));
 
         Assert.Contains("demasiado largo", ex.Message);
-    }
-
-    [Fact]
-    public async Task ColaboradoresDePrueba_BuscaSinDistinguirMayusculasNiEspacios()
-    {
-        var fuente = new ColaboradoresDePrueba();
-
-        var colaborador = await fuente.BuscarAsync("  demo002 ");
-
-        Assert.True(fuente.EsPrueba);
-        Assert.Equal("DEMO002", colaborador!.Codigo);
-    }
-
-    [Fact]
-    public async Task ColaboradoresSinConexion_FueraDeDesarrollo_NoPermiteBuscar()
-    {
-        var fuente = new ColaboradoresSinConexion();
-
-        Assert.False(fuente.EsPrueba);
-        await Assert.ThrowsAsync<PedidoInvalidoException>(() => fuente.BuscarAsync("DEMO001"));
     }
 
     // ================= Catálogo disponible para vender =================
@@ -447,7 +426,7 @@ public sealed class HU008_PedidoTests : IDisposable
 
     private PedidosController Controlador(string? usuarioId = UsuarioOperadora)
     {
-        var controlador = new PedidosController(_servicio, _colaboradores.Object, NullLogger<PedidosController>.Instance);
+        var controlador = new PedidosController(_servicio, new EntornoPrueba(true), NullLogger<PedidosController>.Instance);
         var identidad = usuarioId is null
             ? new ClaimsIdentity()
             : new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, usuarioId)], "Identity.Application");

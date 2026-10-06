@@ -15,7 +15,7 @@ La persona que atiende y la persona que compra son distintas:
 
 También puede entrar la cuenta de desarrollo ADM001. Los roles existentes Soda, Usuario y Administrador tienen acceso a pedidos. RecursosHumanos y las cuentas sin rol no lo tienen. Soda no puede modificar el catálogo. Se conservan los nombres actuales de los roles; no se reorganiza HU-003.
 
-Los nombres y fotos no pertenecen a colaboradores reales. Los pedidos creados con esta fuente llevan `EsPrueba = true`. La fuente ficticia solamente se registra en el entorno Development; fuera de él, el sistema informa que falta configurar la consulta corporativa y no admite estos colaboradores.
+Los colaboradores DEMO no son reales. Viven en `rrhh.tb_Colaborador` como cualquier otro, pero solo los inserta el sembrado de prueba (Development contra un servidor local); en la base real no existen. Los pedidos a su nombre llevan `EsPrueba = true`.
 
 ## Alcance y dependencias
 
@@ -28,7 +28,7 @@ Los nombres y fotos no pertenecen a colaboradores reales. Los pedidos creados co
 - No se aplica impuesto.
 - Se incorpora el botón mínimo **Registrar pedido** autorizado para HU-008. No se añade la pantalla separada de confirmación de HU-009.
 - No envía comprobantes, exporta planillas ni anula órdenes: esas historias están fuera del alcance.
-- La integración con la empresa sigue pendiente de acceso a sus datos. `IColaboradores` permite sustituir la fuente ficticia sin rehacer la pantalla ni el servicio de pedidos.
+- Los colaboradores salen de la tabla `rrhh.tb_Colaborador` (RNF-006), que RH mantendrá desde SAPS. La búsqueda normaliza el código a 10 dígitos (`842` → `0000000842`) y distingue tres resultados: no encontrado, inactivo (`EstaActivo = 0`, no se permite registrar) y activo. Sin foto (`RutaFoto` vacía) la pantalla muestra las iniciales.
 
 ## Qué se guarda y cuándo
 
@@ -125,7 +125,7 @@ Si no hay opciones para comprar, revisar con ADM001 que existan productos activo
 
 | To-do | Resultado local |
 |---|---|
-| 1. Revisar e integrar dependencias | Implementado para el sprint con proveedor ficticio; conexión corporativa futura pendiente. |
+| 1. Revisar e integrar dependencias | Implementado: colaboradores desde `rrhh.tb_Colaborador`. |
 | 2. Buscar colaborador por código | Implementado y probado. |
 | 3. Mostrar código, nombre y foto | Implementado y probado en navegador. |
 | 4. Seleccionar productos y bebidas | Implementado y probado. |
@@ -143,7 +143,7 @@ Los cambios de HU-008 están en los archivos locales, todavía sin un commit pro
 ## Mapa del código para estudiar
 
 - `Controllers/PedidosController.cs`: recibe solicitudes de la pantalla, exige rol y devuelve resultados o errores.
-- `Services/Pedidos/Colaboradores.cs`: contrato de búsqueda y colaboradores ficticios de desarrollo.
+- `Services/Pedidos/Colaboradores.cs`: contrato de búsqueda, consulta a `rrhh.tb_Colaborador` y normalización del código.
 - `Services/Pedidos/ServicioPedidos.cs`: reglas del catálogo, validaciones, precios, transacción y registro.
 - `Models/Pedidos/`: datos que recibe el servidor y entidades de las nuevas tablas.
 - `Data/PedidoConfiguration.cs`: relaciones y reglas de SQL Server para esas entidades.

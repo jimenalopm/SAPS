@@ -1,5 +1,7 @@
 // Data/SembradoPrueba.cs
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using SAPS.Web.Models.Rrhh;
 
 namespace SAPS.Web.Data;
 
@@ -11,6 +13,24 @@ namespace SAPS.Web.Data;
 public static class SembradoPrueba
 {
     private static readonly string[] ServidoresLocales = ["localhost", "127.0.0.1", "::1", ".", "(local)", "(localdb)"];
+
+    private static readonly ColaboradorRrhh[] ColaboradoresDemo =
+    [
+        new() { Codigo = "DEMO001", NombreCompleto = "Ana Solís (prueba)" },
+        new() { Codigo = "DEMO002", NombreCompleto = "Luis Mora (prueba)" },
+        new() { Codigo = "DEMO003", NombreCompleto = "Colaborador inactivo (prueba)", EstaActivo = false }
+    ];
+
+    /// <summary>Inserta los DEMO que falten. Llamar solo cuando <see cref="Permitido"/> sea true.</summary>
+    public static async Task SembrarColaboradoresAsync(ApplicationDbContext db)
+    {
+        var existentes = await db.Colaboradores.Where(c => c.Codigo.StartsWith("DEMO")).Select(c => c.Codigo).ToListAsync();
+        var faltantes = ColaboradoresDemo.Where(d => !existentes.Contains(d.Codigo)).ToList();
+        if (faltantes.Count == 0) return;
+        foreach (var d in faltantes)
+            db.Colaboradores.Add(new ColaboradorRrhh { Codigo = d.Codigo, NombreCompleto = d.NombreCompleto, EstaActivo = d.EstaActivo, FechaRegistro = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+    }
 
     public static bool Permitido(IHostEnvironment entorno, string? cadenaConexion) =>
         entorno.IsDevelopment() && EsServidorLocal(cadenaConexion);
