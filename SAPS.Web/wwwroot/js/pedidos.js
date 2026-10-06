@@ -167,7 +167,34 @@
     });
     byId('tipo-comida').addEventListener('change', bloquear);
     byId('actualizar-catalogo').addEventListener('click', () => cargarCatalogo(true));
-    byId('descartar-pedido').addEventListener('click', () => { reiniciar(); mensaje('Pedido descartado. No se guardó ninguna compra.', 'info'); });
+    const modalDescarte = new bootstrap.Modal(byId('confirmar-descarte-pedido'));
+    const modalDescartado = new bootstrap.Modal(byId('pedido-descartado'));
+    let descarteAceptado = false;
+    byId('confirmar-descarte-pedido').addEventListener('hidden.bs.modal', () => {
+        confirmando = false;
+        bloquear();
+        if (descarteAceptado) {
+            descarteAceptado = false;
+            modalDescartado.show();
+        } else byId('descartar-pedido').focus();
+    });
+    byId('pedido-descartado').addEventListener('hidden.bs.modal', () => byId('codigo-colaborador').focus());
+    byId('descartar-pedido').addEventListener('click', () => {
+        if (enviando || pendiente || confirmando) return;
+        confirmando = true;
+        descarteAceptado = false;
+        byId('aceptar-descarte-pedido').disabled = false;
+        bloquear();
+        modalDescarte.show();
+    });
+    byId('aceptar-descarte-pedido').addEventListener('click', () => {
+        if (!confirmando || enviando || pendiente || descarteAceptado) return;
+        descarteAceptado = true;
+        byId('aceptar-descarte-pedido').disabled = true;
+        reiniciar();
+        limpiarMensaje();
+        modalDescarte.hide();
+    });
     const modalRegistro = new bootstrap.Modal(byId('confirmar-registro-pedido'));
     const modalExito = new bootstrap.Modal(byId('pedido-registrado'));
     byId('pedido-registrado').addEventListener('hidden.bs.modal', () => byId('codigo-colaborador').focus());

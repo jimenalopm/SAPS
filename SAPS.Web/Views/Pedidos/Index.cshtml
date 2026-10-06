@@ -137,6 +137,41 @@
     </div>
 </div>
 
+<div class="modal fade" id="confirmar-descarte-pedido" tabindex="-1" aria-labelledby="titulo-confirmar-descarte" aria-describedby="texto-confirmar-descarte" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="titulo-confirmar-descarte">Descartar pedido</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cancelar descarte"></button>
+            </div>
+            <div class="modal-body">
+                <p id="texto-confirmar-descarte" class="fs-5">¿Está segura de que desea descartar este pedido?</p>
+                <p class="mb-0">Se borrarán los artículos y los datos del pedido pendiente. No se guardará ninguna compra.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-recyplast-outline" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="aceptar-descarte-pedido">Sí, descartar pedido</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="pedido-descartado" tabindex="-1" aria-labelledby="titulo-pedido-descartado" aria-describedby="texto-pedido-descartado" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Cerrar mensaje de descarte"></button>
+            </div>
+            <div class="modal-body text-center px-4 pb-4">
+                <h2 id="titulo-pedido-descartado" class="fs-2 fw-bold mb-4">Pedido descartado</h2>
+                <p id="texto-pedido-descartado" class="fs-5 mb-0">No se guardó ninguna compra. Ya puede preparar otro pedido.</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-recyplast btn-lg px-5" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="~/js/pedidos.js" asp-append-version="true"></script>
     <script src="~/js/pedidos-pasos.js" asp-append-version="true"></script>
