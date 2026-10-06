@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="SAPS.FunctionalTests/SAPS.FunctionalTests.csproj" />
   <Project Path="SAPS.Tests/SAPS.Tests.csproj" />
   <Project Path="SAPS.Web/SAPS.Web.csproj" />
 </Solution>
