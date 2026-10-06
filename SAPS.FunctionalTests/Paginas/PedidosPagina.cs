@@ -24,7 +24,7 @@ public sealed class PedidosPagina(IWebDriver driver, WebDriverWait espera)
         var campo = driver.FindElement(By.Id("codigo-colaborador"));
         campo.Clear();
         campo.SendKeys(codigo);
-        driver.FindElement(By.CssSelector("#buscar-colaborador button[type='submit']")).Click();
+        driver.FindElement(By.CssSelector("#buscar-colaborador button[type='submit']")).ClicSeguro();
         espera.Until(d => ColaboradorIdentificado || HayMensaje);
     }
 
@@ -68,7 +68,7 @@ public sealed class PedidosPagina(IWebDriver driver, WebDriverWait espera)
         var campoCantidad = driver.FindElement(By.Id("cantidad"));
         campoCantidad.Clear();
         campoCantidad.SendKeys(cantidad.ToString());
-        driver.FindElement(By.Id("agregar")).Click();
+        driver.FindElement(By.Id("agregar")).ClicSeguro();
         espera.Until(d => d.FindElements(By.CssSelector("#lineas-pedido tr")).Count > 0);
     }
 
@@ -80,7 +80,7 @@ public sealed class PedidosPagina(IWebDriver driver, WebDriverWait espera)
         var campoCantidad = driver.FindElement(By.Id("cantidad"));
         campoCantidad.Clear();
         campoCantidad.SendKeys(cantidad.ToString());
-        driver.FindElement(By.Id("agregar")).Click();
+        driver.FindElement(By.Id("agregar")).ClicSeguro();
         espera.Until(d => d.FindElements(By.CssSelector("#lineas-pedido tr")).Count > 0);
     }
 
@@ -93,7 +93,7 @@ public sealed class PedidosPagina(IWebDriver driver, WebDriverWait espera)
     public void QuitarLinea(int indice)
     {
         var antes = driver.FindElements(By.CssSelector("#lineas-pedido tr")).Count;
-        driver.FindElements(By.CssSelector("#lineas-pedido tr"))[indice].FindElement(By.CssSelector("button")).Click();
+        driver.FindElements(By.CssSelector("#lineas-pedido tr"))[indice].FindElement(By.CssSelector("button")).ClicSeguro();
         espera.Until(d => d.FindElements(By.CssSelector("#lineas-pedido tr")).Count == antes - 1);
     }
 
@@ -114,11 +114,11 @@ public sealed class PedidosPagina(IWebDriver driver, WebDriverWait espera)
     /// <summary>Pulsa "Registrar pedido", confirma en la ventana y devuelve el número y total que muestra la app.</summary>
     public (string NumeroPedido, string Total) RegistrarYConfirmar()
     {
-        driver.FindElement(By.Id("registrar-pedido")).Click();
+        driver.FindElement(By.Id("registrar-pedido")).ClicSeguro();
         espera.Until(d => d.FindElement(By.Id("aceptar-registro-pedido")).Displayed);
         // La ventana de confirmación se anima: se espera a que el botón esté clicable.
         espera.Until(d => d.FindElement(By.Id("aceptar-registro-pedido")).Enabled);
-        driver.FindElement(By.Id("aceptar-registro-pedido")).Click();
+        driver.FindElement(By.Id("aceptar-registro-pedido")).ClicSeguro();
         espera.Until(d => d.FindElement(By.Id("numero-pedido-registrado")).Text.Trim().Length > 0);
         return (driver.FindElement(By.Id("numero-pedido-registrado")).Text.Trim(),
                 driver.FindElement(By.Id("total-pedido-registrado")).Text.Trim());
@@ -127,7 +127,7 @@ public sealed class PedidosPagina(IWebDriver driver, WebDriverWait espera)
     /// <summary>Cierra la ventana "Pedido registrado correctamente".</summary>
     public void CerrarMensajeExito()
     {
-        driver.FindElement(By.CssSelector("#pedido-registrado .btn-recyplast")).Click();
+        driver.FindElement(By.CssSelector("#pedido-registrado .btn-recyplast")).ClicSeguro();
         espera.Until(d => !d.FindElement(By.Id("pedido-registrado")).Displayed);
     }
 }

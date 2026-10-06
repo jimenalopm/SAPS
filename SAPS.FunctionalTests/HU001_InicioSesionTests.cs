@@ -72,7 +72,7 @@ public class HU001_InicioSesionTests(ITestOutputHelper salida) : PruebaBase("HU0
         Espera.Until(d => d.FindElements(By.Id("login-submit")).Count > 0);
 
         // Se envía el formulario sin escribir nada.
-        Driver.FindElement(By.Id("login-submit")).Click();
+        Driver.FindElement(By.Id("login-submit")).ClicSeguro();
 
         // Aparecen mensajes de validación junto a los campos y la usuaria sigue sin sesión.
         Espera.Until(d => d.FindElements(By.CssSelector("form#account .text-danger")).Any(e => e.Text.Trim().Length > 0));

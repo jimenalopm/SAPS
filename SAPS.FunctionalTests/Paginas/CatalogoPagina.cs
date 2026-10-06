@@ -42,6 +42,18 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
         Filas().FirstOrDefault(f => f.FindElement(By.CssSelector("td.celda-principal")).Text.Trim()
             .StartsWith(nombre, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// ¿Existe un producto con ese nombre, ya sea activo o inactivo? La app separa ambas listas
+    /// (sin filtro = solo activos; "Mostrar inactivos" = solo inactivos), así que hay que mirar las dos.
+    /// </summary>
+    public bool ExisteProducto(string nombre)
+    {
+        AbrirProductos(nombre);
+        if (FilaProducto(nombre) is not null) return true;
+        AbrirProductos(nombre, inactivos: true);
+        return FilaProducto(nombre) is not null;
+    }
+
     /// <summary>Precios mostrados en la fila: uno por línea (un precio único, o uno por tamaño).</summary>
     public static List<string> PreciosDeFila(IWebElement fila) =>
         fila.FindElements(By.CssSelector("td[data-label='Precio(s)'] strong")).Select(e => e.Text.Trim()).ToList();
@@ -70,10 +82,10 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
     /// <summary>
     /// Llena y envía el formulario "Nuevo producto". Con <paramref name="preciosPorTamano"/> marca "Se vende en distintos
     /// tamaños" y asigna, en orden, un precio a cada tamaño activo; si no, usa el precio único.
-    /// No espera el resultado: la prueba decide qué verificar (éxito o rechazo).
+    /// No espera el resultado: la prueba decide qué verificar (éxito o rechazo). Con enviar = false deja el formulario lleno sin enviarlo.
     /// </summary>
     public void CrearProducto(string nombre, string? precioUnico = null, bool especial = false,
-        IReadOnlyList<int>? preciosPorTamano = null)
+        IReadOnlyList<int>? preciosPorTamano = null, bool enviar = true)
     {
         driver.Navigate().GoToUrl($"{Base}/Administracion/CrearProducto");
         espera.Until(d => d.FindElements(By.Id("NombreProducto")).Count > 0);
@@ -83,7 +95,7 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
         var categoria = new SelectElement(driver.FindElement(By.Id("IdCategoria")));
         categoria.SelectByIndex(1);
 
-        if (especial) driver.FindElement(By.Id("EsEspecial")).Click();
+        if (especial) driver.FindElement(By.Id("EsEspecial")).ClicSeguro();
 
         if (preciosPorTamano is null)
         {
@@ -93,17 +105,17 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
         }
         else
         {
-            driver.FindElement(By.Id("requiereTamano")).Click();
+            driver.FindElement(By.Id("requiereTamano")).ClicSeguro();
             var filas = driver.FindElements(By.CssSelector(".precio-tamano-fila"));
             for (var i = 0; i < filas.Count && i < preciosPorTamano.Count; i++)
             {
-                filas[i].FindElement(By.CssSelector("input[type='checkbox']")).Click();
+                filas[i].FindElement(By.CssSelector("input[type='checkbox']")).ClicSeguro();
                 var monto = filas[i].FindElement(By.CssSelector("input[name$='.Monto']"));
                 monto.Clear();
                 monto.SendKeys(preciosPorTamano[i].ToString());
             }
         }
-        driver.FindElement(By.CssSelector("form.form-card button[type='submit']")).Click();
+        if (enviar) driver.FindElement(By.CssSelector("form.form-card button[type='submit']")).ClicSeguro();
     }
 
     /// <summary>Nombres de los tamaños activos que ofrece el formulario de producto.</summary>
@@ -111,6 +123,10 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
     {
         driver.Navigate().GoToUrl($"{Base}/Administracion/CrearProducto");
         espera.Until(d => d.FindElements(By.Id("NombreProducto")).Count > 0);
+        // El bloque de tamaños está OCULTO hasta marcar "Se vende en distintos tamaños"; Selenium devuelve "" para
+        // el texto de lo oculto. Se marca la casilla para mostrarlo (no se guarda nada: no se envía el formulario).
+        driver.FindElement(By.Id("requiereTamano")).ClicSeguro();
+        espera.Until(d => d.FindElement(By.Id("bloquePreciosPorTamano")).Displayed);
         return driver.FindElements(By.CssSelector(".precio-tamano-fila .form-check-label")).Select(e => e.Text.Trim()).ToList();
     }
 
@@ -121,26 +137,30 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
     {
         AbrirProductos(nombre);
         var fila = FilaProducto(nombre) ?? throw new NoSuchElementException($"No se encontró el producto {nombre} en el catálogo.");
-        fila.FindElement(By.LinkText("Editar")).Click();
+        fila.FindElement(By.LinkText("Editar")).ClicSeguro();
         espera.Until(d => d.FindElements(By.Id("PrecioUnico")).Count > 0);
         var campo = driver.FindElement(By.Id("PrecioUnico"));
         campo.Clear();
         campo.SendKeys(nuevoPrecio);
-        driver.FindElement(By.CssSelector("form.form-card button[type='submit']")).Click();
+        driver.FindElement(By.CssSelector("form.form-card button[type='submit']")).ClicSeguro();
     }
 
-    /// <summary>Pulsa "Desactivar" en la fila del producto y acepta la ventana de confirmación.</summary>
+    /// <summary>
+    /// Pulsa "Desactivar" en la fila del producto y acepta la ventana de confirmación.
+    /// OJO: en la app, "Mostrar inactivos" (prodInc=true) muestra SOLO los inactivos, no activos + inactivos;
+    /// por eso un producto activo se busca SIN ese filtro.
+    /// </summary>
     public void Desactivar(string nombre)
     {
-        AbrirProductos(nombre, inactivos: true);
+        AbrirProductos(nombre);
         var fila = FilaProducto(nombre) ?? throw new NoSuchElementException($"No se encontró el producto {nombre} en el catálogo.");
-        fila.FindElement(By.XPath(".//button[normalize-space()='Desactivar']")).Click();
+        fila.FindElement(By.XPath(".//button[normalize-space()='Desactivar']")).ClicSeguro();
         var aceptar = espera.Until(d =>
         {
             var b = d.FindElement(By.Id("modalConfirmarAceptar"));
             return b.Displayed && b.Enabled ? b : null;
         });
-        aceptar.Click();
+        aceptar.ClicSeguro();
         espera.Until(d => d.FindElements(By.CssSelector(".alert-recyplast")).Any(a => a.Text.Contains("desactivado")));
     }
 
@@ -152,10 +172,8 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
     {
         try
         {
-            AbrirProductos(nombre, inactivos: true);
-            var fila = FilaProducto(nombre);
-            if (fila is not null && EstadoDeFila(fila).Contains("Activo") && !EstadoDeFila(fila).Contains("Inactivo"))
-                Desactivar(nombre);
+            AbrirProductos(nombre);               // lista de ACTIVOS (ver nota en Desactivar)
+            if (FilaProducto(nombre) is not null) Desactivar(nombre);
         }
         catch { /* mejor esfuerzo; Sql/limpieza_pruebas.sql borra lo que quede */ }
     }

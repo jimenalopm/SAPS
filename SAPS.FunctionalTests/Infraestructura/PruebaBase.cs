@@ -70,8 +70,8 @@ public abstract class PruebaBase : IDisposable
         Espera.Until(d => d.FindElements(By.Id("Input_CodigoEmpleado")).Count > 0);
         Driver.FindElement(By.Id("Input_CodigoEmpleado")).SendKeys(correo);
         Driver.FindElement(By.Id("Input_Password")).SendKeys(clave);
-        if (recordar) Driver.FindElement(By.Id("Input_RememberMe")).Click();
-        Driver.FindElement(By.Id("login-submit")).Click();
+        if (recordar) Driver.FindElement(By.Id("Input_RememberMe")).ClicSeguro();
+        Driver.FindElement(By.Id("login-submit")).ClicSeguro();
     }
 
     /// <summary>Descarta la sesión actual (borra cookies) y entra con otro rol; sirve para verificar lo mismo desde otro perfil.</summary>
@@ -84,7 +84,7 @@ public abstract class PruebaBase : IDisposable
     /// <summary>Usa el botón "Cerrar sesión" del encabezado, como lo haría la usuaria.</summary>
     protected void CerrarSesion()
     {
-        Driver.FindElement(By.CssSelector(".btn-cerrar-sesion")).Click();
+        Driver.FindElement(By.CssSelector(".btn-cerrar-sesion")).ClicSeguro();
         Espera.Until(d => d.Url.Contains("/Account/Login", StringComparison.OrdinalIgnoreCase)
                           || d.Url.Contains("/Account/Logout", StringComparison.OrdinalIgnoreCase));
     }

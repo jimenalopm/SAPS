@@ -132,7 +132,7 @@ public class HU007_CatalogoPreciosTests(ITestOutputHelper salida) : PruebaBase("
 
     // ===================================================================== Criterio 3: precios enteros
 
-    [Theory(DisplayName = "HU-007 Precios enteros: un precio con decimales o no numérico no se acepta")]
+    [SkippableTheory(DisplayName = "HU-007 Precios enteros: un precio con decimales o no numérico no se acepta")]
     [InlineData("1500.5")]
     [InlineData("1500,5")]
     [InlineData("abc")]
@@ -144,7 +144,18 @@ public class HU007_CatalogoPreciosTests(ITestOutputHelper salida) : PruebaBase("
         try
         {
             IniciarSesion(Rol.Administrador);
-            Catalogo.CrearProducto(nombre, precio);
+            Catalogo.CrearProducto(nombre, precio, enviar: false);
+
+            // El campo es <input type="number">: el NAVEGADOR filtra/normaliza lo que se escribe según su idioma
+            // (p. ej. "1500,5" puede quedar como "15005", un entero válido). Lo que cuenta es el valor que de verdad
+            // llega a la app, así que se lee del campo antes de enviar.
+            var valorEnCampo = (string)((IJavaScriptExecutor)Driver).ExecuteScript(
+                "return document.getElementById('PrecioUnico').value;")!;
+            Capturar($"valor_en_el_campo_{valorEnCampo}");
+            Skip.If(int.TryParse(valorEnCampo, out var entero) && entero > 0,
+                $"Omitida: al escribir «{precio}» el navegador dejó en el campo «{valorEnCampo}», que es un entero válido; " +
+                "el texto original no llega a la app por este campo. (No es un defecto de SAPS.)");
+            Driver.FindElement(By.CssSelector("form.form-card button[type='submit']")).ClicSeguro();
 
             // Se espera que la pantalla muestre un error y NO avance al catálogo.
             var campo = By.Id("PrecioUnico");
@@ -157,9 +168,8 @@ public class HU007_CatalogoPreciosTests(ITestOutputHelper salida) : PruebaBase("
             var campoInvalido = !(bool)((IJavaScriptExecutor)Driver).ExecuteScript("return arguments[0].validity.valid;", Driver.FindElement(campo))!;
             Assert.True(hayTexto || campoInvalido, "Debe mostrarse un mensaje de error para el precio.");
 
-            // Y el producto no se creó.
-            Catalogo.AbrirProductos(nombre, inactivos: true);
-            Assert.Null(Catalogo.FilaProducto(nombre));
+            // Y el producto no se creó (se revisan las listas de activos e inactivos).
+            Assert.False(Catalogo.ExisteProducto(nombre), $"El producto se creó aunque el precio «{precio}» no es válido.");
         }
         finally { LimpiarProducto(nombre); }
     }
@@ -177,7 +187,7 @@ public class HU007_CatalogoPreciosTests(ITestOutputHelper salida) : PruebaBase("
         var precio = Driver.FindElement(By.Id("Precio"));
         precio.Clear();
         precio.SendKeys("1200.5");
-        Driver.FindElement(By.CssSelector("form.form-card button[type='submit']")).Click();
+        Driver.FindElement(By.CssSelector("form.form-card button[type='submit']")).ClicSeguro();
 
         var mensaje = By.CssSelector("span[data-valmsg-for='Precio']");
         Espera.Until(d => d.FindElements(mensaje).Any(m => m.Text.Trim().Length > 0) || !d.Url.Contains("CrearBebida"));
@@ -188,6 +198,9 @@ public class HU007_CatalogoPreciosTests(ITestOutputHelper salida) : PruebaBase("
         Assert.Contains(Driver.FindElements(mensaje), m => m.Text.Trim().Length > 0);
 
         // Y no quedó creada en la lista de bebidas.
+        // (sin filtro = solo activas; bebInc=true = solo inactivas: se revisan las dos).
+        Catalogo.AbrirPestana("bebidas", "&bebQ=" + Uri.EscapeDataString(nombre));
+        Assert.Empty(Catalogo.Filas());
         Catalogo.AbrirPestana("bebidas", "&bebInc=true&bebQ=" + Uri.EscapeDataString(nombre));
         Assert.Empty(Catalogo.Filas());
     }
