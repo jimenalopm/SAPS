@@ -1,11 +1,9 @@
 @using SAPS.Web.Services.Pedidos
-@inject IColaboradores Colaboradores
+@inject EntornoPrueba Entorno
 @{
     ViewData["Title"] = "Recursos Humanos";
 
-    // Estado real de la única fuente de colaboradores que existe en el sistema (solo lectura).
-    var esPrueba = Colaboradores.EsPrueba;
-    var sinConexion = Colaboradores is ColaboradoresSinConexion;
+    var esPrueba = Entorno.Activo;
     var veCatalogo = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos");
     var vePedidos = User.IsInRole("Administrador") || User.IsInRole("Soda");
 }
@@ -41,33 +39,25 @@
                 <div>
                     <dt>Estado</dt>
                     <dd>
-                        @if (sinConexion)
+                        @if (esPrueba)
                         {
-                            <span class="badge-recyplast error con-punto">Sin conexión configurada</span>
-                        }
-                        else if (esPrueba)
-                        {
-                            <span class="badge-recyplast azul con-punto">Datos de prueba</span>
+                            <span class="badge-recyplast azul con-punto">Tabla de SAPS + datos de prueba</span>
                         }
                         else
                         {
-                            <span class="badge-recyplast con-punto">Fuente corporativa</span>
+                            <span class="badge-recyplast con-punto">Tabla de SAPS</span>
                         }
                     </dd>
                 </div>
             </dl>
             <p class="texto-suave small">
-                @if (sinConexion)
+                @if (esPrueba)
                 {
-                    <text>La consulta de colaboradores todavía no está configurada. Contacte al administrador del sistema.</text>
-                }
-                else if (esPrueba)
-                {
-                    <text>El entorno usa colaboradores ficticios, solo para desarrollo y pruebas. No son datos reales de la empresa.</text>
+                    <text>Los colaboradores salen de la tabla rrhh.tb_Colaborador. Este entorno de desarrollo agrega colaboradores ficticios (DEMO001 a DEMO003) que no existen en la base real.</text>
                 }
                 else
                 {
-                    <text>La fuente de colaboradores está disponible para consultas por código desde el registro de pedidos.</text>
+                    <text>Los colaboradores salen de la tabla rrhh.tb_Colaborador y se consultan por código desde el registro de pedidos.</text>
                 }
             </p>
 

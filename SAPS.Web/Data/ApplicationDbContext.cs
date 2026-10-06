@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Models.Catalogo;
 using SAPS.Web.Models.Pedidos;
+using SAPS.Web.Models.Rrhh;
 
 namespace SAPS.Web.Data;
 
@@ -24,6 +25,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Precio> Precios => Set<Precio>();
     public DbSet<Bebida> Bebidas => Set<Bebida>();
 
+    public DbSet<ColaboradorRrhh> Colaboradores => Set<ColaboradorRrhh>();
+
     public DbSet<Pedido> Pedidos => Set<Pedido>();
     public DbSet<DetallePedido> DetallesPedido => Set<DetallePedido>();
 
@@ -31,6 +34,21 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(builder);
         builder.ConfigurarPedidos();
+
+        // ---------- rrhh.tb_Colaborador ----------
+        builder.Entity<ColaboradorRrhh>(entity =>
+        {
+            entity.ToTable("tb_Colaborador", EsquemaRrhh);
+            entity.HasKey(e => e.IdColaborador).HasName("PK_Colaborador");
+            entity.Property(e => e.IdColaborador).HasColumnName("idColaborador");
+            entity.Property(e => e.Codigo).HasMaxLength(10).IsUnicode(false).IsRequired();
+            entity.Property(e => e.NombreCompleto).HasMaxLength(100).IsUnicode(false).IsRequired();
+            entity.Property(e => e.EstaActivo).HasDefaultValue(true);
+            entity.Property(e => e.RutaFoto).HasMaxLength(260).IsUnicode(false);
+            entity.Property(e => e.FechaRegistro).HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+            entity.HasIndex(e => e.Codigo).IsUnique().HasDatabaseName("UQ_Colaborador_Codigo");
+        });
 
         // ---------- soda.tb_Categoria ----------
         builder.Entity<Categoria>(entity =>

@@ -22,11 +22,9 @@ builder.Services.AddDefaultIdentity<IdentityUser>(IdentityConfig.Configurar)
 builder.Services.AddScoped<DbInitializer>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ServicioPedidos>();
-// Los datos ficticios nunca se habilitan fuera de Development ni contra una base no local.
-if (sembrarPrueba)
-    builder.Services.AddSingleton<IColaboradores, ColaboradoresDePrueba>();
-else
-    builder.Services.AddSingleton<IColaboradores, ColaboradoresSinConexion>();
+// Los colaboradores salen de rrhh.tb_Colaborador. Los DEMO solo se insertan si sembrarPrueba (ver abajo).
+builder.Services.AddSingleton(new EntornoPrueba(sembrarPrueba));
+builder.Services.AddScoped<IColaboradores, ColaboradoresTabla>();
 builder.Services.AddControllersWithViews(options =>
 {
     // [H9] Mensajes de conversión de datos en español (antes salían en inglés, por ejemplo
@@ -98,6 +96,9 @@ else
     {
         await userManager.AddToRoleAsync(adminUser, "Administrador");
     }
+
+    // Colaboradores ficticios DEMO001-DEMO003: viven en tb_Colaborador, pero solo se insertan aquí.
+    await SembradoPrueba.SembrarColaboradoresAsync(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>());
 }
 
 if (app.Environment.IsDevelopment())

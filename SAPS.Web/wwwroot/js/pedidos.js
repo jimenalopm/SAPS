@@ -134,9 +134,17 @@
             byId('nombre-colaborador').textContent = datos.nombre;
             byId('codigo-encontrado').textContent = datos.codigo;
             const foto = byId('foto-colaborador');
-            foto.style.backgroundImage = `url("${datos.fotoUrl}")`;
-            foto.style.backgroundPosition = datos.posicionFoto;
-            foto.setAttribute('aria-label', 'Foto de ' + datos.nombre);
+            if (datos.fotoUrl) {
+                foto.classList.remove('sin-foto'); foto.textContent = '';
+                foto.style.backgroundImage = `url("${datos.fotoUrl}")`;
+                foto.style.backgroundPosition = datos.posicionFoto;
+                foto.setAttribute('aria-label', 'Foto de ' + datos.nombre);
+            } else {
+                // Las fotos todavía no existen: se muestran las iniciales.
+                foto.classList.add('sin-foto'); foto.style.backgroundImage = '';
+                foto.textContent = datos.nombre.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+                foto.setAttribute('aria-label', 'Sin foto: ' + datos.nombre);
+            }
             byId('datos-colaborador').classList.remove('d-none'); bloquear();
         } catch (error) { if (intento === busqueda) mensaje(error.message); }
     });

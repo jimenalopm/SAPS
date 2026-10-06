@@ -426,3 +426,48 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261006032751_ColaboradoresRrhh'
+)
+BEGIN
+    IF SCHEMA_ID(N'rrhh') IS NULL EXEC(N'CREATE SCHEMA [rrhh];');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261006032751_ColaboradoresRrhh'
+)
+BEGIN
+    CREATE TABLE [rrhh].[tb_Colaborador] (
+        [idColaborador] int NOT NULL IDENTITY,
+        [Codigo] varchar(10) NOT NULL,
+        [NombreCompleto] varchar(100) NOT NULL,
+        [EstaActivo] bit NOT NULL DEFAULT CAST(1 AS bit),
+        [RutaFoto] varchar(260) NULL,
+        [FechaRegistro] datetime2 NOT NULL DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_Colaborador] PRIMARY KEY ([idColaborador])
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261006032751_ColaboradoresRrhh'
+)
+BEGIN
+    CREATE UNIQUE INDEX [UQ_Colaborador_Codigo] ON [rrhh].[tb_Colaborador] ([Codigo]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261006032751_ColaboradoresRrhh'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261006032751_ColaboradoresRrhh', N'10.0.11');
+END;
+
+COMMIT;
+GO
+

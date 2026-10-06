@@ -307,10 +307,14 @@ a.stat-card:hover { border-color: var(--rp-verde); box-shadow: var(--rp-sombra-m
 
 body { margin-bottom: 0; }
 
-/* HU-008: la imagen contiene dos retratos ficticios de prueba. */
+/* HU-008: foto del colaborador; sin foto se muestran las iniciales. */
 .foto-colaborador {
-  width: 110px; height: 160px; background-size: 200% auto; background-repeat: no-repeat;
+  width: 110px; height: 160px; background-size: cover; background-position: center; background-repeat: no-repeat;
   border-radius: 8px; margin-bottom: 12px;
+}
+.foto-colaborador.sin-foto {
+  display: flex; align-items: center; justify-content: center;
+  background-color: #e9ecef; color: #495057; font-size: 2.5rem; font-weight: 600;
 }
 .cantidad-pedido { min-width: 75px; max-width: 105px; }
 

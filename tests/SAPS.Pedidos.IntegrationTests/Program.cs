@@ -26,7 +26,7 @@ servicios.AddDefaultIdentity<IdentityUser>(o => o.Password.RequireNonAlphanumeri
 await using var proveedor = servicios.BuildServiceProvider();
 await using var alcance = proveedor.CreateAsyncScope();
 var db = alcance.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-var empleados = new ColaboradoresDePrueba();
+var empleados = new ColaboradoresTabla(db);
 var reloj = new RelojPrueba();
 var pedidos = new ServicioPedidos(db, empleados, reloj);
 var verificaciones = 0;
@@ -47,6 +47,7 @@ async Task Rechazar(Func<Task> accion, string caso)
 try
 {
     await db.Database.MigrateAsync();
+    await SembradoPrueba.SembrarColaboradoresAsync(db);
     Verificar(!db.Database.HasPendingModelChanges(), "El modelo coincide con las migraciones");
     var usuario = new IdentityUser { UserName = "operadora-prueba" };
     db.Users.Add(usuario);
@@ -66,11 +67,10 @@ try
         Lineas = [new() { Clave = $"P:{precioId}", Cantidad = 2, PrecioMostrado = 1500 }, new() { Clave = $"B:{bebidaId}", Cantidad = 1, PrecioMostrado = 700 }]
     };
     Verificar((await pedidos.BuscarColaboradorAsync(" demo001 ")).Codigo == "DEMO001", "Buscar código normalizando espacios y mayúsculas");
-    Verificar((await pedidos.BuscarColaboradorAsync("DEMO002")).FotoUrl.EndsWith(".png"), "Colaborador devuelve nombre y fotografía de prueba");
+    Verificar((await pedidos.BuscarColaboradorAsync("DEMO002")).FotoUrl is null, "Colaborador sin foto devuelve FotoUrl nula");
     await Rechazar(async () => { await pedidos.BuscarColaboradorAsync(""); }, "Código vacío rechazado");
     await Rechazar(async () => { await pedidos.BuscarColaboradorAsync("NOEXISTE"); }, "Código inexistente rechazado");
     await Rechazar(async () => { await pedidos.BuscarColaboradorAsync("DEMO003"); }, "Colaborador inactivo rechazado");
-    await Rechazar(async () => { await new ColaboradoresSinConexion().BuscarAsync("DEMO001"); }, "Fuera de desarrollo no se consultan colaboradores ficticios");
     Verificar((await pedidos.CatalogoAsync()).Count == 3, "Catálogo ofrece producto, bebida y variante de tamaño activos");
     var solicitud = Solicitud(); solicitud.Observaciones = "  Sin ensalada  ";
     var resultado = await pedidos.RegistrarAsync(solicitud, usuarioId);
