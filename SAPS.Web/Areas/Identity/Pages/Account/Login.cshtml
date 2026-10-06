@@ -15,13 +15,13 @@
             <h1 class="auth-titulo">Bienvenido a SAPS</h1>
             <p class="auth-subtitulo">Inicia sesión para continuar</p>
 
-            <form id="account" method="post" novalidate>
+            <form id="account" method="post" novalidate data-bloquear-envio>
                 <div asp-validation-summary="ModelOnly" class="auth-alerta" role="alert"></div>
 
                 <div class="mb-3">
                     <label asp-for="Input.CodigoEmpleado" class="form-label">Correo de empleado</label>
                     <input asp-for="Input.CodigoEmpleado" class="form-control" autocomplete="username" autofocus
-                           aria-required="true" placeholder="Ingresa tu correo"
+                           aria-required="true" placeholder="nombre@recyplast.cr"
                            data-val-required="Ingresa tu correo de empleado." />
                     <span asp-validation-for="Input.CodigoEmpleado" class="text-danger small"></span>
                 </div>
@@ -41,12 +41,16 @@
                     <span asp-validation-for="Input.Password" class="text-danger small"></span>
                 </div>
 
-                <div class="form-check mb-4">
-                    <input class="form-check-input" asp-for="Input.RememberMe" />
-                    <label class="form-check-label" asp-for="Input.RememberMe">Recordar mi sesión en este equipo</label>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" asp-for="Input.RememberMe" />
+                        <label class="form-check-label" asp-for="Input.RememberMe">Recordar mi sesión en este equipo</label>
+                    </div>
+                    <a asp-page="./ForgotPassword">¿Olvidaste tu contraseña?</a>
                 </div>
 
-                <button id="login-submit" type="submit" class="btn btn-recyplast btn-lg w-100">Iniciar sesión</button>
+                <button id="login-submit" type="submit" class="btn btn-recyplast btn-lg w-100"
+                        data-texto-procesando="Iniciando sesión...">Iniciar sesión</button>
             </form>
 
             <p class="auth-pie">&copy; @DateTime.Now.Year RecyPlast</p>
