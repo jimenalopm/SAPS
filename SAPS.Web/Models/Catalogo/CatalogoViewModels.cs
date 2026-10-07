@@ -25,6 +25,7 @@ public class TamanoFormViewModel
 
     [Required(ErrorMessage = "El nombre del tamaño es obligatorio.")]
     [StringLength(30, ErrorMessage = "Máximo 30 caracteres.")]
+    [NombreCatalogo(Minimo = 2)]
     public string NombreTamano { get; set; } = "";
 
     [Display(Name = "Tamaño de bebida")]

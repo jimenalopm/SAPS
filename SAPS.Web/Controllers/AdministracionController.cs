@@ -22,6 +22,12 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         string? prodQ = null, bool prodInc = false, int? prodCat = null,
         string? bebQ = null, bool bebInc = false)
     {
+        // Los textos de búsqueda se normalizan igual que los nombres guardados.
+        catQ = NombreCatalogoAttribute.Normalizar(catQ);
+        tamQ = NombreCatalogoAttribute.Normalizar(tamQ);
+        prodQ = NombreCatalogoAttribute.Normalizar(prodQ);
+        bebQ = NombreCatalogoAttribute.Normalizar(bebQ);
+
         var vm = new CatalogoIndexViewModel
         {
             TabActiva = tab,
@@ -199,6 +205,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearTamano(TamanoFormViewModel modelo)
     {
+        modelo.NombreTamano = NombreCatalogoAttribute.Normalizar(modelo.NombreTamano);
         if (await db.Tamanos.AnyAsync(t => t.NombreTamano == modelo.NombreTamano))
         {
             ModelState.AddModelError(nameof(modelo.NombreTamano), "Ya existe un tamaño con ese nombre.");
@@ -227,6 +234,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarTamano(TamanoFormViewModel modelo)
     {
+        modelo.NombreTamano = NombreCatalogoAttribute.Normalizar(modelo.NombreTamano);
         if (await db.Tamanos.AnyAsync(t => t.NombreTamano == modelo.NombreTamano && t.IdTamano != modelo.IdTamano))
         {
             ModelState.AddModelError(nameof(modelo.NombreTamano), "Ya existe otro tamaño con ese nombre.");
@@ -564,6 +572,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         modelo.NombreBebida = NombreCatalogoAttribute.Normalizar(modelo.NombreBebida);
         await ValidarNombreBebidaUnico(modelo);
         ValidarTamanoBebida(modelo);
+        await ValidarOrdenPrecioBebida(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
         db.Bebidas.Add(new Bebida
@@ -605,6 +614,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         modelo.NombreBebida = NombreCatalogoAttribute.Normalizar(modelo.NombreBebida);
         await ValidarNombreBebidaUnico(modelo);
         ValidarTamanoBebida(modelo);
+        await ValidarOrdenPrecioBebida(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
         bebida.NombreBebida = modelo.NombreBebida;
@@ -643,6 +653,34 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         ModelState.AddModelError(nameof(modelo.NombreBebida), existente.Activo
             ? "Ya existe una bebida con ese nombre y tamaño."
             : "Ya existe una bebida con ese nombre y tamaño, pero está desactivada. Actívela desde el catálogo en lugar de crearla de nuevo.");
+    }
+
+    // HU-007: la misma bebida en un tamaño mayor no puede costar menos que en uno menor.
+    // El orden se deduce del nombre del tamaño; si no se reconoce, no se compara.
+    private async Task ValidarOrdenPrecioBebida(BebidaFormViewModel modelo)
+    {
+        if (!modelo.IdTamano.HasValue || modelo.Precio < 1 || modelo.Precio > ReglasCatalogo.PrecioMaximo) return;
+        var propio = modelo.TamanosDisponibles.FirstOrDefault(t => t.IdTamano == modelo.IdTamano);
+        var ordenPropio = OrdenTamano.Calcular(propio?.NombreTamano);
+        if (propio == null || ordenPropio == null) return;
+
+        var hermanas = await db.Bebidas
+            .Where(b => b.NombreBebida == modelo.NombreBebida && b.IdBebida != modelo.IdBebida
+                        && b.Activo && b.IdTamano != null && b.IdTamano != modelo.IdTamano)
+            .Select(b => new { b.Precio, b.Tamano!.NombreTamano })
+            .ToListAsync();
+
+        foreach (var h in hermanas)
+        {
+            var orden = OrdenTamano.Calcular(h.NombreTamano);
+            if (orden == null) continue;
+            if (ordenPropio > orden && modelo.Precio < h.Precio)
+                ModelState.AddModelError(nameof(modelo.Precio),
+                    $"El precio de {propio.NombreTamano} (₡{modelo.Precio:N0}) no puede ser menor que el de {h.NombreTamano} (₡{h.Precio:N0}).");
+            else if (ordenPropio < orden && modelo.Precio > h.Precio)
+                ModelState.AddModelError(nameof(modelo.Precio),
+                    $"El precio de {propio.NombreTamano} (₡{modelo.Precio:N0}) no puede ser mayor que el de {h.NombreTamano} (₡{h.Precio:N0}).");
+        }
     }
 
     private void ValidarTamanoBebida(BebidaFormViewModel modelo)
