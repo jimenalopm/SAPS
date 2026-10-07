@@ -9,6 +9,7 @@ public class CategoriaFormViewModel
 
     [Required(ErrorMessage = "El nombre de la categoría es obligatorio.")]
     [StringLength(50, ErrorMessage = "Máximo 50 caracteres.")]
+    [NombreCatalogo]
     public string NombreCategoria { get; set; } = "";
 }
 
@@ -41,7 +42,8 @@ public class ProductoFormViewModel
     public int IdProducto { get; set; }
 
     [Required(ErrorMessage = "El nombre del producto es obligatorio.")]
-    [StringLength(100, ErrorMessage = "Máximo 100 caracteres.")]
+    [StringLength(60, ErrorMessage = "Máximo 60 caracteres.")]
+    [NombreCatalogo]
     public string NombreProducto { get; set; } = "";
 
     [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar una categoría.")]
@@ -66,7 +68,8 @@ public class BebidaFormViewModel
     public int IdBebida { get; set; }
 
     [Required(ErrorMessage = "El nombre de la bebida es obligatorio.")]
-    [StringLength(100, ErrorMessage = "Máximo 100 caracteres.")]
+    [StringLength(60, ErrorMessage = "Máximo 60 caracteres.")]
+    [NombreCatalogo]
     public string NombreBebida { get; set; } = "";
 
     [Required(ErrorMessage = "Debe indicar el tipo de bebida.")]

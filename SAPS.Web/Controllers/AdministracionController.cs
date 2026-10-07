@@ -71,6 +71,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearCategoria(CategoriaFormViewModel modelo)
     {
+        modelo.NombreCategoria = NombreCatalogoAttribute.Normalizar(modelo.NombreCategoria);
         if (await db.Categorias.AnyAsync(c => c.NombreCategoria == modelo.NombreCategoria))
         {
             ModelState.AddModelError(nameof(modelo.NombreCategoria), "Ya existe una categoría con ese nombre.");
@@ -94,6 +95,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarCategoria(CategoriaFormViewModel modelo)
     {
+        modelo.NombreCategoria = NombreCatalogoAttribute.Normalizar(modelo.NombreCategoria);
         if (await db.Categorias.AnyAsync(c => c.NombreCategoria == modelo.NombreCategoria && c.IdCategoria != modelo.IdCategoria))
         {
             ModelState.AddModelError(nameof(modelo.NombreCategoria), "Ya existe otra categoría con ese nombre.");
@@ -195,6 +197,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     public async Task<IActionResult> CrearProducto(ProductoFormViewModel modelo)
     {
         await RecargarListasProducto(modelo);
+        modelo.NombreProducto = NombreCatalogoAttribute.Normalizar(modelo.NombreProducto);
+        await ValidarNombreProductoUnico(modelo);
         ValidarPreciosProducto(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
@@ -247,6 +251,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         if (producto == null) return NotFound();
 
         await RecargarListasProducto(modelo, producto);
+        modelo.NombreProducto = NombreCatalogoAttribute.Normalizar(modelo.NombreProducto);
+        await ValidarNombreProductoUnico(modelo);
         ValidarPreciosProducto(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
@@ -394,6 +400,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     public async Task<IActionResult> CrearBebida(BebidaFormViewModel modelo)
     {
         modelo.TamanosDisponibles = await db.Tamanos.Where(t => t.Activo).OrderBy(t => t.NombreTamano).ToListAsync();
+        modelo.NombreBebida = NombreCatalogoAttribute.Normalizar(modelo.NombreBebida);
+        await ValidarNombreBebidaUnico(modelo);
         ValidarTamanoBebida(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
@@ -433,6 +441,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         if (bebida == null) return NotFound();
         modelo.TamanosDisponibles = await db.Tamanos.Where(t => t.Activo || t.IdTamano == bebida.IdTamano)
             .OrderBy(t => t.NombreTamano).ToListAsync();
+        modelo.NombreBebida = NombreCatalogoAttribute.Normalizar(modelo.NombreBebida);
+        await ValidarNombreBebidaUnico(modelo);
         ValidarTamanoBebida(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
@@ -444,6 +454,34 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         await db.SaveChangesAsync();
         TempData["Mensaje"] = "Bebida actualizada correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
+    }
+
+    // HU-007: no se repite un producto (mismo nombre) dentro de la misma categoría, esté activo o no.
+    private async Task ValidarNombreProductoUnico(ProductoFormViewModel modelo)
+    {
+        if (string.IsNullOrWhiteSpace(modelo.NombreProducto) || modelo.IdCategoria <= 0) return;
+        var existente = await db.Productos.FirstOrDefaultAsync(p =>
+            p.NombreProducto == modelo.NombreProducto
+            && p.IdCategoria == modelo.IdCategoria
+            && p.IdProducto != modelo.IdProducto);
+        if (existente == null) return;
+        ModelState.AddModelError(nameof(modelo.NombreProducto), existente.Activo
+            ? "Ya existe un producto con ese nombre en esta categoría."
+            : "Ya existe un producto con ese nombre en esta categoría, pero está desactivado. Actívelo desde el catálogo en lugar de crearlo de nuevo.");
+    }
+
+    // HU-007: no se repite una bebida con el mismo nombre y tamaño (la misma bebida puede existir en otro tamaño).
+    private async Task ValidarNombreBebidaUnico(BebidaFormViewModel modelo)
+    {
+        if (string.IsNullOrWhiteSpace(modelo.NombreBebida)) return;
+        var existente = await db.Bebidas.FirstOrDefaultAsync(b =>
+            b.NombreBebida == modelo.NombreBebida
+            && b.IdTamano == modelo.IdTamano
+            && b.IdBebida != modelo.IdBebida);
+        if (existente == null) return;
+        ModelState.AddModelError(nameof(modelo.NombreBebida), existente.Activo
+            ? "Ya existe una bebida con ese nombre y tamaño."
+            : "Ya existe una bebida con ese nombre y tamaño, pero está desactivada. Actívela desde el catálogo en lugar de crearla de nuevo.");
     }
 
     private void ValidarTamanoBebida(BebidaFormViewModel modelo)
