@@ -12,10 +12,12 @@ public class Tamano
     public required string NombreTamano { get; set; }
 
     /// <summary>
-    /// Posición del tamaño de menor a mayor (1 = el más pequeño). Permite validar que un tamaño
-    /// mayor no cueste menos que uno menor dentro del mismo producto.
+    /// HU-007: true si es una presentación de bebida (600ml, 1L...), que solo se usa en la sección Bebidas.
+    /// Los demás tamaños (Pequeño, Mediano, Grande) se asignan a categorías de comida.
     /// </summary>
-    public int Orden { get; set; }
+    public bool EsParaBebida { get; set; }
+
+    public ICollection<CategoriaTamano> Categorias { get; set; } = new List<CategoriaTamano>();
 
     public bool Activo { get; set; } = true;
 

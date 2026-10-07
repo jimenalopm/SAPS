@@ -27,11 +27,11 @@
             <div id="ayuda-nombre-tamano" class="form-text">Por ejemplo: Pequeño, 600ml.</div>
             <span asp-validation-for="NombreTamano" class="text-danger small"></span>
         </div>
-        <div class="mb-1 mt-3">
-            <label asp-for="Orden" class="form-label">Orden (de menor a mayor) <span class="campo-obligatorio" aria-hidden="true">*</span></label>
-            <input asp-for="Orden" class="form-control campo-orden" min="1" max="99" step="1" inputmode="numeric" aria-describedby="ayuda-orden-tamano" />
-            <div id="ayuda-orden-tamano" class="form-text">Posición del tamaño: 1 es el más pequeño. Por ejemplo, Pequeño = 1, Mediano = 2, Grande = 3. Sirve para validar que un tamaño mayor no cueste menos que uno menor.</div>
-            <span asp-validation-for="Orden" class="text-danger small"></span>
+        <div class="form-check mt-3">
+            <input asp-for="EsParaBebida" class="form-check-input" />
+            <label asp-for="EsParaBebida" class="form-check-label">Es un tamaño de bebida (600ml, 1L...)</label>
+            <div class="form-text">Los tamaños de bebida se usan solo en la sección Bebidas. Los demás se asignan a las categorías de comida.</div>
+            <span asp-validation-for="EsParaBebida" class="text-danger small d-block"></span>
         </div>
     </section>
 

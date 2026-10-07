@@ -157,7 +157,7 @@ public class ValidacionesNombresHU007Tests
     public async Task CrearBebida_MismoNombreYTamano_NoSeGuarda()
     {
         await using var db = TestServices.CrearContextoInMemory();
-        var tam = new Tamano { NombreTamano = "600ml" };
+        var tam = new Tamano { NombreTamano = "600ml", EsParaBebida = true };
         db.Tamanos.Add(tam);
         db.Bebidas.Add(new Bebida { NombreBebida = "Coca Cola", TipoBebida = "Gaseosa", Precio = 900, Tamano = tam });
         await db.SaveChangesAsync();
@@ -177,8 +177,8 @@ public class ValidacionesNombresHU007Tests
     public async Task CrearBebida_MismoNombreEnOtroTamano_SeGuarda()
     {
         await using var db = TestServices.CrearContextoInMemory();
-        var chico = new Tamano { NombreTamano = "355ml" };
-        var grande = new Tamano { NombreTamano = "600ml" };
+        var chico = new Tamano { NombreTamano = "355ml", EsParaBebida = true };
+        var grande = new Tamano { NombreTamano = "600ml", EsParaBebida = true };
         db.Tamanos.AddRange(chico, grande);
         db.Bebidas.Add(new Bebida { NombreBebida = "Coca Cola", TipoBebida = "Gaseosa", Precio = 700, Tamano = chico });
         await db.SaveChangesAsync();

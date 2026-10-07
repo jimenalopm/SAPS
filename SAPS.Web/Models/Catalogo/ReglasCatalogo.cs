@@ -4,10 +4,7 @@ namespace SAPS.Web.Models.Catalogo;
 public static class ReglasCatalogo
 {
     /// <summary>Precio máximo aceptado, en colones enteros (RNF-003). Evita errores de digitación.</summary>
-    public const int PrecioMaximo = 100_000;
-
-    /// <summary>Valor máximo de la posición (orden) de un tamaño.</summary>
-    public const int OrdenMaximo = 99;
+    public const int PrecioMaximo = 10_000;
 
     public static string MensajePrecioMaximo => $"El precio no puede superar ₡{PrecioMaximo:N0}.";
 }

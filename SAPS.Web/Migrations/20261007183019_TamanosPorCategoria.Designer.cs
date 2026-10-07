@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SAPS.Web.Data;
 
@@ -11,9 +12,11 @@ using SAPS.Web.Data;
 namespace SAPS.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007183019_TamanosPorCategoria")]
+    partial class TamanosPorCategoria
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -454,6 +457,10 @@ namespace SAPS.Web.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(30)")
                         .HasColumnName("Nombre");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("int")
+                        .HasColumnName("Orden");
 
                     b.HasKey("IdTamano")
                         .HasName("PK_Tamano");

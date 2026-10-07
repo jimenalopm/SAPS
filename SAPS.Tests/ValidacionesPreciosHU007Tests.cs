@@ -15,9 +15,13 @@ public class ValidacionesPreciosHU007Tests
     private static async Task<(Categoria cat, Tamano mediano, Tamano grande)> SembrarPizzaAsync(SAPS.Web.Data.ApplicationDbContext db)
     {
         var cat = new Categoria { NombreCategoria = "Almuerzo" };
-        var mediano = new Tamano { NombreTamano = "Mediano", Orden = 2 };
-        var grande = new Tamano { NombreTamano = "Grande", Orden = 3 };
+        var mediano = new Tamano { NombreTamano = "Mediano" };
+        var grande = new Tamano { NombreTamano = "Grande" };
         db.AddRange(cat, mediano, grande);
+        await db.SaveChangesAsync();
+        db.CategoriasTamanos.AddRange(
+            new CategoriaTamano { IdCategoria = cat.IdCategoria, IdTamano = mediano.IdTamano },
+            new CategoriaTamano { IdCategoria = cat.IdCategoria, IdTamano = grande.IdTamano });
         await db.SaveChangesAsync();
         return (cat, mediano, grande);
     }
@@ -143,7 +147,7 @@ public class ValidacionesPreciosHU007Tests
     [Theory]
     [InlineData(0)]
     [InlineData(-5)]
-    [InlineData(100_001)]
+    [InlineData(10_001)]
     public void Bebida_PrecioFueraDeRango_SeRechaza(int precio)
     {
         var modelo = new BebidaFormViewModel { NombreBebida = "Coca Cola", Precio = precio };
@@ -152,39 +156,34 @@ public class ValidacionesPreciosHU007Tests
         Assert.Contains(errores, e => e.MemberNames.Contains(nameof(BebidaFormViewModel.Precio)));
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(100)]
-    public void Tamano_OrdenFueraDeRango_SeRechaza(int orden)
+    [Fact]
+    public async Task CrearProducto_TamanoConNombreDesconocido_NoSeComparaConLosDemas()
     {
-        var modelo = new TamanoFormViewModel { NombreTamano = "Grande", Orden = orden };
-        var errores = new List<ValidationResult>();
-        Validator.TryValidateObject(modelo, new ValidationContext(modelo), errores, true);
-        Assert.Contains(errores, e => e.MemberNames.Contains(nameof(TamanoFormViewModel.Orden)));
+        await using var db = TestServices.CrearContextoInMemory();
+        var (cat, mediano, grande) = await SembrarPizzaAsync(db);
+        var combo = new Tamano { NombreTamano = "Combo" }; // el sistema no sabe qué tan grande es
+        db.Tamanos.Add(combo);
+        await db.SaveChangesAsync();
+        db.CategoriasTamanos.Add(new CategoriaTamano { IdCategoria = cat.IdCategoria, IdTamano = combo.IdTamano });
+        await db.SaveChangesAsync();
+        var c = TestServices.ConContexto(new AdministracionController(db), "POST");
+        var modelo = Pizza(cat, mediano, 1500, grande, 2000);
+        modelo.PreciosPorTamano.Add(new PrecioPorTamanoInput { IdTamano = combo.IdTamano, Incluir = true, Monto = 500 });
+
+        var resultado = await c.CrearProducto(modelo);
+
+        Assert.IsType<RedirectToActionResult>(resultado);
     }
 
     [Fact]
-    public async Task CrearTamano_SinOrden_NoSeGuarda()
+    public async Task CrearTamano_SeGuardaSinPedirNingunNumeroDeOrden()
     {
         await using var db = TestServices.CrearContextoInMemory();
         var c = TestServices.ConContexto(new AdministracionController(db), "POST");
 
         var resultado = await c.CrearTamano(new TamanoFormViewModel { NombreTamano = "Extra grande" });
 
-        Assert.IsType<ViewResult>(resultado);
-        Assert.True(c.ModelState.ContainsKey(nameof(TamanoFormViewModel.Orden)));
-        Assert.Empty(db.Tamanos);
-    }
-
-    [Fact]
-    public async Task CrearTamano_ConOrden_SeGuardaConEseOrden()
-    {
-        await using var db = TestServices.CrearContextoInMemory();
-        var c = TestServices.ConContexto(new AdministracionController(db), "POST");
-
-        var resultado = await c.CrearTamano(new TamanoFormViewModel { NombreTamano = "Extra grande", Orden = 4 });
-
         Assert.IsType<RedirectToActionResult>(resultado);
-        Assert.Equal(4, db.Tamanos.Single().Orden);
+        Assert.Single(db.Tamanos);
     }
 }

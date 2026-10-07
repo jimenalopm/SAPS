@@ -175,6 +175,7 @@ a.stat-card:hover { border-color: var(--rp-verde); box-shadow: var(--rp-sombra-m
   border: 1px solid var(--rp-gris-borde); border-radius: var(--rp-radio-sm); padding: .55rem .8rem;
   color: var(--rp-gris); background-color: var(--rp-blanco);
 }
+.form-select { padding-right: 2.5rem; background-position: right .8rem center; }
 .form-control::placeholder { color: var(--rp-gris-texto-suave); opacity: 1; }
 .form-label { font-weight: 600; font-size: .9rem; margin-bottom: .35rem; }
 .form-check-input:checked { background-color: var(--rp-verde); border-color: var(--rp-verde); }

@@ -24,6 +24,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<Precio> Precios => Set<Precio>();
     public DbSet<Bebida> Bebidas => Set<Bebida>();
+    public DbSet<CategoriaTamano> CategoriasTamanos => Set<CategoriaTamano>();
 
     public DbSet<ColaboradorRrhh> Colaboradores => Set<ColaboradorRrhh>();
 
@@ -71,12 +72,35 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.IdTamano).HasName("PK_Tamano");
             entity.Property(e => e.IdTamano).HasColumnName("idTamano");
             entity.Property(e => e.NombreTamano).HasColumnName("Nombre").HasMaxLength(30).IsUnicode(false).IsRequired();
-            entity.Property(e => e.Orden).HasColumnName("Orden");
+            entity.Property(e => e.EsParaBebida).HasColumnName("EsParaBebida").HasDefaultValue(false);
             entity.Property(e => e.Activo).HasColumnName("EstaActivo").HasDefaultValue(true);
 
             entity.HasIndex(e => e.NombreTamano)
                   .IsUnique()
                   .HasDatabaseName("UQ_Tamano_Nombre");
+        });
+
+        // ---------- soda.tb_CategoriaTamano (tamaños permitidos por categoría) ----------
+        builder.Entity<CategoriaTamano>(entity =>
+        {
+            entity.ToTable("tb_CategoriaTamano", EsquemaSoda);
+            entity.HasKey(e => new { e.IdCategoria, e.IdTamano }).HasName("PK_CategoriaTamano");
+            entity.Property(e => e.IdCategoria).HasColumnName("idCategoria");
+            entity.Property(e => e.IdTamano).HasColumnName("idTamano");
+
+            entity.HasOne(e => e.Categoria)
+                  .WithMany(c => c.TamanosPermitidos)
+                  .HasForeignKey(e => e.IdCategoria)
+                  .HasConstraintName("FK_CategoriaTamano_Categoria")
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Tamano)
+                  .WithMany(t => t.Categorias)
+                  .HasForeignKey(e => e.IdTamano)
+                  .HasConstraintName("FK_CategoriaTamano_Tamano")
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.IdTamano).HasDatabaseName("IX_CategoriaTamano_idTamano");
         });
 
         // ---------- soda.tb_Producto ----------

@@ -19,7 +19,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         string tab = "categorias",
         string? catQ = null, bool catInc = false,
         string? tamQ = null, bool tamInc = false,
-        string? prodQ = null, bool prodInc = false,
+        string? prodQ = null, bool prodInc = false, int? prodCat = null,
         string? bebQ = null, bool bebInc = false)
     {
         var vm = new CatalogoIndexViewModel
@@ -30,12 +30,13 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             TamanoBuscar = tamQ,
             TamanoIncluirInactivos = tamInc,
             ProductoBuscar = prodQ,
+            ProductoCategoria = prodCat,
             ProductoIncluirInactivos = prodInc,
             BebidaBuscar = bebQ,
             BebidaIncluirInactivos = bebInc,
         };
 
-        var categorias = db.Categorias.AsQueryable();
+        var categorias = db.Categorias.Include(c => c.TamanosPermitidos).ThenInclude(x => x.Tamano).AsQueryable();
         categorias = categorias.Where(c => c.Activo == !catInc);
         if (!string.IsNullOrWhiteSpace(catQ)) categorias = categorias.Where(c => c.NombreCategoria.Contains(catQ));
         vm.Categorias = await categorias.OrderBy(c => c.NombreCategoria).ToListAsync();
@@ -43,7 +44,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         var tamanos = db.Tamanos.AsQueryable();
         tamanos = tamanos.Where(t => t.Activo == !tamInc);
         if (!string.IsNullOrWhiteSpace(tamQ)) tamanos = tamanos.Where(t => t.NombreTamano.Contains(tamQ));
-        vm.Tamanos = await tamanos.OrderBy(t => t.Orden).ThenBy(t => t.NombreTamano).ToListAsync();
+        vm.Tamanos = OrdenarTamanos(await tamanos.ToListAsync());
 
         var productos = db.Productos
             .Include(p => p.Categoria)
@@ -52,6 +53,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             .AsQueryable();
         productos = productos.Where(p => p.Activo == !prodInc);
         if (!string.IsNullOrWhiteSpace(prodQ)) productos = productos.Where(p => p.NombreProducto.Contains(prodQ));
+        if (prodCat.HasValue) productos = productos.Where(p => p.IdCategoria == prodCat.Value);
+        vm.CategoriasFiltro = await db.Categorias.AsNoTracking().OrderBy(c => c.NombreCategoria).ToListAsync();
         vm.Productos = await productos.OrderBy(p => p.NombreProducto).ToListAsync();
 
         var bebidas = db.Bebidas.Include(b => b.Tamano).AsQueryable();
@@ -65,12 +68,18 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     // ==================================================================
     //  CATEGORÍAS
     // ==================================================================
-    public IActionResult CrearCategoria() => View(new CategoriaFormViewModel());
+    public async Task<IActionResult> CrearCategoria()
+    {
+        var modelo = new CategoriaFormViewModel();
+        await CargarTamanosCategoria(modelo);
+        return View(modelo);
+    }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearCategoria(CategoriaFormViewModel modelo)
     {
+        await CargarTamanosCategoria(modelo);
         modelo.NombreCategoria = NombreCatalogoAttribute.Normalizar(modelo.NombreCategoria);
         if (await db.Categorias.AnyAsync(c => c.NombreCategoria == modelo.NombreCategoria))
         {
@@ -78,7 +87,10 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         }
         if (!ModelState.IsValid) return View(modelo);
 
-        db.Categorias.Add(new Categoria { NombreCategoria = modelo.NombreCategoria });
+        var nueva = new Categoria { NombreCategoria = modelo.NombreCategoria };
+        foreach (var idTamano in modelo.TamanosPermitidos)
+            nueva.TamanosPermitidos.Add(new CategoriaTamano { IdTamano = idTamano });
+        db.Categorias.Add(nueva);
         await db.SaveChangesAsync();
         TempData["Mensaje"] = $"Categoría \"{modelo.NombreCategoria}\" creada correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "categorias" });
@@ -86,26 +98,39 @@ public class AdministracionController(ApplicationDbContext db) : Controller
 
     public async Task<IActionResult> EditarCategoria(int id)
     {
-        var categoria = await db.Categorias.FindAsync(id);
+        var categoria = await db.Categorias.Include(c => c.TamanosPermitidos).FirstOrDefaultAsync(c => c.IdCategoria == id);
         if (categoria == null) return NotFound();
-        return View(new CategoriaFormViewModel { IdCategoria = categoria.IdCategoria, NombreCategoria = categoria.NombreCategoria });
+        var modelo = new CategoriaFormViewModel
+        {
+            IdCategoria = categoria.IdCategoria,
+            NombreCategoria = categoria.NombreCategoria,
+            TamanosPermitidos = categoria.TamanosPermitidos.Select(x => x.IdTamano).ToList(),
+        };
+        await CargarTamanosCategoria(modelo);
+        return View(modelo);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarCategoria(CategoriaFormViewModel modelo)
     {
+        await CargarTamanosCategoria(modelo);
         modelo.NombreCategoria = NombreCatalogoAttribute.Normalizar(modelo.NombreCategoria);
         if (await db.Categorias.AnyAsync(c => c.NombreCategoria == modelo.NombreCategoria && c.IdCategoria != modelo.IdCategoria))
         {
             ModelState.AddModelError(nameof(modelo.NombreCategoria), "Ya existe otra categoría con ese nombre.");
         }
+        await ValidarTamanosEnUsoCategoria(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
-        var categoria = await db.Categorias.FindAsync(modelo.IdCategoria);
+        var categoria = await db.Categorias.Include(c => c.TamanosPermitidos).FirstOrDefaultAsync(c => c.IdCategoria == modelo.IdCategoria);
         if (categoria == null) return NotFound();
 
         categoria.NombreCategoria = modelo.NombreCategoria;
+        foreach (var enlace in categoria.TamanosPermitidos.Where(e => !modelo.TamanosPermitidos.Contains(e.IdTamano)).ToList())
+            db.CategoriasTamanos.Remove(enlace);
+        foreach (var idTamano in modelo.TamanosPermitidos.Where(id => categoria.TamanosPermitidos.All(e => e.IdTamano != id)))
+            categoria.TamanosPermitidos.Add(new CategoriaTamano { IdTamano = idTamano });
         await db.SaveChangesAsync();
         TempData["Mensaje"] = "Categoría actualizada correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "categorias" });
@@ -117,10 +142,52 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         var categoria = await db.Categorias.FindAsync(id);
         if (categoria == null) return NotFound();
+        if (categoria.Activo)
+        {
+            var activos = await db.Productos.CountAsync(p => p.IdCategoria == id && p.Activo);
+            if (activos > 0)
+            {
+                TempData["Error"] = $"No se puede desactivar la categoría «{categoria.NombreCategoria}»: tiene {activos} producto(s) activo(s). Desactive primero esos productos.";
+                return RedirectToAction(nameof(Catalogo), new { tab = "categorias" });
+            }
+        }
         categoria.Activo = !categoria.Activo;
         await db.SaveChangesAsync();
         TempData["Mensaje"] = categoria.Activo ? $"Categoría «{categoria.NombreCategoria}» activada." : $"Categoría «{categoria.NombreCategoria}» desactivada.";
         return RedirectToAction(nameof(Catalogo), new { tab = "categorias" });
+    }
+
+    // HU-007: los tamaños se muestran de menor a mayor (el orden se deduce del nombre).
+    private static List<Tamano> OrdenarTamanos(IEnumerable<Tamano> tamanos) =>
+        tamanos.OrderBy(t => OrdenTamano.Calcular(t.NombreTamano) ?? int.MaxValue).ThenBy(t => t.NombreTamano).ToList();
+
+    // HU-007: tamaños que se pueden asignar a una categoría: activos y de comida (más los que ya tiene asignados).
+    // Los ids enviados que no estén en esa lista se descartan.
+    private async Task CargarTamanosCategoria(CategoriaFormViewModel modelo)
+    {
+        var vinculados = modelo.IdCategoria > 0
+            ? await db.CategoriasTamanos.Where(ct => ct.IdCategoria == modelo.IdCategoria).Select(ct => ct.IdTamano).ToListAsync()
+            : new List<int>();
+        modelo.TamanosDisponibles = OrdenarTamanos(await db.Tamanos
+            .Where(t => (t.Activo && !t.EsParaBebida) || vinculados.Contains(t.IdTamano))
+            .ToListAsync());
+        modelo.TamanosPermitidos = modelo.TamanosPermitidos.Distinct()
+            .Where(id => modelo.TamanosDisponibles.Any(t => t.IdTamano == id)).ToList();
+    }
+
+    // HU-007: no se puede quitar de una categoría un tamaño que sus productos activos todavía usan.
+    private async Task ValidarTamanosEnUsoCategoria(CategoriaFormViewModel modelo)
+    {
+        var permitidos = modelo.TamanosPermitidos;
+        var enUso = await db.Precios
+            .Where(p => p.Activo && p.IdTamano != null && p.Producto!.Activo
+                        && p.Producto.IdCategoria == modelo.IdCategoria
+                        && !permitidos.Contains(p.IdTamano.Value))
+            .Select(p => p.Tamano!.NombreTamano)
+            .Distinct().ToListAsync();
+        if (enUso.Count > 0)
+            ModelState.AddModelError(nameof(modelo.TamanosPermitidos),
+                $"No se puede quitar {string.Join(", ", enUso)}: hay productos activos de esta categoría que lo usan.");
     }
 
     // ==================================================================
@@ -136,10 +203,9 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         {
             ModelState.AddModelError(nameof(modelo.NombreTamano), "Ya existe un tamaño con ese nombre.");
         }
-        ValidarOrdenTamano(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
-        db.Tamanos.Add(new Tamano { NombreTamano = modelo.NombreTamano, Orden = modelo.Orden!.Value });
+        db.Tamanos.Add(new Tamano { NombreTamano = modelo.NombreTamano, EsParaBebida = modelo.EsParaBebida });
         await db.SaveChangesAsync();
         TempData["Mensaje"] = $"Tamaño \"{modelo.NombreTamano}\" creado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
@@ -153,7 +219,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         {
             IdTamano = tamano.IdTamano,
             NombreTamano = tamano.NombreTamano,
-            Orden = tamano.Orden > 0 ? tamano.Orden : null,
+            EsParaBebida = tamano.EsParaBebida,
         });
     }
 
@@ -165,14 +231,14 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         {
             ModelState.AddModelError(nameof(modelo.NombreTamano), "Ya existe otro tamaño con ese nombre.");
         }
-        ValidarOrdenTamano(modelo);
+        await ValidarUsoTamano(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
         var tamano = await db.Tamanos.FindAsync(modelo.IdTamano);
         if (tamano == null) return NotFound();
 
         tamano.NombreTamano = modelo.NombreTamano;
-        tamano.Orden = modelo.Orden!.Value;
+        tamano.EsParaBebida = modelo.EsParaBebida;
         await db.SaveChangesAsync();
         TempData["Mensaje"] = "Tamaño actualizado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
@@ -184,6 +250,16 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         var tamano = await db.Tamanos.FindAsync(id);
         if (tamano == null) return NotFound();
+        if (tamano.Activo)
+        {
+            var productos = await db.Precios.CountAsync(p => p.IdTamano == id && p.Activo && p.Producto!.Activo);
+            var bebidas = await db.Bebidas.CountAsync(b => b.IdTamano == id && b.Activo);
+            if (productos + bebidas > 0)
+            {
+                TempData["Error"] = $"No se puede desactivar el tamaño «{tamano.NombreTamano}»: lo usan {productos} producto(s) y {bebidas} bebida(s) activos. Desactívelos o cámbieles el tamaño primero.";
+                return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
+            }
+        }
         tamano.Activo = !tamano.Activo;
         await db.SaveChangesAsync();
         TempData["Mensaje"] = tamano.Activo ? $"Tamaño «{tamano.NombreTamano}» activado." : $"Tamaño «{tamano.NombreTamano}» desactivado.";
@@ -317,6 +393,15 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         var producto = await db.Productos.FindAsync(id);
         if (producto == null) return NotFound();
+        if (!producto.Activo)
+        {
+            var categoria = await db.Categorias.FindAsync(producto.IdCategoria);
+            if (categoria is { Activo: false })
+            {
+                TempData["Error"] = $"No se puede activar el producto «{producto.NombreProducto}»: su categoría «{categoria.NombreCategoria}» está inactiva. Active primero la categoría.";
+                return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
+            }
+        }
         producto.Activo = !producto.Activo;
         // Nota: no se tocan los precios. Se desactiva solo el producto; sus precios
         // quedan tal cual estaban (según se acordó para este sprint).
@@ -337,19 +422,33 @@ public class AdministracionController(ApplicationDbContext db) : Controller
 
         var tamanosAsignados = producto?.Precios.Where(p => p.Activo && p.IdTamano.HasValue)
             .Select(p => p.IdTamano!.Value).ToList() ?? new List<int>();
-        var tamanos = await db.Tamanos
-            .Where(t => t.Activo || tamanosAsignados.Contains(t.IdTamano))
-            .OrderBy(t => t.Orden).ThenBy(t => t.NombreTamano).ToListAsync();
+        var tamanos = OrdenarTamanos(await db.Tamanos
+            .Where(t => (t.Activo && !t.EsParaBebida) || tamanosAsignados.Contains(t.IdTamano))
+            .ToListAsync());
+
+        // HU-007: tamaños permitidos por categoría.
+        var enlaces = await db.CategoriasTamanos.AsNoTracking().ToListAsync();
+        var categoriasPorTamano = enlaces.GroupBy(e => e.IdTamano)
+            .ToDictionary(g => g.Key, g => g.Select(e => e.IdCategoria).ToHashSet());
+        string CategoriasDe(int idTamano) =>
+            categoriasPorTamano.TryGetValue(idTamano, out var cats) ? string.Join(",", cats) : "";
+        var esPost = HttpContext.Request.Method == "POST";
 
         // Conserva los índices de los campos enviados cuando hay errores de validación.
-        foreach (var entrada in modelo.PreciosPorTamano)
+        for (int i = 0; i < modelo.PreciosPorTamano.Count; i++)
         {
+            var entrada = modelo.PreciosPorTamano[i];
             var tamano = tamanos.FirstOrDefault(t => t.IdTamano == entrada.IdTamano);
             entrada.NombreTamano = tamano?.NombreTamano ?? "Tamaño no disponible";
             entrada.TamanoActivo = tamano?.Activo ?? false;
-            entrada.Orden = tamano?.Orden ?? 0;
+            entrada.Orden = OrdenTamano.Calcular(entrada.NombreTamano);
+            entrada.CategoriasPermitidas = CategoriasDe(entrada.IdTamano);
             if (modelo.RequiereTamano && entrada.Incluir && tamano == null)
                 ModelState.AddModelError(string.Empty, "Uno de los tamaños seleccionados ya no está disponible.");
+            else if (esPost && modelo.RequiereTamano && entrada.Incluir && modelo.IdCategoria > 0
+                     && !(categoriasPorTamano.TryGetValue(entrada.IdTamano, out var permitidas) && permitidas.Contains(modelo.IdCategoria)))
+                ModelState.AddModelError($"PreciosPorTamano[{i}].Monto",
+                    $"El tamaño {entrada.NombreTamano} no está disponible para la categoría seleccionada. Asígnelo a la categoría desde el catálogo.");
         }
         foreach (var tamano in tamanos)
         {
@@ -362,7 +461,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
                 IdTamano = tamano.IdTamano,
                 NombreTamano = tamano.NombreTamano,
                 TamanoActivo = tamano.Activo,
-                Orden = tamano.Orden,
+                Orden = OrdenTamano.Calcular(tamano.NombreTamano),
+                CategoriasPermitidas = CategoriasDe(tamano.IdTamano),
                 Incluir = precioActual != null,
                 Monto = precioActual?.MontoPrecio,
             });
@@ -406,7 +506,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         var ordenados = modelo.PreciosPorTamano
             .Select((p, i) => (Entrada: p, Indice: i))
-            .Where(x => x.Entrada.Incluir && x.Entrada.Monto is > 0 && x.Entrada.Monto <= ReglasCatalogo.PrecioMaximo)
+            .Where(x => x.Entrada.Incluir && x.Entrada.Orden != null && x.Entrada.Monto is > 0 && x.Entrada.Monto <= ReglasCatalogo.PrecioMaximo)
             .OrderBy(x => x.Entrada.Orden)
             .ToList();
 
@@ -422,11 +522,26 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         }
     }
 
-    // HU-007: el orden del tamaño es obligatorio también al llamar la acción sin pasar por el enlace de modelos.
-    private void ValidarOrdenTamano(TamanoFormViewModel modelo)
+    // HU-007: un tamaño en uso no cambia de tipo (comida o bebida) mientras lo usen productos, categorías o bebidas.
+    private async Task ValidarUsoTamano(TamanoFormViewModel modelo)
     {
-        if (modelo.Orden is null or < 1 or > ReglasCatalogo.OrdenMaximo && !ModelState.ContainsKey(nameof(modelo.Orden)))
-            ModelState.AddModelError(nameof(modelo.Orden), "Indique el orden del tamaño, un número entre 1 y 99.");
+        if (modelo.IdTamano <= 0) return;
+        var actual = await db.Tamanos.AsNoTracking().FirstOrDefaultAsync(t => t.IdTamano == modelo.IdTamano);
+        if (actual == null || actual.EsParaBebida == modelo.EsParaBebida) return;
+
+        if (modelo.EsParaBebida)
+        {
+            var enProductos = await db.Precios.AnyAsync(p => p.IdTamano == modelo.IdTamano)
+                              || await db.CategoriasTamanos.AnyAsync(ct => ct.IdTamano == modelo.IdTamano);
+            if (enProductos)
+                ModelState.AddModelError(nameof(modelo.EsParaBebida),
+                    "No se puede marcar como tamaño de bebida: ya lo usan productos o categorías. Quítelo de ellos primero.");
+        }
+        else if (await db.Bebidas.AnyAsync(b => b.IdTamano == modelo.IdTamano))
+        {
+            ModelState.AddModelError(nameof(modelo.EsParaBebida),
+                "No se puede cambiar a tamaño de comida: ya lo usan bebidas.");
+        }
     }
 
     // ==================================================================
@@ -436,7 +551,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         var vm = new BebidaFormViewModel
         {
-            TamanosDisponibles = await db.Tamanos.Where(t => t.Activo).OrderBy(t => t.NombreTamano).ToListAsync(),
+            TamanosDisponibles = await db.Tamanos.Where(t => t.Activo && t.EsParaBebida).OrderBy(t => t.NombreTamano).ToListAsync(),
         };
         return View(vm);
     }
@@ -445,7 +560,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearBebida(BebidaFormViewModel modelo)
     {
-        modelo.TamanosDisponibles = await db.Tamanos.Where(t => t.Activo).OrderBy(t => t.NombreTamano).ToListAsync();
+        modelo.TamanosDisponibles = await db.Tamanos.Where(t => t.Activo && t.EsParaBebida).OrderBy(t => t.NombreTamano).ToListAsync();
         modelo.NombreBebida = NombreCatalogoAttribute.Normalizar(modelo.NombreBebida);
         await ValidarNombreBebidaUnico(modelo);
         ValidarTamanoBebida(modelo);
@@ -474,7 +589,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             TipoBebida = bebida.TipoBebida,
             IdTamano = bebida.IdTamano,
             Precio = bebida.Precio,
-            TamanosDisponibles = await db.Tamanos.Where(t => t.Activo || t.IdTamano == bebida.IdTamano)
+            TamanosDisponibles = await db.Tamanos.Where(t => (t.Activo && t.EsParaBebida) || t.IdTamano == bebida.IdTamano)
                 .OrderBy(t => t.NombreTamano).ToListAsync(),
         });
     }
@@ -485,7 +600,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         var bebida = await db.Bebidas.FindAsync(modelo.IdBebida);
         if (bebida == null) return NotFound();
-        modelo.TamanosDisponibles = await db.Tamanos.Where(t => t.Activo || t.IdTamano == bebida.IdTamano)
+        modelo.TamanosDisponibles = await db.Tamanos.Where(t => (t.Activo && t.EsParaBebida) || t.IdTamano == bebida.IdTamano)
             .OrderBy(t => t.NombreTamano).ToListAsync();
         modelo.NombreBebida = NombreCatalogoAttribute.Normalizar(modelo.NombreBebida);
         await ValidarNombreBebidaUnico(modelo);
@@ -544,6 +659,15 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         var bebida = await db.Bebidas.FindAsync(id);
         if (bebida == null) return NotFound();
+        if (!bebida.Activo && bebida.IdTamano.HasValue)
+        {
+            var tamano = await db.Tamanos.FindAsync(bebida.IdTamano.Value);
+            if (tamano is { Activo: false })
+            {
+                TempData["Error"] = $"No se puede activar la bebida «{bebida.NombreBebida}»: su tamaño «{tamano.NombreTamano}» está inactivo. Active primero el tamaño.";
+                return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
+            }
+        }
         bebida.Activo = !bebida.Activo;
         await db.SaveChangesAsync();
         TempData["Mensaje"] = bebida.Activo ? $"Bebida «{bebida.NombreBebida}» activada." : $"Bebida «{bebida.NombreBebida}» desactivada.";
