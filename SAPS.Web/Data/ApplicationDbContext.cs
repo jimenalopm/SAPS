@@ -71,6 +71,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.IdTamano).HasName("PK_Tamano");
             entity.Property(e => e.IdTamano).HasColumnName("idTamano");
             entity.Property(e => e.NombreTamano).HasColumnName("Nombre").HasMaxLength(30).IsUnicode(false).IsRequired();
+            entity.Property(e => e.Orden).HasColumnName("Orden");
             entity.Property(e => e.Activo).HasColumnName("EstaActivo").HasDefaultValue(true);
 
             entity.HasIndex(e => e.NombreTamano)

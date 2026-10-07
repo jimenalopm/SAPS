@@ -11,6 +11,12 @@ public class Tamano
 
     public required string NombreTamano { get; set; }
 
+    /// <summary>
+    /// Posición del tamaño de menor a mayor (1 = el más pequeño). Permite validar que un tamaño
+    /// mayor no cueste menos que uno menor dentro del mismo producto.
+    /// </summary>
+    public int Orden { get; set; }
+
     public bool Activo { get; set; } = true;
 
     public ICollection<Precio> Precios { get; set; } = new List<Precio>();

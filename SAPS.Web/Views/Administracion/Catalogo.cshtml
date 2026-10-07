@@ -134,12 +134,13 @@
 
         <div class="tabla-contenedor">
         <table class="table table-recyplast tabla-apilable align-middle">
-            <thead><tr><th>Nombre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Orden</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var t in Model.Tamanos)
             {
                 <tr class="@(t.Activo ? "" : "fila-inactiva")">
                     <td data-label="Nombre" class="celda-principal">@t.NombreTamano</td>
+                    <td data-label="Orden">@(t.Orden > 0 ? t.Orden.ToString() : "—")</td>
                     <td data-label="Estado"><span class="badge-recyplast con-punto @(t.Activo ? "" : "gris")">@(t.Activo ? "Activo" : "Inactivo")</span></td>
                     <td class="text-end celda-acciones">
                         <a asp-action="EditarTamano" asp-route-id="@t.IdTamano" class="btn btn-sm btn-recyplast-outline"><partial name="_Iconos" model="@("editar icono-sm")" /> Editar</a>

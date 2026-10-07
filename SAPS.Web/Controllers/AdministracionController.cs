@@ -43,7 +43,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         var tamanos = db.Tamanos.AsQueryable();
         tamanos = tamanos.Where(t => t.Activo == !tamInc);
         if (!string.IsNullOrWhiteSpace(tamQ)) tamanos = tamanos.Where(t => t.NombreTamano.Contains(tamQ));
-        vm.Tamanos = await tamanos.OrderBy(t => t.NombreTamano).ToListAsync();
+        vm.Tamanos = await tamanos.OrderBy(t => t.Orden).ThenBy(t => t.NombreTamano).ToListAsync();
 
         var productos = db.Productos
             .Include(p => p.Categoria)
@@ -136,9 +136,10 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         {
             ModelState.AddModelError(nameof(modelo.NombreTamano), "Ya existe un tamaño con ese nombre.");
         }
+        ValidarOrdenTamano(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
-        db.Tamanos.Add(new Tamano { NombreTamano = modelo.NombreTamano });
+        db.Tamanos.Add(new Tamano { NombreTamano = modelo.NombreTamano, Orden = modelo.Orden!.Value });
         await db.SaveChangesAsync();
         TempData["Mensaje"] = $"Tamaño \"{modelo.NombreTamano}\" creado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
@@ -148,7 +149,12 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         var tamano = await db.Tamanos.FindAsync(id);
         if (tamano == null) return NotFound();
-        return View(new TamanoFormViewModel { IdTamano = tamano.IdTamano, NombreTamano = tamano.NombreTamano });
+        return View(new TamanoFormViewModel
+        {
+            IdTamano = tamano.IdTamano,
+            NombreTamano = tamano.NombreTamano,
+            Orden = tamano.Orden > 0 ? tamano.Orden : null,
+        });
     }
 
     [HttpPost]
@@ -159,12 +165,14 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         {
             ModelState.AddModelError(nameof(modelo.NombreTamano), "Ya existe otro tamaño con ese nombre.");
         }
+        ValidarOrdenTamano(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
         var tamano = await db.Tamanos.FindAsync(modelo.IdTamano);
         if (tamano == null) return NotFound();
 
         tamano.NombreTamano = modelo.NombreTamano;
+        tamano.Orden = modelo.Orden!.Value;
         await db.SaveChangesAsync();
         TempData["Mensaje"] = "Tamaño actualizado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
@@ -331,7 +339,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             .Select(p => p.IdTamano!.Value).ToList() ?? new List<int>();
         var tamanos = await db.Tamanos
             .Where(t => t.Activo || tamanosAsignados.Contains(t.IdTamano))
-            .OrderBy(t => t.NombreTamano).ToListAsync();
+            .OrderBy(t => t.Orden).ThenBy(t => t.NombreTamano).ToListAsync();
 
         // Conserva los índices de los campos enviados cuando hay errores de validación.
         foreach (var entrada in modelo.PreciosPorTamano)
@@ -339,6 +347,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             var tamano = tamanos.FirstOrDefault(t => t.IdTamano == entrada.IdTamano);
             entrada.NombreTamano = tamano?.NombreTamano ?? "Tamaño no disponible";
             entrada.TamanoActivo = tamano?.Activo ?? false;
+            entrada.Orden = tamano?.Orden ?? 0;
             if (modelo.RequiereTamano && entrada.Incluir && tamano == null)
                 ModelState.AddModelError(string.Empty, "Uno de los tamaños seleccionados ya no está disponible.");
         }
@@ -353,6 +362,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
                 IdTamano = tamano.IdTamano,
                 NombreTamano = tamano.NombreTamano,
                 TamanoActivo = tamano.Activo,
+                Orden = tamano.Orden,
                 Incluir = precioActual != null,
                 Monto = precioActual?.MontoPrecio,
             });
@@ -373,7 +383,10 @@ public class AdministracionController(ApplicationDbContext db) : Controller
                     ModelState.AddModelError($"PreciosPorTamano[{i}].Monto", precio.Monto is null
                         ? "Indique el precio de este tamaño."
                         : "No se pueden colocar valores negativos o iguales a cero.");
+                else if (precio.Incluir && precio.Monto > ReglasCatalogo.PrecioMaximo)
+                    ModelState.AddModelError($"PreciosPorTamano[{i}].Monto", ReglasCatalogo.MensajePrecioMaximo);
             }
+            ValidarOrdenDePrecios(modelo);
             if (seleccionados.GroupBy(p => p.IdTamano).Any(g => g.Count() > 1))
                 ModelState.AddModelError(string.Empty, "No se puede repetir un tamaño en el producto.");
         }
@@ -381,6 +394,39 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         {
             ModelState.AddModelError(nameof(modelo.PrecioUnico), modelo.PrecioUnico is null ? "Indique el precio." : "No se pueden colocar valores negativos o iguales a cero.");
         }
+        else if (modelo.PrecioUnico > ReglasCatalogo.PrecioMaximo)
+        {
+            ModelState.AddModelError(nameof(modelo.PrecioUnico), ReglasCatalogo.MensajePrecioMaximo);
+        }
+    }
+
+    // HU-007: un tamaño mayor no puede costar menos que uno menor (ej. Mediano ₡1.500 y Grande ₡500 no tiene sentido).
+    // Igual precio entre tamaños sí se permite. Solo se comparan precios ya válidos.
+    private void ValidarOrdenDePrecios(ProductoFormViewModel modelo)
+    {
+        var ordenados = modelo.PreciosPorTamano
+            .Select((p, i) => (Entrada: p, Indice: i))
+            .Where(x => x.Entrada.Incluir && x.Entrada.Monto is > 0 && x.Entrada.Monto <= ReglasCatalogo.PrecioMaximo)
+            .OrderBy(x => x.Entrada.Orden)
+            .ToList();
+
+        for (int k = 1; k < ordenados.Count; k++)
+        {
+            var menor = ordenados[k - 1].Entrada;
+            var mayor = ordenados[k].Entrada;
+            if (mayor.Orden > menor.Orden && mayor.Monto < menor.Monto)
+            {
+                ModelState.AddModelError($"PreciosPorTamano[{ordenados[k].Indice}].Monto",
+                    $"El precio de {mayor.NombreTamano} (₡{mayor.Monto:N0}) no puede ser menor que el de {menor.NombreTamano} (₡{menor.Monto:N0}).");
+            }
+        }
+    }
+
+    // HU-007: el orden del tamaño es obligatorio también al llamar la acción sin pasar por el enlace de modelos.
+    private void ValidarOrdenTamano(TamanoFormViewModel modelo)
+    {
+        if (modelo.Orden is null or < 1 or > ReglasCatalogo.OrdenMaximo && !ModelState.ContainsKey(nameof(modelo.Orden)))
+            ModelState.AddModelError(nameof(modelo.Orden), "Indique el orden del tamaño, un número entre 1 y 99.");
     }
 
     // ==================================================================

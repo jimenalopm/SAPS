@@ -21,6 +21,11 @@ public class TamanoFormViewModel
     [Required(ErrorMessage = "El nombre del tamaño es obligatorio.")]
     [StringLength(30, ErrorMessage = "Máximo 30 caracteres.")]
     public string NombreTamano { get; set; } = "";
+
+    [Required(ErrorMessage = "Indique el orden del tamaño.")]
+    [Range(1, ReglasCatalogo.OrdenMaximo, ErrorMessage = "El orden debe ser un número entre 1 y 99.")]
+    [Display(Name = "Orden")]
+    public int? Orden { get; set; }
 }
 
 // ---------- Producto ----------
@@ -31,6 +36,7 @@ public class PrecioPorTamanoInput
     public int IdTamano { get; set; }
     public string NombreTamano { get; set; } = "";
     public bool TamanoActivo { get; set; } = true;
+    public int Orden { get; set; }
     public bool Incluir { get; set; }
 
     [Display(Name = "Precio")]
@@ -80,7 +86,7 @@ public class BebidaFormViewModel
     // [H9] Required explícito: sin él, ASP.NET agrega uno implícito con el mensaje
     // en inglés "The Precio field is required.".
     [Required(ErrorMessage = "El precio es obligatorio.")]
-    [Range(1, int.MaxValue, ErrorMessage = "El precio debe ser mayor a cero.")]
+    [Range(1, ReglasCatalogo.PrecioMaximo, ErrorMessage = "El precio debe estar entre ₡1 y ₡100.000.")]
     [Display(Name = "Precio")]
     public int Precio { get; set; }
 

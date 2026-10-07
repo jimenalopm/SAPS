@@ -43,7 +43,7 @@
         <label asp-for="PrecioUnico" class="form-label">Precio único <span class="campo-obligatorio" aria-hidden="true">*</span></label>
         <div class="input-group campo-monto">
             <span class="input-group-text" aria-hidden="true">₡</span>
-            <input asp-for="PrecioUnico" class="form-control" min="1" step="1" inputmode="numeric" />
+            <input asp-for="PrecioUnico" class="form-control" min="1" max="100000" step="1" inputmode="numeric" />
         </div>
         <span asp-validation-for="PrecioUnico" class="text-danger small"></span>
     </div>
@@ -68,7 +68,7 @@
                 <div class="precio-tamano-campo">
                     <div class="input-group campo-monto">
                         <span class="input-group-text" aria-hidden="true">₡</span>
-                        <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" step="1" inputmode="numeric" aria-label="Precio del tamaño @Model.PreciosPorTamano[i].NombreTamano" />
+                        <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" max="100000" step="1" inputmode="numeric" aria-label="Precio del tamaño @Model.PreciosPorTamano[i].NombreTamano" />
                     </div>
                     <span asp-validation-for="PreciosPorTamano[i].Monto" class="text-danger small d-block" role="alert"></span>
                 </div>

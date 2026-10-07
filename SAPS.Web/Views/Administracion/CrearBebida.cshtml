@@ -58,7 +58,7 @@
             <label asp-for="Precio" class="form-label">Precio <span class="campo-obligatorio" aria-hidden="true">*</span></label>
             <div class="input-group campo-monto">
                 <span class="input-group-text" aria-hidden="true">₡</span>
-                <input asp-for="Precio" class="form-control" min="1" step="1" inputmode="numeric" />
+                <input asp-for="Precio" class="form-control" min="1" max="100000" step="1" inputmode="numeric" />
             </div>
             <span asp-validation-for="Precio" class="text-danger small"></span>
         </div>
