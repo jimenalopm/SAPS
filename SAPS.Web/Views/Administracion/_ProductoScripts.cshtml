@@ -10,8 +10,28 @@
             fila.querySelector('input[name$=".Monto"]').disabled = !requiereTamano || !fila.querySelector('input[type="checkbox"]').checked;
         });
     }
-    $(function () {
+    // HU-007: solo se muestran los tamaños permitidos para la categoría elegida.
+    function filtrarTamanosPorCategoria() {
+        const categoria = document.getElementById('IdCategoria').value;
+        let visibles = 0;
+        document.querySelectorAll('.precio-tamano-fila').forEach(fila => {
+            const permitidas = (fila.dataset.categorias || '').split(',').filter(Boolean);
+            const visible = categoria !== '' && permitidas.includes(categoria);
+            fila.style.display = visible ? '' : 'none';
+            if (visible) { visibles++; } else { fila.querySelector('input[type="checkbox"]').checked = false; }
+        });
+        const aviso = document.getElementById('sinTamanosCategoria');
+        if (aviso) {
+            aviso.textContent = categoria === ''
+                ? 'Seleccione primero la categoría para ver sus tamaños.'
+                : 'Esta categoría no tiene tamaños asignados. Asígnelos desde Editar categoría en el catálogo.';
+            aviso.style.display = visibles === 0 ? 'block' : 'none';
+        }
         alternarPrecios();
+    }
+    $(function () {
+        filtrarTamanosPorCategoria();
+        document.getElementById('IdCategoria').addEventListener('change', filtrarTamanosPorCategoria);
         document.querySelectorAll('.precio-tamano-fila input[type="checkbox"]').forEach(input => input.addEventListener('change', alternarPrecios));
         const mensaje = 'No se pueden colocar valores negativos o iguales a cero.';
         $('#PrecioUnico, .precio-tamano-fila input[name$=".Monto"]').each(function () {

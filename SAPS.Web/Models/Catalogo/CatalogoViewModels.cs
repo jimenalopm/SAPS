@@ -9,7 +9,13 @@ public class CategoriaFormViewModel
 
     [Required(ErrorMessage = "El nombre de la categoría es obligatorio.")]
     [StringLength(50, ErrorMessage = "Máximo 50 caracteres.")]
+    [NombreCatalogo]
     public string NombreCategoria { get; set; } = "";
+
+    /// <summary>HU-007: tamaños que pueden tener los productos de esta categoría.</summary>
+    public List<int> TamanosPermitidos { get; set; } = [];
+
+    public List<Tamano> TamanosDisponibles { get; set; } = [];
 }
 
 // ---------- Tamaño ----------
@@ -19,7 +25,11 @@ public class TamanoFormViewModel
 
     [Required(ErrorMessage = "El nombre del tamaño es obligatorio.")]
     [StringLength(30, ErrorMessage = "Máximo 30 caracteres.")]
+    [NombreCatalogo(Minimo = 2)]
     public string NombreTamano { get; set; } = "";
+
+    [Display(Name = "Tamaño de bebida")]
+    public bool EsParaBebida { get; set; }
 }
 
 // ---------- Producto ----------
@@ -30,6 +40,10 @@ public class PrecioPorTamanoInput
     public int IdTamano { get; set; }
     public string NombreTamano { get; set; } = "";
     public bool TamanoActivo { get; set; } = true;
+    public int? Orden { get; set; }
+
+    /// <summary>Ids de categoría (separados por coma) donde este tamaño está permitido; lo usa el formulario para filtrar.</summary>
+    public string CategoriasPermitidas { get; set; } = "";
     public bool Incluir { get; set; }
 
     [Display(Name = "Precio")]
@@ -41,7 +55,8 @@ public class ProductoFormViewModel
     public int IdProducto { get; set; }
 
     [Required(ErrorMessage = "El nombre del producto es obligatorio.")]
-    [StringLength(100, ErrorMessage = "Máximo 100 caracteres.")]
+    [StringLength(60, ErrorMessage = "Máximo 60 caracteres.")]
+    [NombreCatalogo]
     public string NombreProducto { get; set; } = "";
 
     [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar una categoría.")]
@@ -66,7 +81,8 @@ public class BebidaFormViewModel
     public int IdBebida { get; set; }
 
     [Required(ErrorMessage = "El nombre de la bebida es obligatorio.")]
-    [StringLength(100, ErrorMessage = "Máximo 100 caracteres.")]
+    [StringLength(60, ErrorMessage = "Máximo 60 caracteres.")]
+    [NombreCatalogo]
     public string NombreBebida { get; set; } = "";
 
     [Required(ErrorMessage = "Debe indicar el tipo de bebida.")]
@@ -77,7 +93,7 @@ public class BebidaFormViewModel
     // [H9] Required explícito: sin él, ASP.NET agrega uno implícito con el mensaje
     // en inglés "The Precio field is required.".
     [Required(ErrorMessage = "El precio es obligatorio.")]
-    [Range(1, int.MaxValue, ErrorMessage = "El precio debe ser mayor a cero.")]
+    [Range(1, ReglasCatalogo.PrecioMaximo, ErrorMessage = "El precio debe estar entre ₡1 y ₡10.000.")]
     [Display(Name = "Precio")]
     public int Precio { get; set; }
 
@@ -98,6 +114,8 @@ public class CatalogoIndexViewModel
     public List<Tamano> Tamanos { get; set; } = [];
 
     public string? ProductoBuscar { get; set; }
+    public int? ProductoCategoria { get; set; }
+    public List<Categoria> CategoriasFiltro { get; set; } = [];
     public bool ProductoIncluirInactivos { get; set; }
     public List<Producto> Productos { get; set; } = [];
 

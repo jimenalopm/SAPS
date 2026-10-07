@@ -27,6 +27,12 @@
             <input asp-for="NombreTamano" class="form-control" autofocus />
             <span asp-validation-for="NombreTamano" class="text-danger small"></span>
         </div>
+        <div class="form-check mt-3">
+            <input asp-for="EsParaBebida" class="form-check-input" />
+            <label asp-for="EsParaBebida" class="form-check-label">Es un tamaño de bebida (600ml, 1L...)</label>
+            <div class="form-text">Los tamaños de bebida se usan solo en la sección Bebidas. Los demás se asignan a las categorías de comida.</div>
+            <span asp-validation-for="EsParaBebida" class="text-danger small d-block"></span>
+        </div>
     </section>
 
     <div class="form-acciones">

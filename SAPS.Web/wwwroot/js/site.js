@@ -110,3 +110,23 @@
     movil.addEventListener('change', () => fijar(false));
     fijar(false);
 })();
+
+/* Campos de precio: solo dígitos y nunca más que el máximo permitido (atributo max). */
+(function () {
+    function limitar(campo) {
+        const max = parseInt(campo.getAttribute('max'), 10);
+        if (!max) return;
+        const digitos = String(max).length;
+        let valor = campo.value.replace(/\D/g, '').slice(0, digitos);
+        if (valor !== '' && parseInt(valor, 10) > max) valor = valor.slice(0, -1);
+        if (valor !== campo.value) campo.value = valor;
+    }
+    document.addEventListener('input', function (e) {
+        const campo = e.target;
+        if (campo instanceof HTMLInputElement && campo.getAttribute('inputmode') === 'numeric' && campo.hasAttribute('max')) limitar(campo);
+    });
+    document.addEventListener('keydown', function (e) {
+        const campo = e.target;
+        if (campo instanceof HTMLInputElement && campo.getAttribute('inputmode') === 'numeric' && campo.hasAttribute('max') && ['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
+    });
+})();

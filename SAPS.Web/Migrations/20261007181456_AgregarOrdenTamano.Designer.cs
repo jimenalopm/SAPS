@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SAPS.Web.Data;
 
@@ -11,9 +12,11 @@ using SAPS.Web.Data;
 namespace SAPS.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007181456_AgregarOrdenTamano")]
+    partial class AgregarOrdenTamano
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -307,25 +310,6 @@ namespace SAPS.Web.Migrations
                     b.ToTable("tb_Categoria", "soda");
                 });
 
-            modelBuilder.Entity("SAPS.Web.Models.Catalogo.CategoriaTamano", b =>
-                {
-                    b.Property<int>("IdCategoria")
-                        .HasColumnType("int")
-                        .HasColumnName("idCategoria");
-
-                    b.Property<int>("IdTamano")
-                        .HasColumnType("int")
-                        .HasColumnName("idTamano");
-
-                    b.HasKey("IdCategoria", "IdTamano")
-                        .HasName("PK_CategoriaTamano");
-
-                    b.HasIndex("IdTamano")
-                        .HasDatabaseName("IX_CategoriaTamano_idTamano");
-
-                    b.ToTable("tb_CategoriaTamano", "soda");
-                });
-
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Precio", b =>
                 {
                     b.Property<int>("IdPrecio")
@@ -442,18 +426,16 @@ namespace SAPS.Web.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("EstaActivo");
 
-                    b.Property<bool>("EsParaBebida")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("EsParaBebida");
-
                     b.Property<string>("NombreTamano")
                         .IsRequired()
                         .HasMaxLength(30)
                         .IsUnicode(false)
                         .HasColumnType("varchar(30)")
                         .HasColumnName("Nombre");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("int")
+                        .HasColumnName("Orden");
 
                     b.HasKey("IdTamano")
                         .HasName("PK_Tamano");
@@ -708,27 +690,6 @@ namespace SAPS.Web.Migrations
                     b.Navigation("Tamano");
                 });
 
-            modelBuilder.Entity("SAPS.Web.Models.Catalogo.CategoriaTamano", b =>
-                {
-                    b.HasOne("SAPS.Web.Models.Catalogo.Categoria", "Categoria")
-                        .WithMany("TamanosPermitidos")
-                        .HasForeignKey("IdCategoria")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_CategoriaTamano_Categoria");
-
-                    b.HasOne("SAPS.Web.Models.Catalogo.Tamano", "Tamano")
-                        .WithMany("Categorias")
-                        .HasForeignKey("IdTamano")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_CategoriaTamano_Tamano");
-
-                    b.Navigation("Categoria");
-
-                    b.Navigation("Tamano");
-                });
-
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Precio", b =>
                 {
                     b.HasOne("SAPS.Web.Models.Catalogo.Producto", "Producto")
@@ -798,8 +759,6 @@ namespace SAPS.Web.Migrations
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Categoria", b =>
                 {
                     b.Navigation("Productos");
-
-                    b.Navigation("TamanosPermitidos");
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Producto", b =>
@@ -810,8 +769,6 @@ namespace SAPS.Web.Migrations
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Tamano", b =>
                 {
                     b.Navigation("Bebidas");
-
-                    b.Navigation("Categorias");
 
                     b.Navigation("Precios");
                 });

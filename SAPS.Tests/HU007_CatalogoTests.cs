@@ -254,6 +254,11 @@ public class HU007_CatalogoTests
         var grande = new Tamano { NombreTamano = "Grande" };
         db.AddRange(cat, pequeno, grande);
         await db.SaveChangesAsync();
+        // HU-007: la categoría permite estos tamaños en sus productos.
+        db.CategoriasTamanos.AddRange(
+            new CategoriaTamano { IdCategoria = cat.IdCategoria, IdTamano = pequeno.IdTamano },
+            new CategoriaTamano { IdCategoria = cat.IdCategoria, IdTamano = grande.IdTamano });
+        await db.SaveChangesAsync();
         return (cat, pequeno, grande);
     }
 
@@ -542,6 +547,8 @@ public class HU007_CatalogoTests
     {
         await using var db = TestServices.CrearContextoInMemory();
         var (_, pequeno, _) = await SembrarBaseAsync(db);
+        pequeno.EsParaBebida = true; // HU-007: las bebidas solo usan tamaños de bebida
+        await db.SaveChangesAsync();
 
         var resultado = await Controlador(db).CrearBebida(new BebidaFormViewModel
         {

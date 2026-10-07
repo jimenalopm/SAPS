@@ -43,7 +43,7 @@
         <label asp-for="PrecioUnico" class="form-label">Precio único <span class="campo-obligatorio" aria-hidden="true">*</span></label>
         <div class="input-group campo-monto">
             <span class="input-group-text" aria-hidden="true">₡</span>
-            <input asp-for="PrecioUnico" class="form-control" min="1" step="1" inputmode="numeric" />
+            <input asp-for="PrecioUnico" class="form-control" min="1" max="10000" step="1" inputmode="numeric" />
         </div>
         <span asp-validation-for="PrecioUnico" class="text-danger small"></span>
     </div>
@@ -55,10 +55,11 @@
         {
             <p class="text-muted">No hay tamaños activos registrados todavía. Cree al menos un tamaño primero.</p>
         }
+        <p id="sinTamanosCategoria" class="text-muted" style="display:none">Esta categoría no tiene tamaños asignados. Asígnelos desde Editar categoría en el catálogo.</p>
         <div class="precios-tamano-lista">
         @for (int i = 0; i < Model.PreciosPorTamano.Count; i++)
         {
-            <div class="precio-tamano-fila">
+            <div class="precio-tamano-fila" data-categorias="@Model.PreciosPorTamano[i].CategoriasPermitidas">
                 <input type="hidden" asp-for="PreciosPorTamano[i].IdTamano" />
                 <input type="hidden" asp-for="PreciosPorTamano[i].NombreTamano" />
                 <div class="form-check">
@@ -68,7 +69,7 @@
                 <div class="precio-tamano-campo">
                     <div class="input-group campo-monto">
                         <span class="input-group-text" aria-hidden="true">₡</span>
-                        <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" step="1" inputmode="numeric" aria-label="Precio del tamaño @Model.PreciosPorTamano[i].NombreTamano" />
+                        <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" max="10000" step="1" inputmode="numeric" aria-label="Precio del tamaño @Model.PreciosPorTamano[i].NombreTamano" />
                     </div>
                     <span asp-validation-for="PreciosPorTamano[i].Monto" class="text-danger small d-block" role="alert"></span>
                 </div>

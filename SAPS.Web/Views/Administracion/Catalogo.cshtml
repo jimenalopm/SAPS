@@ -20,6 +20,14 @@
     </div>
 </div>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
 @if (TempData["Mensaje"] != null)
 {
     <div class="alert alert-recyplast alert-dismissible fade show" role="alert">
@@ -87,12 +95,13 @@
 
         <div class="tabla-contenedor">
         <table class="table table-recyplast tabla-apilable align-middle">
-            <thead><tr><th>Nombre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Tamaños permitidos</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var c in Model.Categorias)
             {
                 <tr class="@(c.Activo ? "" : "fila-inactiva")">
                     <td data-label="Nombre" class="celda-principal">@c.NombreCategoria</td>
+                    <td data-label="Tamaños permitidos">@(c.TamanosPermitidos.Any() ? string.Join(", ", c.TamanosPermitidos.Select(x => x.Tamano!.NombreTamano)) : "—")</td>
                     <td data-label="Estado"><span class="badge-recyplast con-punto @(c.Activo ? "" : "gris")">@(c.Activo ? "Activa" : "Inactiva")</span></td>
                     <td class="text-end celda-acciones">
                         <a asp-action="EditarCategoria" asp-route-id="@c.IdCategoria" class="btn btn-sm btn-recyplast-outline"><partial name="_Iconos" model="@("editar icono-sm")" /> Editar</a>
@@ -107,7 +116,7 @@
             }
             @if (!Model.Categorias.Any())
             {
-                <tr class="fila-vacia"><td colspan="3" class="estado-vacio">No hay categorías para mostrar.</td></tr>
+                <tr class="fila-vacia"><td colspan="4" class="estado-vacio">No hay categorías para mostrar.</td></tr>
             }
             </tbody>
         </table>
@@ -134,12 +143,13 @@
 
         <div class="tabla-contenedor">
         <table class="table table-recyplast tabla-apilable align-middle">
-            <thead><tr><th>Nombre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Uso</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var t in Model.Tamanos)
             {
                 <tr class="@(t.Activo ? "" : "fila-inactiva")">
                     <td data-label="Nombre" class="celda-principal">@t.NombreTamano</td>
+                    <td data-label="Uso">@(t.EsParaBebida ? "Bebida" : "Comida")</td>
                     <td data-label="Estado"><span class="badge-recyplast con-punto @(t.Activo ? "" : "gris")">@(t.Activo ? "Activo" : "Inactivo")</span></td>
                     <td class="text-end celda-acciones">
                         <a asp-action="EditarTamano" asp-route-id="@t.IdTamano" class="btn btn-sm btn-recyplast-outline"><partial name="_Iconos" model="@("editar icono-sm")" /> Editar</a>
@@ -154,7 +164,7 @@
             }
             @if (!Model.Tamanos.Any())
             {
-                <tr class="fila-vacia"><td colspan="3" class="estado-vacio">No hay tamaños para mostrar.</td></tr>
+                <tr class="fila-vacia"><td colspan="4" class="estado-vacio">No hay tamaños para mostrar.</td></tr>
             }
             </tbody>
         </table>
@@ -169,6 +179,15 @@
                 <div class="input-buscar">
                     <partial name="_Iconos" model="@("buscar icono-sm")" />
                     <input type="search" name="prodQ" value="@Model.ProductoBuscar" class="form-control" placeholder="Buscar producto..." aria-label="Buscar producto" />
+                </div>
+                <div>
+                    <select name="prodCat" class="form-select" aria-label="Filtrar por categoría">
+                        <option value="">Todas las categorías</option>
+                        @foreach (var categoriaFiltro in Model.CategoriasFiltro)
+                        {
+                            <option value="@categoriaFiltro.IdCategoria" selected="@(Model.ProductoCategoria == categoriaFiltro.IdCategoria)">@categoriaFiltro.NombreCategoria@(categoriaFiltro.Activo ? "" : " (inactiva)")</option>
+                        }
+                    </select>
                 </div>
                 <div class="form-check">
                     <input type="checkbox" name="prodInc" value="true" data-filtrar-estado class="form-check-input" id="prodInc" checked="@Model.ProductoIncluirInactivos" />
