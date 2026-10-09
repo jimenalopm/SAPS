@@ -14,9 +14,19 @@ public class RegistrarPedidoRequest
 public class LineaPedidoRequest
 {
     [Required] public string Clave { get; set; } = "";
-    [Range(1, int.MaxValue)] public int Cantidad { get; set; }
+    [Range(1, ServicioLimites.CantidadMaxima)] public int Cantidad { get; set; }
     // Solo detecta cambios desde que se mostró el catálogo. Nunca determina el cobro.
     [Range(1, int.MaxValue)] public int PrecioMostrado { get; set; }
+}
+
+public static class ServicioLimites
+{
+    /// <summary>Máximo de unidades por renglón (3 dígitos).</summary>
+    public const int CantidadMaxima = 999;
+    /// <summary>Desde este total (exclusivo) el pedido se considera fuera de lo razonable y se advierte.</summary>
+    public const long TotalAdvertencia = 25_000;
+    /// <summary>Total máximo permitido para un pedido.</summary>
+    public const long TotalMaximo = 40_000;
 }
 
 public record ArticuloPedido(string Clave, string Nombre, string Categoria, string? Tamano, int Precio);

@@ -62,7 +62,7 @@ try
     var categoriaId = categoria.IdCategoria; var tamanoId = tamano.IdTamano; var productoId = producto.IdProducto;
     RegistrarPedidoRequest Solicitud() => new()
     {
-        TokenRegistro = Guid.NewGuid(), CodigoColaborador = "DEMO001", TipoComida = "Almuerzo",
+        TokenRegistro = Guid.NewGuid(), CodigoColaborador = "DEMO001", TipoComida = "Almuerzos",
         Lineas = [new() { Clave = $"P:{precioId}", Cantidad = 2, PrecioMostrado = 1500 }, new() { Clave = $"B:{bebidaId}", Cantidad = 1, PrecioMostrado = 700 }]
     };
     Verificar((await pedidos.BuscarColaboradorAsync(" demo001 ")).Codigo == "DEMO001", "Buscar código normalizando espacios y mayúsculas");
@@ -124,16 +124,22 @@ try
     guardado = await db.Pedidos.AsNoTracking().Include(p => p.Detalles).SingleAsync();
     Verificar(guardado.Total == 3700 && guardado.Detalles.Single(d => d.IdBebida != null).PrecioUnitario == 700, "Cambio de catálogo conserva precio y total históricos");
     await db.Bebidas.Where(b => b.IdBebida == bebidaId).ExecuteUpdateAsync(s => s.SetProperty(b => b.Precio, 700));
-    await db.Database.ExecuteSqlRawAsync("ALTER TABLE tb_DetallePedido ADD CONSTRAINT CK_PruebaFallo CHECK (Cantidad <> 7777)");
-    solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 7777;
+    await db.Database.ExecuteSqlRawAsync("ALTER TABLE tb_DetallePedido ADD CONSTRAINT CK_PruebaFallo CHECK (Cantidad <> 7)");
+    solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 7;
     var antes = await db.Pedidos.CountAsync(); var fallo = false;
     try { await pedidos.RegistrarAsync(solicitud, usuarioId); } catch (DbUpdateException) { fallo = true; }
     db.ChangeTracker.Clear();
     Verificar(fallo && await db.Pedidos.CountAsync() == antes, "Fallo de detalle revierte cabecera y todos los renglones");
     await db.Database.ExecuteSqlRawAsync("ALTER TABLE tb_DetallePedido DROP CONSTRAINT CK_PruebaFallo");
-    solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 1_000_000;
+    solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 1000;
+    await Rechazar(async () => { await pedidos.RegistrarAsync(solicitud, usuarioId); }, "Cantidad de más de 3 dígitos rechazada");
+    solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 27;
+    await Rechazar(async () => { await pedidos.RegistrarAsync(solicitud, usuarioId); }, "Pedido de más de ₡40.000 rechazado");
+    solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 26;
     resultado = await pedidos.RegistrarAsync(solicitud, usuarioId);
-    Verificar(resultado.Total == 1_500_000_700, "No hay tope comercial de consumo");
+    Verificar(resultado.Total == 39_700, "Pedido por encima de ₡25.000 pero dentro de ₡40.000 se registra");
+    solicitud = Solicitud(); solicitud.TipoComida = "Desayuno";
+    await Rechazar(async () => { await pedidos.RegistrarAsync(solicitud, usuarioId); }, "Tipo de comida sin artículos en el catálogo rechazado");
     reloj.Hora = new DateTimeOffset(2026, 9, 20, 9, 0, 0, TimeSpan.Zero);
     resultado = await pedidos.RegistrarAsync(Solicitud(), usuarioId);
     Verificar(resultado.Total == 3700, "Se puede registrar de madrugada sin restricción horaria");
@@ -154,12 +160,12 @@ try
         "Los tres tamaños activos con precio vigente se ofrecen simultáneamente");
     var solicitudTres = new RegistrarPedidoRequest
     {
-        TokenRegistro = Guid.NewGuid(), CodigoColaborador = "DEMO001", TipoComida = "Merienda",
+        TokenRegistro = Guid.NewGuid(), CodigoColaborador = "DEMO001", TipoComida = "Almuerzos",
         Lineas = opcionesTres.Select(a => new LineaPedidoRequest { Clave = a.Clave, Cantidad = 1, PrecioMostrado = a.Precio }).ToList()
     };
     var compraTres = await pedidos.RegistrarAsync(solicitudTres, usuarioId);
     Verificar(compraTres.Total == 1550 && await db.DetallesPedido.CountAsync(d => d.IdPedido == compraTres.IdPedido) == 3,
-        "Se pueden registrar los tres tamaños en un mismo pedido con el valor interno de Café");
+        "Se pueden registrar los tres tamaños en un mismo pedido con el tipo de comida tomado de la categoría");
     await db.Tamanos.Where(t => t.IdTamano == medianoTres.IdTamano).ExecuteUpdateAsync(s => s.SetProperty(t => t.Activo, false));
     Verificar((await pedidos.CatalogoAsync()).Count(a => a.Nombre == productoTres.NombreProducto) == 2,
         "Solo se oculta el tamaño desactivado y se mantienen los otros dos");
