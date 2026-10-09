@@ -14,14 +14,13 @@ internal static class PedidoConfiguration
             e.ToTable("tb_Pedido", t =>
             {
                 t.HasCheckConstraint("CK_Pedido_Total", "[Total] > 0");
-                t.HasCheckConstraint("CK_Pedido_TipoComida", "[TipoComida] IN ('Desayuno','Almuerzo','Merienda')");
             });
             e.HasKey(p => p.IdPedido);
             e.HasIndex(p => p.TokenRegistro).IsUnique();
             e.HasIndex(p => new { p.CodigoColaborador, p.FechaRegistroUtc });
             e.Property(p => p.CodigoColaborador).HasMaxLength(50).IsRequired();
             e.Property(p => p.NombreColaborador).HasMaxLength(150).IsRequired();
-            e.Property(p => p.TipoComida).HasMaxLength(20).IsRequired();
+            e.Property(p => p.TipoComida).HasMaxLength(50).IsRequired();
             e.Property(p => p.Observaciones).HasMaxLength(500);
             e.HasOne<IdentityUser>().WithMany().HasForeignKey(p => p.IdUsuarioRegistro).OnDelete(DeleteBehavior.Restrict);
         });

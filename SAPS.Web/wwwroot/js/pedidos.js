@@ -14,7 +14,42 @@
         caja.focus();
     };
     const limpiarMensaje = () => byId('mensaje-pedido').classList.add('d-none');
-    const cantidadValida = valor => /^\d+$/.test(String(valor)) && Number(valor) > 0 && Number(valor) <= 2147483647;
+    const CANTIDAD_MAXIMA = 999, TOTAL_ADVERTENCIA = 25000n, TOTAL_MAXIMO = 40000n;
+    const cantidadValida = valor => /^\d+$/.test(String(valor)) && Number(valor) > 0 && Number(valor) <= CANTIDAD_MAXIMA;
+    // Un input numérico ignora maxlength, así que se limita a 3 dígitos y se bloquean e, +, - y punto.
+    const limitarDigitos = entrada => {
+        entrada.addEventListener('keydown', e => { if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault(); });
+        entrada.addEventListener('input', () => { if (entrada.value.length > 3) entrada.value = entrada.value.slice(0, 3); }, true);
+    };
+    const totalCarrito = () => carrito.reduce((suma, l) => suma + BigInt(l.precio) * BigInt(l.cantidad), 0n);
+    // Aviso permanente (no se borra con otros mensajes) mientras el total siga fuera de lo razonable.
+    function actualizarTotal() {
+        const total = totalCarrito();
+        byId('total-pedido').textContent = moneda(total);
+        const aviso = byId('aviso-total');
+        if (total > TOTAL_MAXIMO) {
+            aviso.className = 'alert alert-danger';
+            aviso.textContent = 'El pedido supera el máximo permitido de ' + moneda(TOTAL_MAXIMO) + '. Reduzca cantidades o quite artículos para poder registrarlo.';
+        } else if (total > TOTAL_ADVERTENCIA) {
+            aviso.className = 'alert alert-warning';
+            aviso.textContent = 'Advertencia: el pedido excede ' + moneda(TOTAL_ADVERTENCIA) + ', que es el límite razonable para un pedido. Verifique las cantidades. No podrá registrar más de ' + moneda(TOTAL_MAXIMO) + '.';
+        } else aviso.className = 'alert d-none';
+        return total;
+    }
+    function pintarTipos() {
+        const select = byId('tipo-comida'), anterior = select.value;
+        const categorias = [...new Set(catalogo.map(a => a.categoria))];
+        select.replaceChildren(new Option('Seleccione…', ''), ...categorias.map(c => new Option(c, c)));
+        select.value = categorias.includes(anterior) ? anterior : '';
+        pintarArticulos();
+    }
+    function pintarArticulos() {
+        const select = byId('articulo'), tipo = byId('tipo-comida').value;
+        const lista = catalogo.filter(a => a.categoria === tipo);
+        select.replaceChildren(new Option(tipo ? (lista.length ? 'Seleccione un artículo…' : 'No hay artículos en esta categoría') : 'Seleccione primero el tipo de comida', ''));
+        lista.forEach(a => select.append(new Option(a.nombre + (a.tamano ? ' · ' + a.tamano : '') + ' — ' + moneda(a.precio), a.clave)));
+        bloquear();
+    }
     async function solicitar(url, opciones = {}) {
         const respuesta = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...opciones });
         if (respuesta.redirected || respuesta.status === 401 || respuesta.status === 403) {
@@ -36,9 +71,9 @@
     function bloquear() {
         // Ante una respuesta incierta se permite reintentar exactamente el mismo pedido.
         app.querySelectorAll('input:not([type=hidden]), select, textarea, button').forEach(c => c.disabled = enviando || !!pendiente);
-        byId('registrar-pedido').disabled = enviando || cargandoCatalogo || (!pendiente && (!colaborador || !carrito.length || !byId('tipo-comida').value || [...app.querySelectorAll('.cantidad-pedido')].some(c => !cantidadValida(c.value))));
+        byId('registrar-pedido').disabled = enviando || cargandoCatalogo || (!pendiente && (totalCarrito() > TOTAL_MAXIMO || !colaborador || !carrito.length || !byId('tipo-comida').value || [...app.querySelectorAll('.cantidad-pedido')].some(c => !cantidadValida(c.value))));
         byId('registrar-pedido').textContent = enviando ? 'Registrando…' : pendiente ? 'Reintentar registro' : 'Registrar pedido';
-        if (!enviando && !pendiente) { byId('agregar').disabled = cargandoCatalogo || !catalogo.length; byId('actualizar-catalogo').disabled = cargandoCatalogo; }
+        if (!enviando && !pendiente) { byId('agregar').disabled = cargandoCatalogo || byId('articulo').options.length < 2; byId('actualizar-catalogo').disabled = cargandoCatalogo; }
     }
     function pintar() {
         const cuerpo = byId('lineas-pedido');
@@ -51,21 +86,22 @@
             const precio = document.createElement('td'); precio.textContent = moneda(linea.precio);
             const celdaCantidad = document.createElement('td');
             const entrada = document.createElement('input');
-            Object.assign(entrada, { type: 'number', min: '1', max: '2147483647', step: '1', value: linea.cantidad, className: 'form-control cantidad-pedido' });
+            Object.assign(entrada, { type: 'number', min: '1', max: String(CANTIDAD_MAXIMA), step: '1', value: linea.cantidad, className: 'form-control cantidad-pedido' });
             entrada.setAttribute('aria-label', 'Cantidad de ' + nombre.textContent);
+            limitarDigitos(entrada);
             entrada.addEventListener('input', () => {
                 const valida = cantidadValida(entrada.value);
-                entrada.setCustomValidity(valida ? '' : 'Indique una cantidad entera mayor que cero.');
+                entrada.setCustomValidity(valida ? '' : 'Indique una cantidad entera entre 1 y ' + CANTIDAD_MAXIMA + '.');
                 entrada.setAttribute('aria-invalid', String(!valida));
                 if (valida) {
                     linea.cantidad = Number(entrada.value);
                     celdaSubtotal.textContent = moneda(BigInt(linea.precio) * BigInt(linea.cantidad));
-                    byId('total-pedido').textContent = moneda(carrito.reduce((suma, l) => suma + BigInt(l.precio) * BigInt(l.cantidad), 0n));
+                    actualizarTotal();
                 }
                 bloquear();
             });
             entrada.addEventListener('change', () => {
-                if (!cantidadValida(entrada.value)) mensaje('La cantidad debe ser un número entero mayor que cero.');
+                if (!cantidadValida(entrada.value)) mensaje('La cantidad debe ser un número entero entre 1 y ' + CANTIDAD_MAXIMA + '.');
             });
             celdaCantidad.append(entrada);
             const subtotal = BigInt(linea.precio) * BigInt(linea.cantidad);
@@ -81,13 +117,13 @@
         });
         byId('tabla-detalle').hidden = !carrito.length;
         byId('pedido-vacio').hidden = !!carrito.length;
-        byId('total-pedido').textContent = moneda(total);
+        actualizarTotal();
         bloquear();
     }
     function reiniciar() {
         carrito = []; colaborador = null; pendiente = null; token = crypto.randomUUID(); busqueda++;
         byId('codigo-colaborador').value = ''; byId('tipo-comida').value = ''; byId('observaciones').value = '';
-        byId('articulo').value = ''; byId('cantidad').value = '1';
+        pintarArticulos(); byId('cantidad').value = '1';
         byId('datos-colaborador').classList.add('d-none'); pintar();
     }
     async function cargarCatalogo(revisar = false) {
@@ -96,15 +132,7 @@
         try {
             const nuevos = await solicitar(app.dataset.catalogoUrl);
             catalogo = nuevos;
-            const select = byId('articulo');
-            select.replaceChildren(new Option('Seleccione un artículo…', ''));
-            let grupo = null;
-            catalogo.forEach(a => {
-                if (!grupo || grupo.label !== a.categoria) {
-                    grupo = document.createElement('optgroup'); grupo.label = a.categoria; select.append(grupo);
-                }
-                grupo.append(new Option(a.nombre + (a.tamano ? ' · ' + a.tamano : '') + ' — ' + moneda(a.precio), a.clave));
-            });
+            pintarTipos();
             byId('estado-catalogo').textContent = catalogo.length ? 'Solo se muestran opciones activas con precio vigente.' : 'No hay artículos disponibles. Solicite al administrador revisar el catálogo.';
             if (revisar) {
                 let cambios = false;
@@ -144,15 +172,16 @@
         evento.preventDefault();
         const articulo = catalogo.find(a => a.clave === byId('articulo').value);
         const cantidad = byId('cantidad').value;
-        if (!articulo || !cantidadValida(cantidad)) { mensaje('Seleccione un artículo y una cantidad entera mayor que cero.'); return; }
+        if (!articulo || !cantidadValida(cantidad)) { mensaje('Seleccione un artículo y una cantidad entera entre 1 y ' + CANTIDAD_MAXIMA + '.'); return; }
         const existente = carrito.find(l => l.clave === articulo.clave);
         if (existente) {
-            if (!cantidadValida(existente.cantidad + Number(cantidad))) { mensaje('La cantidad supera la capacidad numérica de un renglón.'); return; }
+            if (!cantidadValida(existente.cantidad + Number(cantidad))) { mensaje('La cantidad total de un artículo no puede superar ' + CANTIDAD_MAXIMA + ' unidades.'); return; }
             existente.cantidad += Number(cantidad);
         } else carrito.push({ ...articulo, cantidad: Number(cantidad) });
         limpiarMensaje(); pintar();
     });
-    byId('tipo-comida').addEventListener('change', bloquear);
+    byId('tipo-comida').addEventListener('change', pintarArticulos);
+    limitarDigitos(byId('cantidad'));
     byId('actualizar-catalogo').addEventListener('click', () => cargarCatalogo(true));
     byId('descartar-pedido').addEventListener('click', () => { reiniciar(); mensaje('Pedido descartado. No se guardó ninguna compra.', 'info'); });
     byId('registrar-pedido').addEventListener('click', async () => {
