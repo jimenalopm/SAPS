@@ -23,6 +23,14 @@ public sealed class VencimientoContrasenaMiddleware(RequestDelegate siguiente)
         "/Identity/Account/AccessDenied",
     ];
 
+    // Solo recursos estáticos reales. No basta con buscar un punto en la ruta, porque una página
+    // con un id como "/Pedidos/Detalle/juan.perez" también lo tendría y se saltaría el bloqueo.
+    private static readonly HashSet<string> ExtensionesEstaticas = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".css", ".js", ".map", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico",
+        ".woff", ".woff2", ".ttf", ".eot",
+    };
+
     public async Task InvokeAsync(HttpContext context, ApplicationDbContext db, TimeProvider reloj)
     {
         if (context.User.Identity?.IsAuthenticated != true || EsRutaExenta(context.Request.Path) || EsArchivoEstatico(context.Request.Path))
@@ -67,7 +75,9 @@ public sealed class VencimientoContrasenaMiddleware(RequestDelegate siguiente)
         }
         catch (DbUpdateException)
         {
-            // Otra solicitud concurrente ya creó la fila primero; no hay nada más que hacer.
+            // Otra solicitud concurrente ya creó la fila primero. Se descarta el intento fallido
+            // para que no se reintente en un SaveChanges posterior de esta misma solicitud.
+            db.ChangeTracker.Clear();
         }
     }
 
@@ -75,5 +85,5 @@ public sealed class VencimientoContrasenaMiddleware(RequestDelegate siguiente)
         RutasExentas.Any(r => ruta.StartsWithSegments(r, StringComparison.OrdinalIgnoreCase));
 
     private static bool EsArchivoEstatico(PathString ruta) =>
-        ruta.Value is { } valor && valor.Contains('.', StringComparison.Ordinal);
+        ruta.HasValue && ExtensionesEstaticas.Contains(Path.GetExtension(ruta.Value!));
 }
