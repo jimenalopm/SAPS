@@ -19,6 +19,14 @@ builder.Services.AddDefaultIdentity<IdentityUser>(IdentityConfig.Configurar)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+// HU-001 (criterio 9): la sesión no debe vencer por inactividad. El default de Identity
+// (14 días deslizantes) es corto para este uso; se fija en 1 año deslizante.
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.ExpireTimeSpan = TimeSpan.FromDays(365);
+    options.SlidingExpiration = true;
+});
+
 builder.Services.AddScoped<DbInitializer>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ServicioPedidos>();
