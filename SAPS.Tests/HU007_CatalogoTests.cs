@@ -177,13 +177,13 @@ public class HU007_CatalogoTests
     }
 
     [Fact]
-    public void Bebida_TieneRestriccionesDePrecioPositivoYTiposPermitidos()
+    public void Bebida_TieneRestriccionDePrecioPositivo_YLosTiposSeAdministranEnTabla()
     {
         var checks = Entidad<Bebida>().GetCheckConstraints().ToDictionary(c => c.Name!, c => c.Sql);
 
         Assert.Equal("[Precio] > 0", checks["CK_Bebida_Precio"]);
-        foreach (var tipo in new[] { "Gaseosa", "Embotellada", "Energizante", "Jugo" })
-            Assert.Contains($"'{tipo}'", checks["CK_Bebida_Tipo"]);
+        // Los tipos ya no son una lista fija en la BD: viven en tb_TipoBebida y se administran desde el catálogo.
+        Assert.DoesNotContain("CK_Bebida_Tipo", checks.Keys);
     }
 
     [Fact]

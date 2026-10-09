@@ -389,7 +389,7 @@ body { margin-bottom: 0; }
 .accesos-rapidos .btn { justify-content: flex-start; padding: .8rem 1rem; }
 
 /* ---------- 14. Catálogo ---------- */
-.catalogo-tarjetas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+.catalogo-tarjetas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
 .catalogo-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
 .catalogo-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; flex: 1 1 320px; min-width: 0; }
 .input-buscar { position: relative; flex: 1 1 220px; max-width: 360px; min-width: 0; }

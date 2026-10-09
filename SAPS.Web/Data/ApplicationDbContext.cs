@@ -24,6 +24,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<Precio> Precios => Set<Precio>();
     public DbSet<Bebida> Bebidas => Set<Bebida>();
+    public DbSet<TipoBebida> TiposBebida => Set<TipoBebida>();
     public DbSet<CategoriaTamano> CategoriasTamanos => Set<CategoriaTamano>();
 
     public DbSet<ColaboradorRrhh> Colaboradores => Set<ColaboradorRrhh>();
@@ -165,14 +166,33 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasIndex(e => e.IdTamano).HasDatabaseName("IX_Precio_idTamano");
         });
 
+        // ---------- soda.tb_TipoBebida ----------
+        // Los tipos se administran desde el catálogo; estos cuatro son los iniciales.
+        builder.Entity<TipoBebida>(entity =>
+        {
+            entity.ToTable("tb_TipoBebida", EsquemaSoda);
+            entity.HasKey(e => e.IdTipoBebida).HasName("PK_TipoBebida");
+            entity.Property(e => e.IdTipoBebida).HasColumnName("idTipoBebida");
+            entity.Property(e => e.NombreTipo).HasColumnName("Nombre").HasMaxLength(20).IsUnicode(false).IsRequired();
+            entity.Property(e => e.Activo).HasColumnName("EstaActivo").HasDefaultValue(true);
+
+            entity.HasIndex(e => e.NombreTipo)
+                  .IsUnique()
+                  .HasDatabaseName("UQ_TipoBebida_Nombre");
+
+            entity.HasData(
+                new TipoBebida { IdTipoBebida = 1, NombreTipo = "Gaseosa", Activo = true },
+                new TipoBebida { IdTipoBebida = 2, NombreTipo = "Embotellada", Activo = true },
+                new TipoBebida { IdTipoBebida = 3, NombreTipo = "Energizante", Activo = true },
+                new TipoBebida { IdTipoBebida = 4, NombreTipo = "Jugo", Activo = true });
+        });
+
         // ---------- soda.tb_Bebida ----------
         builder.Entity<Bebida>(entity =>
         {
             entity.ToTable("tb_Bebida", EsquemaSoda, t =>
             {
                 t.HasCheckConstraint("CK_Bebida_Precio", "[Precio] > 0");
-                t.HasCheckConstraint("CK_Bebida_Tipo",
-                    "[Tipo] IN ('Gaseosa','Embotellada','Energizante','Jugo')");
             });
 
             entity.HasKey(e => e.IdBebida).HasName("PK_Bebida");

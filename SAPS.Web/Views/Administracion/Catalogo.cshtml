@@ -71,6 +71,14 @@
             <p class="stat-detalle">mostradas</p>
         </div>
     </a>
+    <a class="stat-card @TarjetaActiva("tipos")" href="?tab=tipos" aria-current="@(Model.TabActiva == "tipos" ? "page" : null)">
+        <span class="stat-icono"><partial name="_Iconos" model="@("bebidas icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Tipos de bebida</p>
+            <p class="stat-valor">@Model.Tipos.Count.ToString("N0", cultura)</p>
+            <p class="stat-detalle">mostrados</p>
+        </div>
+    </a>
 </nav>
 
 <div class="tab-content">
@@ -165,6 +173,53 @@
             @if (!Model.Tamanos.Any())
             {
                 <tr class="fila-vacia"><td colspan="4" class="estado-vacio">No hay tamaños para mostrar.</td></tr>
+            }
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    @* ================= TIPOS DE BEBIDA ================= *@
+    <div class="tab-pane @Activa("tipos")">
+        <div class="catalogo-barra">
+            <form method="get" class="catalogo-filtros" data-bloquear-envio>
+                <input type="hidden" name="tab" value="tipos" />
+                <div class="input-buscar">
+                    <partial name="_Iconos" model="@("buscar icono-sm")" />
+                    <input type="search" name="tipoQ" value="@Model.TipoBuscar" class="form-control" placeholder="Buscar tipo de bebida..." aria-label="Buscar tipo de bebida" />
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="tipoInc" value="true" data-filtrar-estado class="form-check-input" id="tipoInc" checked="@Model.TipoIncluirInactivos" />
+                    <label class="form-check-label" for="tipoInc">Mostrar inactivos</label>
+                </div>
+                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
+            </form>
+            <a asp-action="CrearTipoBebida" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nuevo tipo</a>
+        </div>
+
+        <div class="tabla-contenedor">
+        <table class="table table-recyplast tabla-apilable align-middle">
+            <thead><tr><th>Nombre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+            @foreach (var t in Model.Tipos)
+            {
+                <tr class="@(t.Activo ? "" : "fila-inactiva")">
+                    <td data-label="Nombre" class="celda-principal">@t.NombreTipo</td>
+                    <td data-label="Estado"><span class="badge-recyplast con-punto @(t.Activo ? "" : "gris")">@(t.Activo ? "Activo" : "Inactivo")</span></td>
+                    <td class="text-end celda-acciones">
+                        <a asp-action="EditarTipoBebida" asp-route-id="@t.IdTipoBebida" class="btn btn-sm btn-recyplast-outline"><partial name="_Iconos" model="@("editar icono-sm")" /> Editar</a>
+                        <form asp-action="CambiarEstadoTipoBebida" asp-route-id="@t.IdTipoBebida" method="post" class="d-inline" data-bloquear-envio
+                              data-confirmar="@(t.Activo ? $"¿Desea desactivar el tipo «{t.NombreTipo}»? Ya no podrá elegirse para nuevas bebidas. Podrá activarlo de nuevo cuando lo necesite." : null)">
+                            <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm @(t.Activo ? "btn-outline-danger" : "btn-outline-success")">
+                                @(t.Activo ? "Desactivar" : "Activar")
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Tipos.Any())
+            {
+                <tr class="fila-vacia"><td colspan="3" class="estado-vacio">No hay tipos de bebida para mostrar.</td></tr>
             }
             </tbody>
         </table>
