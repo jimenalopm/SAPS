@@ -39,6 +39,7 @@ namespace SAPS.Web.Migrations
                 schema: "soda",
                 table: "tb_TipoBebida",
                 columns: new[] { "idTipoBebida", "Nombre" },
+                columnTypes: new[] { "int", "varchar(20)" },
                 values: new object[,]
                 {
                     { 1, "Gaseosa" },
