@@ -687,8 +687,9 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         if (modelo.IdTamano.HasValue && !modelo.TamanosDisponibles.Any(t => t.IdTamano == modelo.IdTamano))
             ModelState.AddModelError(nameof(modelo.IdTamano), "Seleccione un tamaño activo o conserve el tamaño actual.");
-        if (!new[] { "Gaseosa", "Embotellada", "Energizante", "Jugo" }.Contains(modelo.TipoBebida))
-            ModelState.AddModelError(nameof(modelo.TipoBebida), "Seleccione un tipo de bebida válido.");
+        if (!ReglasCatalogo.TiposBebida.Contains(modelo.TipoBebida))
+            ModelState.AddModelError(nameof(modelo.TipoBebida),
+                $"Seleccione un tipo de bebida válido: {string.Join(", ", ReglasCatalogo.TiposBebida)}.");
     }
 
     [HttpPost]

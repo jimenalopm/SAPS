@@ -32,10 +32,10 @@
         <div class="mb-3">
             <label asp-for="TipoBebida" class="form-label">Tipo de bebida <span class="campo-obligatorio" aria-hidden="true">*</span></label>
             <select asp-for="TipoBebida" class="form-select">
-                <option value="Gaseosa">Gaseosa</option>
-                <option value="Embotellada">Embotellada</option>
-                <option value="Energizante">Energizante</option>
-                <option value="Jugo">Jugo</option>
+                @foreach (var tipo in SAPS.Web.Models.Catalogo.ReglasCatalogo.TiposBebida)
+                {
+                    <option value="@tipo">@tipo</option>
+                }
             </select>
             <span asp-validation-for="TipoBebida" class="text-danger small"></span>
         </div>

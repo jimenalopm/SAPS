@@ -115,4 +115,36 @@ public class ValidacionesPendientesHU007Tests
         Assert.IsType<RedirectToActionResult>(resultado);
         Assert.Equal(2, db.Bebidas.Count());
     }
+
+    // ---------- Tipo de bebida ----------
+
+    [Theory]
+    [InlineData("Licor")]
+    [InlineData("gaseosa ")]
+    [InlineData("")]
+    public async Task CrearBebida_TipoNoPermitido_SeRechaza(string tipo)
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var c = Controlador(db);
+
+        var resultado = await c.CrearBebida(new BebidaFormViewModel { NombreBebida = "Cerveza", TipoBebida = tipo, Precio = 1500 });
+
+        Assert.IsType<ViewResult>(resultado);
+        Assert.True(c.ModelState.ContainsKey(nameof(BebidaFormViewModel.TipoBebida)));
+        Assert.Empty(db.Bebidas);
+    }
+
+    [Theory]
+    [InlineData("Gaseosa")]
+    [InlineData("Embotellada")]
+    [InlineData("Energizante")]
+    [InlineData("Jugo")]
+    public async Task CrearBebida_TipoPermitido_SeGuarda(string tipo)
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+
+        var resultado = await Controlador(db).CrearBebida(new BebidaFormViewModel { NombreBebida = "Bebida", TipoBebida = tipo, Precio = 1500 });
+
+        Assert.IsType<RedirectToActionResult>(resultado);
+    }
 }
