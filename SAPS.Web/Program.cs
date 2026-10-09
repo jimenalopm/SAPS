@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Data;
+using SAPS.Web.Middleware;
 using SAPS.Web.Services.Pedidos;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -124,6 +125,9 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// HU-001 (criterio 7): bloquea el acceso a toda la app si la contraseña venció.
+app.UseMiddleware<VencimientoContrasenaMiddleware>();
 
 app.MapStaticAssets();
 
