@@ -1,0 +1,67 @@
+@page
+@model CambiarContrasenaModel
+@{
+    ViewData["Title"] = "Cambiar contraseña";
+}
+
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador actual" aria-current="page">Cambiar contraseña</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Cambiar contraseña</h1>
+        @if (Model.Obligatorio)
+        {
+            <p>Tu contraseña venció. Debes establecer una nueva antes de continuar.</p>
+        }
+        else
+        {
+            <p>Podés cambiar tu contraseña cuando quieras. No es obligatorio.</p>
+        }
+    </div>
+</div>
+
+@if (Model.Mensaje != null)
+{
+    <div class="alert alert-recyplast alert-dismissible fade show" role="alert">
+        @Model.Mensaje
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+<form method="post" novalidate data-bloquear-envio class="card-recyplast" style="max-width: 420px;">
+    <div asp-validation-summary="ModelOnly" class="auth-alerta" role="alert"></div>
+    <input type="hidden" asp-for="Obligatorio" />
+
+    <div class="mb-3">
+        <label asp-for="Input.ContrasenaActual" class="form-label"></label>
+        <input asp-for="Input.ContrasenaActual" class="form-control" autocomplete="current-password" aria-required="true" />
+        <span asp-validation-for="Input.ContrasenaActual" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.ContrasenaNueva" class="form-label"></label>
+        <input asp-for="Input.ContrasenaNueva" class="form-control" autocomplete="new-password" aria-required="true" />
+        <span asp-validation-for="Input.ContrasenaNueva" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.ConfirmarContrasenaNueva" class="form-label"></label>
+        <input asp-for="Input.ConfirmarContrasenaNueva" class="form-control" autocomplete="new-password" aria-required="true" />
+        <span asp-validation-for="Input.ConfirmarContrasenaNueva" class="text-danger small"></span>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-recyplast" data-texto-procesando="Guardando...">Cambiar contraseña</button>
+        @if (!Model.Obligatorio)
+        {
+            <a class="btn btn-recyplast-outline" asp-controller="Home" asp-action="Index">Cancelar</a>
+        }
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

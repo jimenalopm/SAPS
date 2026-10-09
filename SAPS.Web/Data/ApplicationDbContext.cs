@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Models.Catalogo;
+using SAPS.Web.Models.Identity;
 using SAPS.Web.Models.Pedidos;
 using SAPS.Web.Models.Rrhh;
 
@@ -30,10 +31,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Pedido> Pedidos => Set<Pedido>();
     public DbSet<DetallePedido> DetallesPedido => Set<DetallePedido>();
 
+    public DbSet<EstadoContrasenaUsuario> EstadosContrasena => Set<EstadoContrasenaUsuario>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.ConfigurarPedidos();
+        builder.ConfigurarEstadoContrasena();
 
         // ---------- rrhh.tb_Colaborador ----------
         builder.Entity<ColaboradorRrhh>(entity =>

@@ -471,3 +471,29 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009032146_EstadoContrasena'
+)
+BEGIN
+    CREATE TABLE [tb_EstadoContrasena] (
+        [idUsuario] nvarchar(450) NOT NULL,
+        [FechaUltimoCambio] datetime2 NOT NULL,
+        CONSTRAINT [PK_EstadoContrasena] PRIMARY KEY ([idUsuario]),
+        CONSTRAINT [FK_EstadoContrasena_Usuario] FOREIGN KEY ([idUsuario]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009032146_EstadoContrasena'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261009032146_EstadoContrasena', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
