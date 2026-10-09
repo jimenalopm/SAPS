@@ -1,0 +1,39 @@
+@model SAPS.Web.Models.Catalogo.TipoBebidaFormViewModel
+@{ ViewData["Title"] = "Nuevo tipo de bebida"; }
+
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador"></span><a asp-action="Catalogo">Catálogo</a>
+    <span class="separador"></span><a asp-action="Catalogo" asp-route-tab="tipos">Tipos de bebida</a>
+    <span class="separador actual" aria-current="page">Nuevo tipo de bebida</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Nuevo tipo de bebida</h1>
+        <p>Completa la información del tipo.</p>
+    </div>
+</div>
+
+<form asp-action="CrearTipoBebida" method="post" data-bloquear-envio class="form-card form-card-estrecho">
+    <div asp-validation-summary="ModelOnly" class="alerta-error-recyplast" role="alert"></div>
+
+    <section aria-labelledby="titulo-info">
+        <h2 class="form-card-titulo" id="titulo-info">Información del tipo</h2>
+        <div class="mb-1">
+            <label asp-for="NombreTipo" class="form-label">Nombre del tipo <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <input asp-for="NombreTipo" class="form-control" autofocus aria-describedby="ayuda-nombre-tipo" />
+            <div id="ayuda-nombre-tipo" class="form-text">Por ejemplo: Gaseosa, Jugo, Café frío.</div>
+            <span asp-validation-for="NombreTipo" class="text-danger small"></span>
+        </div>
+    </section>
+
+    <div class="form-acciones">
+        <a asp-action="Catalogo" asp-route-tab="tipos" class="btn btn-recyplast-outline">Cancelar</a>
+        <button type="submit" class="btn btn-recyplast">Guardar</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

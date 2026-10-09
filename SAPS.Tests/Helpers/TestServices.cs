@@ -48,7 +48,10 @@ public static class TestServices
             // InMemory no soporta transacciones; los controladores que las abren siguen funcionando.
             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
-        return new ApplicationDbContext(options);
+        var ctx = new ApplicationDbContext(options);
+        // Carga los datos iniciales del modelo (HasData), como los tipos de bebida.
+        ctx.Database.EnsureCreated();
+        return ctx;
     }
 
     /// <summary>

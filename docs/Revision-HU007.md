@@ -28,8 +28,13 @@
 - Cada tamaño es de comida o de bebida. Los productos solo usan tamaños de comida y las bebidas solo de bebida.
 - Cada categoría define qué tamaños permite. No se puede quitar de una categoría un tamaño que usan productos activos, ni cambiar el tipo de un tamaño en uso.
 
-### Tipo de bebida
-- Solo se aceptan Gaseosa, Embotellada, Energizante y Jugo. La lista está en `ReglasCatalogo.TiposBebida`, la usan el formulario y el servidor, y coincide con la restricción de `tb_Bebida`. Agregar un tipo nuevo exige cambiar ambos sitios (lista y restricción, con migración).
+### Tipos de bebida
+- Los tipos de bebida se administran desde la pestaña **Tipos de bebida** del Catálogo: se pueden crear, editar, desactivar y activar sin tocar el código. Quedan cuatro tipos iniciales: Gaseosa, Embotellada, Energizante y Jugo.
+- Nombre del tipo: mismas reglas de nombres (mínimo 3, máximo 20 caracteres, al menos una letra, caracteres permitidos, espacios normalizados) y sin duplicados.
+- Una bebida solo puede usar un tipo existente y activo. Al editar una bebida se conserva su tipo aunque haya quedado inactivo.
+- Si se cambia el nombre de un tipo, las bebidas que lo usan se actualizan con el nombre nuevo.
+- No se desactiva un tipo con bebidas activas, ni se activa una bebida cuyo tipo está inactivo.
+- Antes los tipos eran una restricción fija en la base (`CK_Bebida_Tipo`); la migración `TiposDeBebida` la elimina y crea `tb_TipoBebida`.
 
 ### Reglas de estado
 - No se desactiva una categoría con productos activos, ni un tamaño usado por productos o bebidas activos.
@@ -41,17 +46,18 @@
 
 ## Datos anteriores
 
-Hay tres migraciones nuevas, que se aplican con `dotnet ef database update --project SAPS.Web`:
+Hay cuatro migraciones nuevas, que se aplican con `dotnet ef database update --project SAPS.Web`:
 - `AgregarOrdenTamano` y `QuitarOrdenTamano`: la columna `Orden` se agregó y luego se eliminó, porque el orden se deduce del nombre.
+- `TiposDeBebida`: crea `tb_TipoBebida` con los cuatro tipos iniciales, agrega los tipos distintos que ya tuvieran las bebidas existentes y elimina la restricción fija `CK_Bebida_Tipo`.
 - `TamanosPorCategoria`: agrega `EsParaBebida` a `tb_Tamano`, crea `tb_CategoriaTamano`, marca como de bebida los tamaños que ningún producto usa y asigna a cada categoría los tamaños que sus productos ya usan.
 
-Después de migrar, revisar en la pestaña Tamaños que cada uno quedó con el tipo correcto. Al guardar un producto existente, sus precios activos se ajustan al modo seleccionado. No se reparan todos los productos automáticamente; revisar y guardar los productos de prueba que quedaron con modos mezclados.
+Después de migrar, revisar en la pestaña Tamaños que cada uno quedó con el tipo correcto, y en Tipos de bebida que están los esperados. Al guardar un producto existente, sus precios activos se ajustan al modo seleccionado. No se reparan todos los productos automáticamente; revisar y guardar los productos de prueba que quedaron con modos mezclados.
 
 Un IdTamano nulo corresponde al precio sin tamaño. Una FechaVigenciaHasta nula corresponde a un precio sin fecha de cierre. Desactivar un tamaño conserva sus asociaciones y sus precios; no equivale a reemplazar un precio.
 
 ## Verificación automática
 
-Pruebas unitarias del proyecto `SAPS.Tests`: nombres, precios, tamaños por categoría, orden de tamaños, estado y filtros, nombre de tamaño, búsqueda, orden de precios en bebidas y tipo de bebida. Se ejecutan con `dotnet test` desde la raíz.
+Pruebas unitarias del proyecto `SAPS.Tests`: nombres, precios, tamaños por categoría, orden de tamaños, estado y filtros, nombre de tamaño, búsqueda, orden de precios en bebidas y tipos de bebida. Se ejecutan con `dotnet test` desde la raíz.
 
 Verificación sobre base temporal (anterior a las validaciones de este PR): se ejecutaron 24 verificaciones sobre una base temporal de SQL Server, creada con las migraciones del proyecto y eliminada al terminar. Incluyen creación, cambio en ambos sentidos, actualización de precios, historial, validaciones, conservación de tamaños inactivos y reversión ante un fallo de inserción. La aplicación y el ejecutable de pruebas compilaron sin errores.
 
@@ -67,7 +73,7 @@ El ejecutable invoca los controladores y comprueba los registros en SQL Server. 
 
 ## Comprobación manual
 
-El usuario confirmó que las correcciones anteriores funcionan al probarlas en el navegador. No se recibió un resultado individual para cada caso; se conserva la lista para que el revisor pueda repetirla. Las validaciones de este PR se verificaron con pruebas unitarias; los casos 7 a 11 están pendientes de confirmar en el navegador.
+El usuario confirmó que las correcciones anteriores funcionan al probarlas en el navegador. No se recibió un resultado individual para cada caso; se conserva la lista para que el revisor pueda repetirla. Las validaciones de este PR se verificaron con pruebas unitarias; los casos 7 a 12 están pendientes de confirmar en el navegador.
 
 1. Abrir Nuevo producto y marcar tamaños: deben aparecer sin guardar previamente.
 2. Cambiar un producto de precio único a tamaños y después a precio único: verificar el listado tras recargar.
@@ -79,7 +85,8 @@ El usuario confirmó que las correcciones anteriores funcionan al probarlas en e
 8. Crear un tamaño «Grande » (con espacio al final) cuando ya existe «Grande»: debe rechazarlo por duplicado.
 9. Intentar desactivar una categoría con productos activos y un tamaño en uso: debe mostrar el mensaje y no desactivar.
 10. Crear un producto de comida: no debe ofrecer tamaños de bebida como 600ml; en la pizza, Grande más barato que Mediano debe rechazarse.
-11. Crear la misma bebida en 600ml y 3L con el 3L más barato: debe rechazarlo. Probar el filtro por categoría y una búsqueda con espacios de más.
+11. Crear un tipo de bebida nuevo (por ejemplo «Café frío») y comprobar que aparece al crear una bebida; intentar desactivar un tipo con bebidas activas: debe rechazarlo.
+12. Crear la misma bebida en 600ml y 3L con el 3L más barato: debe rechazarlo. Probar el filtro por categoría y una búsqueda con espacios de más.
 
 ## Fuera de esta corrección
 

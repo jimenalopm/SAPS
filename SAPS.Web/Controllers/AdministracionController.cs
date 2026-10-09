@@ -20,13 +20,15 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         string? catQ = null, bool catInc = false,
         string? tamQ = null, bool tamInc = false,
         string? prodQ = null, bool prodInc = false, int? prodCat = null,
-        string? bebQ = null, bool bebInc = false)
+        string? bebQ = null, bool bebInc = false,
+        string? tipoQ = null, bool tipoInc = false)
     {
         // Los textos de búsqueda se normalizan igual que los nombres guardados.
         catQ = NombreCatalogoAttribute.Normalizar(catQ);
         tamQ = NombreCatalogoAttribute.Normalizar(tamQ);
         prodQ = NombreCatalogoAttribute.Normalizar(prodQ);
         bebQ = NombreCatalogoAttribute.Normalizar(bebQ);
+        tipoQ = NombreCatalogoAttribute.Normalizar(tipoQ);
 
         var vm = new CatalogoIndexViewModel
         {
@@ -40,6 +42,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             ProductoIncluirInactivos = prodInc,
             BebidaBuscar = bebQ,
             BebidaIncluirInactivos = bebInc,
+            TipoBuscar = tipoQ,
+            TipoIncluirInactivos = tipoInc,
         };
 
         var categorias = db.Categorias.Include(c => c.TamanosPermitidos).ThenInclude(x => x.Tamano).AsQueryable();
@@ -62,6 +66,11 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         if (prodCat.HasValue) productos = productos.Where(p => p.IdCategoria == prodCat.Value);
         vm.CategoriasFiltro = await db.Categorias.AsNoTracking().OrderBy(c => c.NombreCategoria).ToListAsync();
         vm.Productos = await productos.OrderBy(p => p.NombreProducto).ToListAsync();
+
+        var tipos = db.TiposBebida.AsQueryable();
+        tipos = tipos.Where(t => t.Activo == !tipoInc);
+        if (!string.IsNullOrWhiteSpace(tipoQ)) tipos = tipos.Where(t => t.NombreTipo.Contains(tipoQ));
+        vm.Tipos = await tipos.OrderBy(t => t.NombreTipo).ToListAsync();
 
         var bebidas = db.Bebidas.Include(b => b.Tamano).AsQueryable();
         bebidas = bebidas.Where(b => b.Activo == !bebInc);
@@ -553,6 +562,78 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     }
 
     // ==================================================================
+    //  TIPOS DE BEBIDA  (se administran desde el catálogo, sin tocar código)
+    // ==================================================================
+    public IActionResult CrearTipoBebida() => View(new TipoBebidaFormViewModel());
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CrearTipoBebida(TipoBebidaFormViewModel modelo)
+    {
+        modelo.NombreTipo = NombreCatalogoAttribute.Normalizar(modelo.NombreTipo);
+        if (await db.TiposBebida.AnyAsync(t => t.NombreTipo == modelo.NombreTipo))
+            ModelState.AddModelError(nameof(modelo.NombreTipo), "Ya existe un tipo de bebida con ese nombre.");
+        if (!ModelState.IsValid) return View(modelo);
+
+        db.TiposBebida.Add(new TipoBebida { NombreTipo = modelo.NombreTipo });
+        await db.SaveChangesAsync();
+        TempData["Mensaje"] = $"Tipo de bebida \"{modelo.NombreTipo}\" creado correctamente.";
+        return RedirectToAction(nameof(Catalogo), new { tab = "tipos" });
+    }
+
+    public async Task<IActionResult> EditarTipoBebida(int id)
+    {
+        var tipo = await db.TiposBebida.FindAsync(id);
+        if (tipo == null) return NotFound();
+        return View(new TipoBebidaFormViewModel { IdTipoBebida = tipo.IdTipoBebida, NombreTipo = tipo.NombreTipo });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditarTipoBebida(TipoBebidaFormViewModel modelo)
+    {
+        modelo.NombreTipo = NombreCatalogoAttribute.Normalizar(modelo.NombreTipo);
+        if (await db.TiposBebida.AnyAsync(t => t.NombreTipo == modelo.NombreTipo && t.IdTipoBebida != modelo.IdTipoBebida))
+            ModelState.AddModelError(nameof(modelo.NombreTipo), "Ya existe otro tipo de bebida con ese nombre.");
+        if (!ModelState.IsValid) return View(modelo);
+
+        var tipo = await db.TiposBebida.FindAsync(modelo.IdTipoBebida);
+        if (tipo == null) return NotFound();
+
+        // Las bebidas guardan el nombre del tipo: si cambia el nombre, las bebidas lo siguen.
+        if (tipo.NombreTipo != modelo.NombreTipo)
+        {
+            var bebidas = await db.Bebidas.Where(b => b.TipoBebida == tipo.NombreTipo).ToListAsync();
+            foreach (var bebida in bebidas) bebida.TipoBebida = modelo.NombreTipo;
+            tipo.NombreTipo = modelo.NombreTipo;
+        }
+        await db.SaveChangesAsync();
+        TempData["Mensaje"] = "Tipo de bebida actualizado correctamente.";
+        return RedirectToAction(nameof(Catalogo), new { tab = "tipos" });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CambiarEstadoTipoBebida(int id)
+    {
+        var tipo = await db.TiposBebida.FindAsync(id);
+        if (tipo == null) return NotFound();
+        if (tipo.Activo)
+        {
+            var activas = await db.Bebidas.CountAsync(b => b.TipoBebida == tipo.NombreTipo && b.Activo);
+            if (activas > 0)
+            {
+                TempData["Error"] = $"No se puede desactivar el tipo «{tipo.NombreTipo}»: lo usan {activas} bebida(s) activa(s). Desactívelas o cámbieles el tipo primero.";
+                return RedirectToAction(nameof(Catalogo), new { tab = "tipos" });
+            }
+        }
+        tipo.Activo = !tipo.Activo;
+        await db.SaveChangesAsync();
+        TempData["Mensaje"] = tipo.Activo ? $"Tipo de bebida «{tipo.NombreTipo}» activado." : $"Tipo de bebida «{tipo.NombreTipo}» desactivado.";
+        return RedirectToAction(nameof(Catalogo), new { tab = "tipos" });
+    }
+
+    // ==================================================================
     //  BEBIDAS
     // ==================================================================
     public async Task<IActionResult> CrearBebida()
@@ -560,6 +641,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         var vm = new BebidaFormViewModel
         {
             TamanosDisponibles = await db.Tamanos.Where(t => t.Activo && t.EsParaBebida).OrderBy(t => t.NombreTamano).ToListAsync(),
+            TiposDisponibles = await db.TiposBebida.Where(t => t.Activo).OrderBy(t => t.NombreTipo).ToListAsync(),
         };
         return View(vm);
     }
@@ -569,6 +651,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     public async Task<IActionResult> CrearBebida(BebidaFormViewModel modelo)
     {
         modelo.TamanosDisponibles = await db.Tamanos.Where(t => t.Activo && t.EsParaBebida).OrderBy(t => t.NombreTamano).ToListAsync();
+        modelo.TiposDisponibles = await db.TiposBebida.Where(t => t.Activo).OrderBy(t => t.NombreTipo).ToListAsync();
         modelo.NombreBebida = NombreCatalogoAttribute.Normalizar(modelo.NombreBebida);
         await ValidarNombreBebidaUnico(modelo);
         ValidarTamanoBebida(modelo);
@@ -600,6 +683,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             Precio = bebida.Precio,
             TamanosDisponibles = await db.Tamanos.Where(t => (t.Activo && t.EsParaBebida) || t.IdTamano == bebida.IdTamano)
                 .OrderBy(t => t.NombreTamano).ToListAsync(),
+            TiposDisponibles = await db.TiposBebida.Where(t => t.Activo || t.NombreTipo == bebida.TipoBebida)
+                .OrderBy(t => t.NombreTipo).ToListAsync(),
         });
     }
 
@@ -611,6 +696,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         if (bebida == null) return NotFound();
         modelo.TamanosDisponibles = await db.Tamanos.Where(t => (t.Activo && t.EsParaBebida) || t.IdTamano == bebida.IdTamano)
             .OrderBy(t => t.NombreTamano).ToListAsync();
+        modelo.TiposDisponibles = await db.TiposBebida.Where(t => t.Activo || t.NombreTipo == bebida.TipoBebida)
+            .OrderBy(t => t.NombreTipo).ToListAsync();
         modelo.NombreBebida = NombreCatalogoAttribute.Normalizar(modelo.NombreBebida);
         await ValidarNombreBebidaUnico(modelo);
         ValidarTamanoBebida(modelo);
@@ -687,9 +774,9 @@ public class AdministracionController(ApplicationDbContext db) : Controller
     {
         if (modelo.IdTamano.HasValue && !modelo.TamanosDisponibles.Any(t => t.IdTamano == modelo.IdTamano))
             ModelState.AddModelError(nameof(modelo.IdTamano), "Seleccione un tamaño activo o conserve el tamaño actual.");
-        if (!ReglasCatalogo.TiposBebida.Contains(modelo.TipoBebida))
-            ModelState.AddModelError(nameof(modelo.TipoBebida),
-                $"Seleccione un tipo de bebida válido: {string.Join(", ", ReglasCatalogo.TiposBebida)}.");
+        // El tipo debe existir en el catálogo de tipos y estar activo (o ser el que la bebida ya tiene).
+        if (!modelo.TiposDisponibles.Any(t => t.NombreTipo == modelo.TipoBebida))
+            ModelState.AddModelError(nameof(modelo.TipoBebida), "Seleccione un tipo de bebida activo del catálogo.");
     }
 
     [HttpPost]
@@ -706,6 +793,11 @@ public class AdministracionController(ApplicationDbContext db) : Controller
                 TempData["Error"] = $"No se puede activar la bebida «{bebida.NombreBebida}»: su tamaño «{tamano.NombreTamano}» está inactivo. Active primero el tamaño.";
                 return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
             }
+        }
+        if (!bebida.Activo && await db.TiposBebida.AnyAsync(t => t.NombreTipo == bebida.TipoBebida && !t.Activo))
+        {
+            TempData["Error"] = $"No se puede activar la bebida «{bebida.NombreBebida}»: su tipo «{bebida.TipoBebida}» está inactivo. Active primero el tipo.";
+            return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
         }
         bebida.Activo = !bebida.Activo;
         await db.SaveChangesAsync();

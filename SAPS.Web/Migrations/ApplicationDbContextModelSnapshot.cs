@@ -270,8 +270,6 @@ namespace SAPS.Web.Migrations
                     b.ToTable("tb_Bebida", "soda", t =>
                         {
                             t.HasCheckConstraint("CK_Bebida_Precio", "[Precio] > 0");
-
-                            t.HasCheckConstraint("CK_Bebida_Tipo", "[Tipo] IN ('Gaseosa','Embotellada','Energizante','Jugo')");
                         });
                 });
 
@@ -463,6 +461,64 @@ namespace SAPS.Web.Migrations
                         .HasDatabaseName("UQ_Tamano_Nombre");
 
                     b.ToTable("tb_Tamano", "soda");
+                });
+
+            modelBuilder.Entity("SAPS.Web.Models.Catalogo.TipoBebida", b =>
+                {
+                    b.Property<int>("IdTipoBebida")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("idTipoBebida");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdTipoBebida"));
+
+                    b.Property<bool>("Activo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("EstaActivo");
+
+                    b.Property<string>("NombreTipo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("Nombre");
+
+                    b.HasKey("IdTipoBebida")
+                        .HasName("PK_TipoBebida");
+
+                    b.HasIndex("NombreTipo")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_TipoBebida_Nombre");
+
+                    b.ToTable("tb_TipoBebida", "soda");
+
+                    b.HasData(
+                        new
+                        {
+                            IdTipoBebida = 1,
+                            Activo = true,
+                            NombreTipo = "Gaseosa"
+                        },
+                        new
+                        {
+                            IdTipoBebida = 2,
+                            Activo = true,
+                            NombreTipo = "Embotellada"
+                        },
+                        new
+                        {
+                            IdTipoBebida = 3,
+                            Activo = true,
+                            NombreTipo = "Energizante"
+                        },
+                        new
+                        {
+                            IdTipoBebida = 4,
+                            Activo = true,
+                            NombreTipo = "Jugo"
+                        });
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Pedidos.DetallePedido", b =>

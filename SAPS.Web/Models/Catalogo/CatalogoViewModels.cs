@@ -32,6 +32,18 @@ public class TamanoFormViewModel
     public bool EsParaBebida { get; set; }
 }
 
+// ---------- Tipo de bebida ----------
+public class TipoBebidaFormViewModel
+{
+    public int IdTipoBebida { get; set; }
+
+    [Required(ErrorMessage = "El nombre del tipo de bebida es obligatorio.")]
+    [StringLength(20, ErrorMessage = "Máximo 20 caracteres.")]
+    [NombreCatalogo]
+    [Display(Name = "Nombre del tipo")]
+    public string NombreTipo { get; set; } = "";
+}
+
 // ---------- Producto ----------
 
 /// <summary>Una fila del formulario de producto: "¿incluir este tamaño? ¿a qué precio?".</summary>
@@ -86,7 +98,7 @@ public class BebidaFormViewModel
     public string NombreBebida { get; set; } = "";
 
     [Required(ErrorMessage = "Debe indicar el tipo de bebida.")]
-    public string TipoBebida { get; set; } = "Gaseosa";
+    public string TipoBebida { get; set; } = "";
 
     public int? IdTamano { get; set; }
 
@@ -98,6 +110,8 @@ public class BebidaFormViewModel
     public int Precio { get; set; }
 
     public List<Tamano> TamanosDisponibles { get; set; } = [];
+
+    public List<TipoBebida> TiposDisponibles { get; set; } = [];
 }
 
 // ---------- Pantalla principal (con pestañas) ----------
@@ -118,6 +132,10 @@ public class CatalogoIndexViewModel
     public List<Categoria> CategoriasFiltro { get; set; } = [];
     public bool ProductoIncluirInactivos { get; set; }
     public List<Producto> Productos { get; set; } = [];
+
+    public string? TipoBuscar { get; set; }
+    public bool TipoIncluirInactivos { get; set; }
+    public List<TipoBebida> Tipos { get; set; } = [];
 
     public string? BebidaBuscar { get; set; }
     public bool BebidaIncluirInactivos { get; set; }
