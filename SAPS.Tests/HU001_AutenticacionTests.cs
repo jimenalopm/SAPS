@@ -220,7 +220,7 @@ public class HU001_AutenticacionTests
 
         Assert.IsType<PageResult>(resultado);
         var errores = page.ModelState[string.Empty]!.Errors;
-        Assert.Contains(errores, e => e.ErrorMessage == "Usuario o contraseña inválidos.");
+        Assert.Contains(errores, e => e.ErrorMessage == "El correo de empleado o la contraseña son incorrectos. Revisa los datos e inténtalo de nuevo. Si olvidaste tu contraseña, comunícate con el administrador.");
     }
 
     [Fact]
