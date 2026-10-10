@@ -5,7 +5,7 @@
     if (!app) return;
     const moneda = valor => '₡' + BigInt(valor).toLocaleString('es-CR');
     let catalogo = [], carrito = [], colaborador = null, busqueda = 0;
-    let enviando = false, pendiente = null, cargandoCatalogo = false, confirmando = false;
+    let enviando = false, pendiente = null, cargandoCatalogo = false, confirmando = false, buscando = false;
     let token = crypto.randomUUID();
     const mensaje = (texto, tipo = 'danger', enfocar = true) => {
         const caja = byId('mensaje-pedido');
@@ -21,19 +21,45 @@
         entrada.addEventListener('keydown', e => { if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault(); });
         entrada.addEventListener('input', () => { if (entrada.value.length > 3) entrada.value = entrada.value.slice(0, 3); }, true);
     };
+    function errorCampo(entrada, texto) {
+        entrada.classList.toggle('is-invalid', !!texto);
+        entrada.setAttribute('aria-invalid', String(!!texto));
+        const aviso = byId('error-' + entrada.id);
+        aviso.textContent = texto;
+        aviso.className = texto ? 'invalid-feedback d-block' : 'invalid-feedback';
+    }
+    function validarCantidad(entrada) {
+        const texto = cantidadValida(entrada.value) ? '' : 'La cantidad no puede estar vacía, ser cero ni negativa.';
+        entrada.setCustomValidity(texto);
+        errorCampo(entrada, texto);
+        return !texto;
+    }
+    function conectarCantidad(entrada, menos, mas) {
+        const ajustar = cambio => {
+            const actual = cantidadValida(entrada.value) ? Number(entrada.value) : 0;
+            entrada.value = String(Math.max(1, Math.min(CANTIDAD_MAXIMA, actual + cambio)));
+            entrada.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        menos.addEventListener('click', () => ajustar(-1));
+        mas.addEventListener('click', () => ajustar(1));
+    }
     const totalCarrito = () => carrito.reduce((suma, l) => suma + BigInt(l.precio) * BigInt(l.cantidad), 0n);
     // Aviso permanente (no se borra con otros mensajes) mientras el total siga fuera de lo razonable.
-    function actualizarTotal() {
+    function actualizarTotal(entrada = null) {
         const total = totalCarrito();
         byId('total-pedido').textContent = moneda(total);
-        const aviso = byId('aviso-total');
-        if (total > TOTAL_MAXIMO) {
-            aviso.className = 'alert alert-danger';
-            aviso.textContent = 'El pedido supera el máximo permitido de ' + moneda(TOTAL_MAXIMO) + '. Reduzca cantidades o quite artículos para poder registrarlo.';
-        } else if (total > TOTAL_ADVERTENCIA) {
-            aviso.className = 'alert alert-warning';
-            aviso.textContent = 'Advertencia: el pedido excede ' + moneda(TOTAL_ADVERTENCIA) + ', que es el límite razonable para un pedido. Verifique las cantidades. No podrá registrar más de ' + moneda(TOTAL_MAXIMO) + '.';
-        } else aviso.className = 'alert d-none';
+        const texto = total > TOTAL_MAXIMO
+            ? 'El máximo por pedido es ' + moneda(TOTAL_MAXIMO) + '. Reduzca esta cantidad o quite artículos.'
+            : total > TOTAL_ADVERTENCIA ? 'Revise esta cantidad: el total supera ' + moneda(TOTAL_ADVERTENCIA) + '.' : '';
+        app.querySelectorAll('.aviso-total-cantidad').forEach(aviso => aviso.className = 'aviso-total-cantidad d-none');
+        const campo = entrada || byId('cantidad-linea-' + (carrito.length - 1));
+        const avisoLocal = campo ? byId('aviso-total-' + campo.id) : null;
+        const avisoGeneral = byId('aviso-total');
+        avisoGeneral.className = 'alert d-none';
+        if (texto && avisoLocal && cantidadValida(campo.value)) {
+            avisoLocal.textContent = texto;
+            avisoLocal.className = 'aviso-total-cantidad small mt-1 mb-0 ' + (total > TOTAL_MAXIMO ? 'text-danger' : 'text-warning-emphasis');
+        }
         return total;
     }
     function pintarTipos() {
@@ -71,6 +97,10 @@
     function bloquear() {
         // Ante una respuesta incierta se permite reintentar exactamente el mismo pedido.
         app.querySelectorAll('input:not([type=hidden]), select, textarea, button').forEach(c => c.disabled = enviando || confirmando || !!pendiente);
+        byId('boton-buscar-colaborador').disabled = buscando || enviando || confirmando || !!pendiente;
+        byId('boton-buscar-colaborador').setAttribute('aria-busy', String(buscando));
+        byId('texto-buscar-colaborador').textContent = buscando ? 'Buscando colaborador…' : 'Buscar colaborador';
+        byId('busqueda-en-espera').classList.toggle('d-none', !buscando);
         byId('registrar-pedido').disabled = enviando || confirmando || cargandoCatalogo || (!pendiente && (totalCarrito() > TOTAL_MAXIMO || !colaborador || !carrito.length || !byId('tipo-comida').value || [...app.querySelectorAll('.cantidad-pedido')].some(c => !cantidadValida(c.value))));
         byId('registrar-pedido').textContent = enviando ? 'Registrando…' : pendiente ? 'Reintentar registro' : 'Registrar pedido';
         if (!enviando && !confirmando && !pendiente) { byId('agregar').disabled = cargandoCatalogo || byId('articulo').options.length < 2; byId('actualizar-catalogo').disabled = cargandoCatalogo; }
@@ -87,23 +117,37 @@
             const celdaCantidad = document.createElement('td');
             const entrada = document.createElement('input');
             Object.assign(entrada, { type: 'number', min: '1', max: String(CANTIDAD_MAXIMA), step: '1', value: linea.cantidad, className: 'form-control cantidad-pedido' });
+            entrada.id = 'cantidad-linea-' + indice;
+            entrada.setAttribute('aria-describedby', 'error-' + entrada.id + ' aviso-total-' + entrada.id);
+            const errorCantidad = document.createElement('p');
+            errorCantidad.id = 'error-' + entrada.id;
+            errorCantidad.className = 'invalid-feedback';
+            errorCantidad.setAttribute('aria-live', 'polite');
+            const avisoTotalCantidad = document.createElement('p');
+            avisoTotalCantidad.id = 'aviso-total-' + entrada.id;
+            avisoTotalCantidad.className = 'aviso-total-cantidad d-none';
+            avisoTotalCantidad.setAttribute('aria-live', 'polite');
             entrada.setAttribute('aria-label', 'Cantidad de ' + nombre.textContent);
             limitarDigitos(entrada);
             entrada.addEventListener('input', () => {
-                const valida = cantidadValida(entrada.value);
-                entrada.setCustomValidity(valida ? '' : 'Indique una cantidad entera entre 1 y ' + CANTIDAD_MAXIMA + '.');
-                entrada.setAttribute('aria-invalid', String(!valida));
+                const valida = validarCantidad(entrada);
                 if (valida) {
                     linea.cantidad = Number(entrada.value);
                     celdaSubtotal.textContent = moneda(BigInt(linea.precio) * BigInt(linea.cantidad));
-                    actualizarTotal();
-                }
+                    actualizarTotal(entrada);
+                } else avisoTotalCantidad.className = 'aviso-total-cantidad d-none';
                 bloquear();
             });
-            entrada.addEventListener('change', () => {
-                if (!cantidadValida(entrada.value)) mensaje('La cantidad debe ser un número entero entre 1 y ' + CANTIDAD_MAXIMA + '.');
-            });
-            celdaCantidad.append(entrada);
+            const selector = document.createElement('div');
+            selector.className = 'input-group selector-cantidad';
+            const menos = document.createElement('button'), mas = document.createElement('button');
+            Object.assign(menos, { type: 'button', className: 'btn btn-recyplast-outline', textContent: '−' });
+            Object.assign(mas, { type: 'button', className: 'btn btn-recyplast-outline', textContent: '+' });
+            menos.setAttribute('aria-label', 'Disminuir cantidad de ' + nombre.textContent);
+            mas.setAttribute('aria-label', 'Aumentar cantidad de ' + nombre.textContent);
+            conectarCantidad(entrada, menos, mas);
+            selector.append(menos, entrada, mas);
+            celdaCantidad.append(selector, errorCantidad, avisoTotalCantidad);
             const subtotal = BigInt(linea.precio) * BigInt(linea.cantidad);
             total += subtotal;
             const celdaSubtotal = document.createElement('td'); celdaSubtotal.textContent = moneda(subtotal);
@@ -121,9 +165,11 @@
         bloquear();
     }
     function reiniciar() {
-        carrito = []; colaborador = null; pendiente = null; token = crypto.randomUUID(); busqueda++;
+        carrito = []; colaborador = null; pendiente = null; buscando = false; token = crypto.randomUUID(); busqueda++;
         byId('codigo-colaborador').value = ''; byId('tipo-comida').value = ''; byId('observaciones').value = '';
         pintarArticulos(); byId('cantidad').value = '1';
+        ['codigo-colaborador', 'tipo-comida', 'articulo', 'cantidad'].forEach(id => errorCampo(byId(id), ''));
+        byId('cantidad').setCustomValidity('');
         byId('datos-colaborador').classList.add('d-none'); pintar();
     }
     async function cargarCatalogo(revisar = false) {
@@ -150,18 +196,25 @@
     }
     byId('codigo-colaborador').addEventListener('input', () => {
         const teniaBorrador = carrito.length > 0 || byId('tipo-comida').value || byId('observaciones').value;
-        busqueda++; colaborador = null; carrito = []; pendiente = null; token = crypto.randomUUID();
+        busqueda++; buscando = false; errorCampo(byId('codigo-colaborador'), ''); colaborador = null; carrito = []; pendiente = null; token = crypto.randomUUID();
         byId('tipo-comida').value = ''; byId('observaciones').value = '';
         pintarArticulos(); byId('cantidad').value = '1';
+        ['tipo-comida', 'articulo', 'cantidad'].forEach(id => errorCampo(byId(id), ''));
+        byId('cantidad').setCustomValidity('');
         byId('datos-colaborador').classList.add('d-none'); pintar();
         if (teniaBorrador) mensaje('Se descartó el pedido pendiente porque cambió el código del colaborador. Busque al colaborador y prepare un nuevo pedido.', 'info', false);
     });
     byId('buscar-colaborador').addEventListener('submit', async evento => {
-        evento.preventDefault(); limpiarMensaje();
+        evento.preventDefault();
+        if (buscando || enviando || confirmando || pendiente) return;
+        const codigo = byId('codigo-colaborador').value.trim();
+        if (!codigo) { errorCampo(byId('codigo-colaborador'), 'Ingrese el código del colaborador.'); return; }
+        limpiarMensaje(); errorCampo(byId('codigo-colaborador'), '');
+        buscando = true;
         const intento = ++busqueda;
         colaborador = null; byId('datos-colaborador').classList.add('d-none'); bloquear();
         try {
-            const datos = await solicitar(app.dataset.colaboradorUrl + '?codigo=' + encodeURIComponent(byId('codigo-colaborador').value.trim()));
+            const datos = await solicitar(app.dataset.colaboradorUrl + '?codigo=' + encodeURIComponent(codigo));
             if (intento !== busqueda) return;
             colaborador = datos;
             byId('nombre-colaborador').textContent = datos.nombre;
@@ -179,21 +232,28 @@
                 foto.setAttribute('aria-label', 'Sin foto: ' + datos.nombre);
             }
             byId('datos-colaborador').classList.remove('d-none'); bloquear();
-        } catch (error) { if (intento === busqueda) mensaje(error.message); }
+        } catch (error) { if (intento === busqueda) errorCampo(byId('codigo-colaborador'), error.message); }
+        finally { if (intento === busqueda) { buscando = false; bloquear(); } }
     });
     byId('agregar-articulo').addEventListener('submit', evento => {
         evento.preventDefault();
         const articulo = catalogo.find(a => a.clave === byId('articulo').value);
         const cantidad = byId('cantidad').value;
-        if (!articulo || !cantidadValida(cantidad)) { mensaje('Seleccione un artículo y una cantidad entera entre 1 y ' + CANTIDAD_MAXIMA + '.'); return; }
+        errorCampo(byId('tipo-comida'), byId('tipo-comida').value ? '' : 'Seleccione el tipo de comida.');
+        errorCampo(byId('articulo'), articulo ? '' : 'Seleccione un artículo.');
+        const cantidadCorrecta = validarCantidad(byId('cantidad'));
+        if (!articulo || !cantidadCorrecta || !byId('tipo-comida').value) return;
         const existente = carrito.find(l => l.clave === articulo.clave);
         if (existente) {
-            if (!cantidadValida(existente.cantidad + Number(cantidad))) { mensaje('La cantidad total de un artículo no puede superar ' + CANTIDAD_MAXIMA + ' unidades.'); return; }
+            if (!cantidadValida(existente.cantidad + Number(cantidad))) { errorCampo(byId('cantidad'), 'Ya hay unidades de este artículo. La cantidad acumulada no puede superar 999.'); return; }
             existente.cantidad += Number(cantidad);
         } else carrito.push({ ...articulo, cantidad: Number(cantidad) });
         limpiarMensaje(); pintar();
     });
-    byId('tipo-comida').addEventListener('change', pintarArticulos);
+    byId('tipo-comida').addEventListener('change', () => { errorCampo(byId('tipo-comida'), ''); errorCampo(byId('articulo'), ''); pintarArticulos(); });
+    byId('articulo').addEventListener('change', () => errorCampo(byId('articulo'), ''));
+    byId('cantidad').addEventListener('input', () => validarCantidad(byId('cantidad')));
+    conectarCantidad(byId('cantidad'), byId('cantidad-menos'), byId('cantidad-mas'));
     limitarDigitos(byId('cantidad'));
     byId('actualizar-catalogo').addEventListener('click', () => cargarCatalogo(true));
     const modalDescarte = new bootstrap.Modal(byId('confirmar-descarte-pedido'));
@@ -235,6 +295,7 @@
     byId('registrar-pedido').addEventListener('click', () => {
         if (enviando || confirmando || byId('registrar-pedido').disabled) return;
         byId('confirmar-colaborador').textContent = colaborador.nombre + ' (' + colaborador.codigo + ')';
+        byId('confirmar-tipo-comida').textContent = pendiente?.tipoComida || byId('tipo-comida').value;
         byId('confirmar-total').textContent = byId('total-pedido').textContent;
         byId('aceptar-registro-pedido').disabled = false;
         byId('aceptar-registro-pedido').textContent = pendiente ? 'Sí, reintentar registro' : 'Sí, registrar pedido';

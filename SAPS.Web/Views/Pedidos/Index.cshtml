@@ -32,12 +32,13 @@
     <fieldset id="controles-pedido" class="border-0 p-0 m-0 min-w-0">
         <section class="card-recyplast mb-3" aria-labelledby="titulo-colaborador">
             <h3 class="card-recyplast-titulo" id="titulo-colaborador">1. Identificar al colaborador</h3>
-            <form id="buscar-colaborador" class="row g-2 align-items-end">
+            <form id="buscar-colaborador" novalidate class="row g-2 align-items-end">
                 <div class="col-12 col-sm-6 col-lg-4">
                     <label class="form-label" for="codigo-colaborador">Código de empleado</label>
-                    <input class="form-control" id="codigo-colaborador" maxlength="50" autocomplete="off" placeholder="Ej. EMP001" required />
+                    <input class="form-control" id="codigo-colaborador" maxlength="50" autocomplete="off" placeholder="Ej. EMP001" aria-describedby="error-codigo-colaborador" required />
+                    <p id="error-codigo-colaborador" class="invalid-feedback" aria-live="polite"></p>
                 </div>
-                <div class="col-12 col-sm-auto"><button class="btn btn-recyplast-secondary w-100" type="submit"><partial name="_Iconos" model="@("buscar icono-sm")" /> Buscar colaborador</button></div>
+                <div class="col-12 col-sm-auto"><button id="boton-buscar-colaborador" class="btn btn-recyplast-secondary w-100" type="submit"><span id="busqueda-en-espera" class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span><span id="texto-buscar-colaborador" aria-live="polite">Buscar colaborador</span></button></div>
             </form>
             <div id="datos-colaborador" class="tarjeta-colaborador mt-3 d-none" aria-live="polite">
                 <div id="foto-colaborador" role="img" class="foto-colaborador"></div>
@@ -55,13 +56,20 @@
                     <h3 class="card-recyplast-titulo" id="titulo-articulos">2. Agregar artículos</h3>
                     <label class="form-label" for="tipo-comida">Tipo de comida</label>
                     @* Las opciones se cargan desde las categorías vigentes del catálogo. *@
-                    <select id="tipo-comida" class="form-select mb-3"><option value="">Cargando categorías…</option></select>
-                    <form id="agregar-articulo">
+                    <select id="tipo-comida" aria-describedby="error-tipo-comida" class="form-select mb-3"><option value="">Cargando categorías…</option></select>
+                    <p id="error-tipo-comida" class="invalid-feedback" aria-live="polite"></p>
+                    <form id="agregar-articulo" novalidate>
                         <label class="form-label" for="articulo">Producto, adicional o bebida</label>
-                        <select id="articulo" class="form-select mb-2" required><option value="">Seleccione primero el tipo de comida</option></select>
+                        <select id="articulo" aria-describedby="error-articulo" class="form-select mb-2" required><option value="">Seleccione primero el tipo de comida</option></select>
+                        <p id="error-articulo" class="invalid-feedback" aria-live="polite"></p>
                         <p id="estado-catalogo" class="texto-suave small" aria-live="polite"></p>
                         <label class="form-label" for="cantidad">Cantidad</label>
-                        <input id="cantidad" class="form-control mb-3 campo-cantidad" type="number" min="1" max="999" step="1" value="1" required />
+                        <div id="selector-cantidad" class="input-group selector-cantidad mb-2">
+                            <button type="button" id="cantidad-menos" class="btn btn-recyplast-outline" aria-label="Disminuir cantidad">−</button>
+                            <input id="cantidad" class="form-control" type="number" min="1" max="999" step="1" value="1" aria-describedby="error-cantidad" required />
+                            <button type="button" id="cantidad-mas" class="btn btn-recyplast-outline" aria-label="Aumentar cantidad">+</button>
+                        </div>
+                        <p id="error-cantidad" class="invalid-feedback" aria-live="polite"></p>
                         <p class="texto-suave small">Máximo 3 dígitos (hasta 999 unidades).</p>
                         <div class="d-flex flex-wrap gap-2">
                             <button type="submit" class="btn btn-recyplast" id="agregar" disabled><partial name="_Iconos" model="@("agregar icono-sm")" /> Agregar al pedido</button>
@@ -108,6 +116,7 @@
             <div class="modal-body">
                 <p id="texto-confirmar-registro">¿Está segura de que desea registrar este pedido?</p>
                 <p class="mb-1">Colaborador: <strong id="confirmar-colaborador"></strong></p>
+                <p class="mb-1">Tipo de comida: <strong id="confirmar-tipo-comida"></strong></p>
                 <p class="mb-0">Total: <strong id="confirmar-total"></strong></p>
             </div>
             <div class="modal-footer">
