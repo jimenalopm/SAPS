@@ -1,21 +1,38 @@
 @model SAPS.Web.Models.Catalogo.CategoriaFormViewModel
 @{ ViewData["Title"] = "Nueva categoría"; }
 
-<h1>Nueva categoría</h1>
-<div class="row">
-    <div class="col-md-5">
-        <form asp-action="CrearCategoria" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="NombreCategoria" class="form-control" placeholder="Nombre de la categoría" autofocus />
-                <label asp-for="NombreCategoria">Nombre de la categoría</label>
-                <span asp-validation-for="NombreCategoria" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-recyplast">Guardar</button>
-            <a asp-action="Catalogo" asp-route-tab="categorias" class="btn btn-outline-secondary">Cancelar</a>
-        </form>
+@* [H1] Ruta de navegación: muestra dónde está la persona y permite volver a cualquier nivel. *@
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador"></span><a asp-action="Catalogo">Catálogo</a>
+    <span class="separador"></span><a asp-action="Catalogo" asp-route-tab="categorias">Categorías</a>
+    <span class="separador actual" aria-current="page">Nueva categoría</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Nueva categoría</h1>
+        <p>Completa la información de la categoría.</p>
     </div>
 </div>
+
+<form asp-action="CrearCategoria" method="post" data-bloquear-envio class="form-card form-card-estrecho">
+    <div asp-validation-summary="ModelOnly" class="alerta-error-recyplast" role="alert"></div>
+
+    <section aria-labelledby="titulo-info">
+        <h2 class="form-card-titulo" id="titulo-info">Información de la categoría</h2>
+        <div class="mb-1">
+            <label asp-for="NombreCategoria" class="form-label">Nombre de la categoría <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <input asp-for="NombreCategoria" class="form-control" autofocus />
+            <span asp-validation-for="NombreCategoria" class="text-danger small"></span>
+        </div>
+    </section>
+
+    <div class="form-acciones">
+        <a asp-action="Catalogo" asp-route-tab="categorias" class="btn btn-recyplast-outline">Cancelar</a>
+        <button type="submit" class="btn btn-recyplast">Guardar</button>
+    </div>
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

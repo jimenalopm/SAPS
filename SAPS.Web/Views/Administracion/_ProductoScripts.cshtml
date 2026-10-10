@@ -1,0 +1,26 @@
+<partial name="_ValidationScriptsPartial" />
+<script>
+    function alternarPrecios() {
+        const requiereTamano = document.getElementById('requiereTamano').checked;
+        document.getElementById('bloquePrecioUnico').style.display = requiereTamano ? 'none' : 'block';
+        document.getElementById('bloquePreciosPorTamano').style.display = requiereTamano ? 'block' : 'none';
+        document.querySelectorAll('#bloquePrecioUnico input').forEach(input => input.disabled = requiereTamano);
+        document.querySelectorAll('#bloquePreciosPorTamano input').forEach(input => input.disabled = !requiereTamano);
+        document.querySelectorAll('.precio-tamano-fila').forEach(fila => {
+            fila.querySelector('input[name$=".Monto"]').disabled = !requiereTamano || !fila.querySelector('input[type="checkbox"]').checked;
+        });
+    }
+    $(function () {
+        alternarPrecios();
+        document.querySelectorAll('.precio-tamano-fila input[type="checkbox"]').forEach(input => input.addEventListener('change', alternarPrecios));
+        const mensaje = 'No se pueden colocar valores negativos o iguales a cero.';
+        $('#PrecioUnico, .precio-tamano-fila input[name$=".Monto"]').each(function () {
+            $(this).rules('add', {
+                required: true,
+                min: 1,
+                digits: true,
+                messages: { required: 'Indique el precio.', min: mensaje, digits: 'Indique un precio entero positivo.' }
+            });
+        });
+    });
+</script>

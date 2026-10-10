@@ -19,16 +19,20 @@ namespace SAPS.Web.Migrations
         {
             migrationBuilder.DropCheckConstraint(
                 name: "CK_Pedido_TipoComida",
-                table: "tb_Pedido");
+                table: "tb_Pedido",
+                schema: "soda");
 
             migrationBuilder.AlterColumn<string>(
                 name: "TipoComida",
                 table: "tb_Pedido",
-                type: "nvarchar(50)",
+                schema: "soda",
+                type: "varchar(50)",
                 maxLength: 50,
+                unicode: false,
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(20)",
+                oldUnicode: false,
+                oldType: "varchar(20)",
                 oldMaxLength: 20);
         }
 
@@ -38,16 +42,20 @@ namespace SAPS.Web.Migrations
             migrationBuilder.AlterColumn<string>(
                 name: "TipoComida",
                 table: "tb_Pedido",
-                type: "nvarchar(20)",
+                schema: "soda",
+                type: "varchar(20)",
                 maxLength: 20,
+                unicode: false,
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(50)",
+                oldUnicode: false,
+                oldType: "varchar(50)",
                 oldMaxLength: 50);
 
             migrationBuilder.AddCheckConstraint(
                 name: "CK_Pedido_TipoComida",
                 table: "tb_Pedido",
+                schema: "soda",
                 sql: "[TipoComida] IN ('Desayuno','Almuerzo','Merienda')");
         }
     }

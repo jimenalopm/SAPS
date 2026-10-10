@@ -42,30 +42,23 @@ Si el sistema indica que la herramienta ya está instalada, puedes continuar sin
 
 ---
 
-## 4. Confirmar la cadena de conexión
+## 4. Configurar la cadena de conexión
 
-Asegúrate de que el archivo `appsettings.json`, ubicado en la raíz de `SAPS.Web`, tenga exactamente esta cadena de conexión con la contraseña `GarfieldPapuPro1234!`:
+La cadena de conexión con la contraseña no se guarda en `appsettings.json`, sino en los *user secrets* de .NET (son individuales por máquina y no se suben al repo). Desde la carpeta `SAPS.Web`, ejecuta:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost,1433;Database=SAPS_Db;User Id=sa;Password=GarfieldPapuPro1234!;TrustServerCertificate=True;"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*"
-}
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=SAPS_DB;User Id=sa;Password=TU_CLAVE;Encrypt=False;TrustServerCertificate=True;"
 ```
+
+Reemplaza `TU_CLAVE` por la contraseña de `sa` que elegiste al crear el contenedor. El script `crear_db.bat` la pide al ejecutarse.
+
+> **Importante:** la contraseña nunca se escribe en archivos del repo. El valor `CONFIGURAR_EN_USER_SECRETS` que aparece en `appsettings.json` es solo un marcador; el valor real lo toma la aplicación de los *user secrets*.
 
 ---
 
 ## 5. Aplicar las migraciones de la base de datos
 
-Como el proyecto ya cuenta con la carpeta `Migrations`, ejecuta el siguiente comando para construir el esquema de tablas dentro de la base de datos `SAPS_Db`:
+Ejecuta el siguiente comando para construir el esquema de tablas dentro de la base de datos `SAPS_DB` (esquemas `soda` y `rrhh`, ver `docs/BaseDatos-Estandares-SQL2012.md`):
 
 ```powershell
 dotnet ef database update
@@ -103,4 +96,29 @@ info: Microsoft.Hosting.Lifetime[14]
 
 ```
 http://localhost:5120
+```
+
+---
+
+## 8. Protección: datos de prueba solo en base local
+
+Al iniciar en Development, la aplicación siembra datos de prueba (usuarios `EMP001`, `SODA001` y `ADM001` con clave de desarrollo, y los colaboradores ficticios `DEMO001` a `DEMO003`, que se insertan en `rrhh.tb_Colaborador`). Para no contaminar una base real, **solo lo hace si el entorno es Development y el servidor de `DefaultConnection` es local** (`localhost`, `127.0.0.1`, `.`, `(local)`, `(localdb)` o el contenedor Docker de la sección 2, que usa `localhost,1433`). Cualquier otro servidor, como el de RecyPlast (`10.195.13.2`), se considera base real.
+
+Si la base no es local, la aplicación no crea ni modifica usuarios, no inserta los colaboradores DEMO (en la base real solo existen los colaboradores reales) y escribe en el log: `Sembrado de datos de prueba omitido: la base no es local.` Los roles (`Administrador`, `RecursosHumanos`, `Soda`, `Usuario`) se siguen creando solo si faltan, porque la aplicación los necesita para funcionar; esto no toca usuarios ni borra datos existentes.
+
+La lógica está en `SAPS.Web/Data/SembradoPrueba.cs` y sus pruebas en `SAPS.Tests/SembradoPruebaTests.cs`. El script `seed_catalogo.sql` es manual y no lo ejecuta la aplicación: no lo corra contra una base real.
+
+---
+
+## 9. Colaboradores (RNF-006)
+
+Los colaboradores salen de la tabla `rrhh.tb_Colaborador` de `SAPS_DB`, que administra RH desde SAPS (la pantalla de administración aún no existe). El pedido busca por código; si digita `842` se busca `0000000842`. Un código que no existe muestra «Colaborador no encontrado» y uno inactivo muestra «Colaborador inactivo» y no deja registrar el pedido.
+
+La carga inicial se hace una sola vez con `tools/cargar_colaboradores.py` (lee `C:\SAPS-datos\Codigo.xlsm` y genera `datos-locales/colaboradores_inserts.sql`). Esa carpeta está en `.gitignore`: el repo es público y el archivo trae nombres reales, **no se sube**. Se ejecuta con `sqlcmd -I -f 65001 -d SAPS_DB -i colaboradores_inserts.sql` y se puede repetir sin duplicar.
+
+Mientras no exista la pantalla, RH da de baja o de alta con estas consultas:
+
+```sql
+UPDATE rrhh.tb_Colaborador SET EstaActivo = 0 WHERE Codigo = '0000000XXX';  -- baja
+UPDATE rrhh.tb_Colaborador SET EstaActivo = 1 WHERE Codigo = '0000000XXX';  -- alta
 ```

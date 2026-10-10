@@ -8,14 +8,14 @@ using SAPS.Web.Services.Pedidos;
 
 namespace SAPS.Web.Controllers;
 
-[Authorize(Roles = "Soda,Usuario,Administrador")]
+[Authorize(Roles = "Soda,Administrador")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public class PedidosController(ServicioPedidos pedidos, IColaboradores colaboradores, ILogger<PedidosController> logger) : Controller
+public class PedidosController(ServicioPedidos pedidos, EntornoPrueba entorno, ILogger<PedidosController> logger) : Controller
 {
     [HttpGet]
     public IActionResult Index()
     {
-        ViewData["EsPrueba"] = colaboradores.EsPrueba;
+        ViewData["EsPrueba"] = entorno.Activo;
         return View();
     }
 

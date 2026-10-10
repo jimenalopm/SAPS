@@ -6,3 +6,8 @@ obj/
 *.db
 *.db-shm
 *.db-wal
+TestResults/
+*.bak
+
+# Archivos generados con datos reales de colaboradores (repo público: NO commitear)
+datos-locales/

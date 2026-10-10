@@ -1,11 +1,24 @@
+@using System.Globalization
 @model SAPS.Web.Models.Catalogo.CatalogoIndexViewModel
 @{
     ViewData["Title"] = "Catálogo";
+    var cultura = CultureInfo.GetCultureInfo("es-CR");
     string Activa(string nombre) => Model.TabActiva == nombre ? "show active" : "";
-    string ActivaLink(string nombre) => Model.TabActiva == nombre ? "active" : "";
+    string TarjetaActiva(string nombre) => Model.TabActiva == nombre ? "activa" : "";
+    string Colones(int monto) => "₡" + monto.ToString("N0", cultura);
 }
 
-<h1 class="mb-3">Administración del catálogo</h1>
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador actual" aria-current="page">Catálogo</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Catálogo</h1>
+        <p>Gestiona los productos y bebidas disponibles para la soda.</p>
+    </div>
+</div>
 
 @if (TempData["Mensaje"] != null)
 {
@@ -15,42 +28,77 @@
     </div>
 }
 
-<ul class="nav nav-tabs mb-3">
-    <li class="nav-item"><a class="nav-link @ActivaLink("categorias")" href="?tab=categorias">Categorías</a></li>
-    <li class="nav-item"><a class="nav-link @ActivaLink("tamanos")" href="?tab=tamanos">Tamaños</a></li>
-    <li class="nav-item"><a class="nav-link @ActivaLink("productos")" href="?tab=productos">Productos</a></li>
-    <li class="nav-item"><a class="nav-link @ActivaLink("bebidas")" href="?tab=bebidas">Bebidas</a></li>
-</ul>
+@* Secciones del catálogo. Cada tarjeta es el mismo enlace de pestaña de antes (?tab=...).
+   El número es la cantidad de registros que se muestran con el filtro actual de esa sección. *@
+<nav class="catalogo-tarjetas" aria-label="Secciones del catálogo">
+    <a class="stat-card @TarjetaActiva("productos")" href="?tab=productos" aria-current="@(Model.TabActiva == "productos" ? "page" : null)">
+        <span class="stat-icono"><partial name="_Iconos" model="@("productos icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Productos</p>
+            <p class="stat-valor">@Model.Productos.Count.ToString("N0", cultura)</p>
+            <p class="stat-detalle">mostrados</p>
+        </div>
+    </a>
+    <a class="stat-card @TarjetaActiva("categorias")" href="?tab=categorias" aria-current="@(Model.TabActiva == "categorias" ? "page" : null)">
+        <span class="stat-icono azul"><partial name="_Iconos" model="@("categorias icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Categorías</p>
+            <p class="stat-valor">@Model.Categorias.Count.ToString("N0", cultura)</p>
+            <p class="stat-detalle">mostradas</p>
+        </div>
+    </a>
+    <a class="stat-card @TarjetaActiva("tamanos")" href="?tab=tamanos" aria-current="@(Model.TabActiva == "tamanos" ? "page" : null)">
+        <span class="stat-icono"><partial name="_Iconos" model="@("tamanos icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Tamaños</p>
+            <p class="stat-valor">@Model.Tamanos.Count.ToString("N0", cultura)</p>
+            <p class="stat-detalle">mostrados</p>
+        </div>
+    </a>
+    <a class="stat-card @TarjetaActiva("bebidas")" href="?tab=bebidas" aria-current="@(Model.TabActiva == "bebidas" ? "page" : null)">
+        <span class="stat-icono azul"><partial name="_Iconos" model="@("bebidas icono-lg")" /></span>
+        <div>
+            <p class="stat-etiqueta">Bebidas</p>
+            <p class="stat-valor">@Model.Bebidas.Count.ToString("N0", cultura)</p>
+            <p class="stat-detalle">mostradas</p>
+        </div>
+    </a>
+</nav>
 
 <div class="tab-content">
 
     @* ================= CATEGORÍAS ================= *@
     <div class="tab-pane @Activa("categorias")">
-        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
-            <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+        <div class="catalogo-barra">
+            <form method="get" class="catalogo-filtros" data-bloquear-envio>
                 <input type="hidden" name="tab" value="categorias" />
-                <input type="search" name="catQ" value="@Model.CategoriaBuscar" class="form-control" placeholder="Buscar categoría..." style="max-width:220px" />
+                <div class="input-buscar">
+                    <partial name="_Iconos" model="@("buscar icono-sm")" />
+                    <input type="search" name="catQ" value="@Model.CategoriaBuscar" class="form-control" placeholder="Buscar categoría..." aria-label="Buscar categoría" />
+                </div>
                 <div class="form-check">
-                    <input type="checkbox" name="catInc" value="true" class="form-check-input" id="catInc" checked="@Model.CategoriaIncluirInactivos" />
+                    <input type="checkbox" name="catInc" value="true" data-filtrar-estado class="form-check-input" id="catInc" checked="@Model.CategoriaIncluirInactivos" />
                     <label class="form-check-label" for="catInc">Mostrar inactivas</label>
                 </div>
-                <button type="submit" class="btn btn-outline-secondary btn-sm">Buscar</button>
+                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
-            <a asp-action="CrearCategoria" class="btn btn-recyplast">+ Nueva categoría</a>
+            <a asp-action="CrearCategoria" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nueva categoría</a>
         </div>
 
-        <table class="table table-hover align-middle">
+        <div class="tabla-contenedor">
+        <table class="table table-recyplast tabla-apilable align-middle">
             <thead><tr><th>Nombre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var c in Model.Categorias)
             {
-                <tr>
-                    <td>@c.NombreCategoria</td>
-                    <td><span class="badge @(c.Activo ? "badge-activo" : "badge-inactivo")">@(c.Activo ? "Activa" : "Inactiva")</span></td>
-                    <td class="text-end">
-                        <a asp-action="EditarCategoria" asp-route-id="@c.IdCategoria" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <form asp-action="CambiarEstadoCategoria" asp-route-id="@c.IdCategoria" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm @(c.Activo ? "btn-outline-danger" : "btn-outline-success")">
+                <tr class="@(c.Activo ? "" : "fila-inactiva")">
+                    <td data-label="Nombre" class="celda-principal">@c.NombreCategoria</td>
+                    <td data-label="Estado"><span class="badge-recyplast con-punto @(c.Activo ? "" : "gris")">@(c.Activo ? "Activa" : "Inactiva")</span></td>
+                    <td class="text-end celda-acciones">
+                        <a asp-action="EditarCategoria" asp-route-id="@c.IdCategoria" class="btn btn-sm btn-recyplast-outline"><partial name="_Iconos" model="@("editar icono-sm")" /> Editar</a>
+                        <form asp-action="CambiarEstadoCategoria" asp-route-id="@c.IdCategoria" method="post" class="d-inline" data-bloquear-envio
+                              data-confirmar="@(c.Activo ? $"¿Desea desactivar la categoría «{c.NombreCategoria}»? Dejará de estar disponible para nuevos pedidos. Podrá activarla de nuevo cuando lo necesite." : null)">
+                            <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm @(c.Activo ? "btn-outline-danger" : "btn-outline-success")">
                                 @(c.Activo ? "Desactivar" : "Activar")
                             </button>
                         </form>
@@ -59,39 +107,45 @@
             }
             @if (!Model.Categorias.Any())
             {
-                <tr><td colspan="3" class="text-muted text-center">No hay categorías para mostrar.</td></tr>
+                <tr class="fila-vacia"><td colspan="3" class="estado-vacio">No hay categorías para mostrar.</td></tr>
             }
             </tbody>
         </table>
+        </div>
     </div>
 
     @* ================= TAMAÑOS ================= *@
     <div class="tab-pane @Activa("tamanos")">
-        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
-            <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+        <div class="catalogo-barra">
+            <form method="get" class="catalogo-filtros" data-bloquear-envio>
                 <input type="hidden" name="tab" value="tamanos" />
-                <input type="search" name="tamQ" value="@Model.TamanoBuscar" class="form-control" placeholder="Buscar tamaño..." style="max-width:220px" />
+                <div class="input-buscar">
+                    <partial name="_Iconos" model="@("buscar icono-sm")" />
+                    <input type="search" name="tamQ" value="@Model.TamanoBuscar" class="form-control" placeholder="Buscar tamaño..." aria-label="Buscar tamaño" />
+                </div>
                 <div class="form-check">
-                    <input type="checkbox" name="tamInc" value="true" class="form-check-input" id="tamInc" checked="@Model.TamanoIncluirInactivos" />
+                    <input type="checkbox" name="tamInc" value="true" data-filtrar-estado class="form-check-input" id="tamInc" checked="@Model.TamanoIncluirInactivos" />
                     <label class="form-check-label" for="tamInc">Mostrar inactivos</label>
                 </div>
-                <button type="submit" class="btn btn-outline-secondary btn-sm">Buscar</button>
+                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
-            <a asp-action="CrearTamano" class="btn btn-recyplast">+ Nuevo tamaño</a>
+            <a asp-action="CrearTamano" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nuevo tamaño</a>
         </div>
 
-        <table class="table table-hover align-middle">
+        <div class="tabla-contenedor">
+        <table class="table table-recyplast tabla-apilable align-middle">
             <thead><tr><th>Nombre</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var t in Model.Tamanos)
             {
-                <tr>
-                    <td>@t.NombreTamano</td>
-                    <td><span class="badge @(t.Activo ? "badge-activo" : "badge-inactivo")">@(t.Activo ? "Activo" : "Inactivo")</span></td>
-                    <td class="text-end">
-                        <a asp-action="EditarTamano" asp-route-id="@t.IdTamano" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <form asp-action="CambiarEstadoTamano" asp-route-id="@t.IdTamano" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm @(t.Activo ? "btn-outline-danger" : "btn-outline-success")">
+                <tr class="@(t.Activo ? "" : "fila-inactiva")">
+                    <td data-label="Nombre" class="celda-principal">@t.NombreTamano</td>
+                    <td data-label="Estado"><span class="badge-recyplast con-punto @(t.Activo ? "" : "gris")">@(t.Activo ? "Activo" : "Inactivo")</span></td>
+                    <td class="text-end celda-acciones">
+                        <a asp-action="EditarTamano" asp-route-id="@t.IdTamano" class="btn btn-sm btn-recyplast-outline"><partial name="_Iconos" model="@("editar icono-sm")" /> Editar</a>
+                        <form asp-action="CambiarEstadoTamano" asp-route-id="@t.IdTamano" method="post" class="d-inline" data-bloquear-envio
+                              data-confirmar="@(t.Activo ? $"¿Desea desactivar el tamaño «{t.NombreTamano}»? Dejará de estar disponible para nuevos pedidos. Podrá activarlo de nuevo cuando lo necesite." : null)">
+                            <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm @(t.Activo ? "btn-outline-danger" : "btn-outline-success")">
                                 @(t.Activo ? "Desactivar" : "Activar")
                             </button>
                         </form>
@@ -100,51 +154,62 @@
             }
             @if (!Model.Tamanos.Any())
             {
-                <tr><td colspan="3" class="text-muted text-center">No hay tamaños para mostrar.</td></tr>
+                <tr class="fila-vacia"><td colspan="3" class="estado-vacio">No hay tamaños para mostrar.</td></tr>
             }
             </tbody>
         </table>
+        </div>
     </div>
 
     @* ================= PRODUCTOS ================= *@
     <div class="tab-pane @Activa("productos")">
-        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
-            <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+        <div class="catalogo-barra">
+            <form method="get" class="catalogo-filtros" data-bloquear-envio>
                 <input type="hidden" name="tab" value="productos" />
-                <input type="search" name="prodQ" value="@Model.ProductoBuscar" class="form-control" placeholder="Buscar producto..." style="max-width:220px" />
+                <div class="input-buscar">
+                    <partial name="_Iconos" model="@("buscar icono-sm")" />
+                    <input type="search" name="prodQ" value="@Model.ProductoBuscar" class="form-control" placeholder="Buscar producto..." aria-label="Buscar producto" />
+                </div>
                 <div class="form-check">
-                    <input type="checkbox" name="prodInc" value="true" class="form-check-input" id="prodInc" checked="@Model.ProductoIncluirInactivos" />
+                    <input type="checkbox" name="prodInc" value="true" data-filtrar-estado class="form-check-input" id="prodInc" checked="@Model.ProductoIncluirInactivos" />
                     <label class="form-check-label" for="prodInc">Mostrar inactivos</label>
                 </div>
-                <button type="submit" class="btn btn-outline-secondary btn-sm">Buscar</button>
+                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
-            <a asp-action="CrearProducto" class="btn btn-recyplast">+ Nuevo producto</a>
+            <a asp-action="CrearProducto" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nuevo producto</a>
         </div>
 
-        <table class="table table-hover align-middle">
-            <thead><tr><th>Nombre</th><th>Categoría</th><th>Precio(s)</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+        <div class="tabla-contenedor">
+        <table class="table table-recyplast tabla-apilable align-middle">
+            <thead><tr><th>Producto</th><th>Categoría</th><th>Precio(s)</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var p in Model.Productos)
             {
-                <tr>
-                    <td>@p.NombreProducto @(p.EsEspecial ? Html.Raw("<span class=\"badge bg-info text-dark ms-1\">Especial</span>") : Html.Raw(""))</td>
-                    <td>@p.Categoria?.NombreCategoria@(p.Categoria?.Activo == false ? " (inactiva)" : "")</td>
-                    <td>
+                <tr class="@(p.Activo ? "" : "fila-inactiva")">
+                    <td data-label="Producto" class="celda-principal">@p.NombreProducto @(p.EsEspecial ? Html.Raw("<span class=\"badge-recyplast azul ms-1\">Especial</span>") : Html.Raw(""))</td>
+                    <td data-label="Categoría">@p.Categoria?.NombreCategoria@(p.Categoria?.Activo == false ? " (inactiva)" : "")</td>
+                    <td data-label="Precio(s)">
                         @if (p.RequiereTamano)
                         {
-                            @string.Join(" · ", p.Precios.Where(pr => pr.Activo && pr.IdTamano != null).Select(pr => $"{pr.Tamano?.NombreTamano}{(pr.Tamano?.Activo == false ? " (inactivo)" : "")}: ₡{pr.MontoPrecio}"))
+                            <ul class="list-unstyled mb-0 precios-tamano">
+                            @foreach (var pr in p.Precios.Where(x => x.Activo && x.IdTamano != null))
+                            {
+                                <li class="text-nowrap">@pr.Tamano?.NombreTamano@(pr.Tamano?.Activo == false ? " (inactivo)" : ""): <strong>@Colones(pr.MontoPrecio)</strong></li>
+                            }
+                            </ul>
                         }
                         else
                         {
                             var precio = p.Precios.FirstOrDefault(pr => pr.Activo && pr.IdTamano == null);
-                            @(precio != null ? $"₡{precio.MontoPrecio}" : "Sin precio")
+                            if (precio != null) { <strong>@Colones(precio.MontoPrecio)</strong> } else { <span class="texto-suave">Sin precio</span> }
                         }
                     </td>
-                    <td><span class="badge @(p.Activo ? "badge-activo" : "badge-inactivo")">@(p.Activo ? "Activo" : "Inactivo")</span></td>
-                    <td class="text-end">
-                        <a asp-action="EditarProducto" asp-route-id="@p.IdProducto" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <form asp-action="CambiarEstadoProducto" asp-route-id="@p.IdProducto" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm @(p.Activo ? "btn-outline-danger" : "btn-outline-success")">
+                    <td data-label="Estado"><span class="badge-recyplast con-punto @(p.Activo ? "" : "gris")">@(p.Activo ? "Activo" : "Inactivo")</span></td>
+                    <td class="text-end celda-acciones">
+                        <a asp-action="EditarProducto" asp-route-id="@p.IdProducto" class="btn btn-sm btn-recyplast-outline"><partial name="_Iconos" model="@("editar icono-sm")" /> Editar</a>
+                        <form asp-action="CambiarEstadoProducto" asp-route-id="@p.IdProducto" method="post" class="d-inline" data-bloquear-envio
+                              data-confirmar="@(p.Activo ? $"¿Desea desactivar el producto «{p.NombreProducto}»? Dejará de estar disponible para nuevos pedidos. Podrá activarlo de nuevo cuando lo necesite." : null)">
+                            <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm @(p.Activo ? "btn-outline-danger" : "btn-outline-success")">
                                 @(p.Activo ? "Desactivar" : "Activar")
                             </button>
                         </form>
@@ -153,42 +218,48 @@
             }
             @if (!Model.Productos.Any())
             {
-                <tr><td colspan="5" class="text-muted text-center">No hay productos para mostrar.</td></tr>
+                <tr class="fila-vacia"><td colspan="5" class="estado-vacio">No hay productos para mostrar.</td></tr>
             }
             </tbody>
         </table>
+        </div>
     </div>
 
     @* ================= BEBIDAS ================= *@
     <div class="tab-pane @Activa("bebidas")">
-        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
-            <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+        <div class="catalogo-barra">
+            <form method="get" class="catalogo-filtros" data-bloquear-envio>
                 <input type="hidden" name="tab" value="bebidas" />
-                <input type="search" name="bebQ" value="@Model.BebidaBuscar" class="form-control" placeholder="Buscar bebida..." style="max-width:220px" />
+                <div class="input-buscar">
+                    <partial name="_Iconos" model="@("buscar icono-sm")" />
+                    <input type="search" name="bebQ" value="@Model.BebidaBuscar" class="form-control" placeholder="Buscar bebida..." aria-label="Buscar bebida" />
+                </div>
                 <div class="form-check">
-                    <input type="checkbox" name="bebInc" value="true" class="form-check-input" id="bebInc" checked="@Model.BebidaIncluirInactivos" />
+                    <input type="checkbox" name="bebInc" value="true" data-filtrar-estado class="form-check-input" id="bebInc" checked="@Model.BebidaIncluirInactivos" />
                     <label class="form-check-label" for="bebInc">Mostrar inactivas</label>
                 </div>
-                <button type="submit" class="btn btn-outline-secondary btn-sm">Buscar</button>
+                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
-            <a asp-action="CrearBebida" class="btn btn-recyplast">+ Nueva bebida</a>
+            <a asp-action="CrearBebida" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nueva bebida</a>
         </div>
 
-        <table class="table table-hover align-middle">
+        <div class="tabla-contenedor">
+        <table class="table table-recyplast tabla-apilable align-middle">
             <thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño</th><th>Precio</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
             <tbody>
             @foreach (var b in Model.Bebidas)
             {
-                <tr>
-                    <td>@b.NombreBebida</td>
-                    <td>@b.TipoBebida</td>
-                    <td>@(b.Tamano?.NombreTamano ?? "—")@(b.Tamano?.Activo == false ? " (inactivo)" : "")</td>
-                    <td>₡@b.Precio</td>
-                    <td><span class="badge @(b.Activo ? "badge-activo" : "badge-inactivo")">@(b.Activo ? "Activa" : "Inactiva")</span></td>
-                    <td class="text-end">
-                        <a asp-action="EditarBebida" asp-route-id="@b.IdBebida" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <form asp-action="CambiarEstadoBebida" asp-route-id="@b.IdBebida" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm @(b.Activo ? "btn-outline-danger" : "btn-outline-success")">
+                <tr class="@(b.Activo ? "" : "fila-inactiva")">
+                    <td data-label="Nombre" class="celda-principal">@b.NombreBebida</td>
+                    <td data-label="Tipo"><span class="badge-recyplast azul">@b.TipoBebida</span></td>
+                    <td data-label="Tamaño">@(b.Tamano?.NombreTamano ?? "—")@(b.Tamano?.Activo == false ? " (inactivo)" : "")</td>
+                    <td data-label="Precio"><strong>@Colones(b.Precio)</strong></td>
+                    <td data-label="Estado"><span class="badge-recyplast con-punto @(b.Activo ? "" : "gris")">@(b.Activo ? "Activa" : "Inactiva")</span></td>
+                    <td class="text-end celda-acciones">
+                        <a asp-action="EditarBebida" asp-route-id="@b.IdBebida" class="btn btn-sm btn-recyplast-outline"><partial name="_Iconos" model="@("editar icono-sm")" /> Editar</a>
+                        <form asp-action="CambiarEstadoBebida" asp-route-id="@b.IdBebida" method="post" class="d-inline" data-bloquear-envio
+                              data-confirmar="@(b.Activo ? $"¿Desea desactivar la bebida «{b.NombreBebida}»? Dejará de estar disponible para nuevos pedidos. Podrá activarla de nuevo cuando lo necesite." : null)">
+                            <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm @(b.Activo ? "btn-outline-danger" : "btn-outline-success")">
                                 @(b.Activo ? "Desactivar" : "Activar")
                             </button>
                         </form>
@@ -197,10 +268,19 @@
             }
             @if (!Model.Bebidas.Any())
             {
-                <tr><td colspan="6" class="text-muted text-center">No hay bebidas para mostrar.</td></tr>
+                <tr class="fila-vacia"><td colspan="6" class="estado-vacio">No hay bebidas para mostrar.</td></tr>
             }
             </tbody>
         </table>
+        </div>
     </div>
 
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('[data-filtrar-estado]').forEach(check => {
+            check.addEventListener('change', () => check.form.requestSubmit());
+        });
+    </script>
+}

@@ -12,9 +12,9 @@ public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores cola
     {
         if (string.IsNullOrWhiteSpace(codigo)) throw new PedidoInvalidoException("Ingrese el código del colaborador.");
         if (codigo.Trim().Length > 50) throw new PedidoInvalidoException("El código es demasiado largo.");
-        var colaborador = await colaboradores.BuscarAsync(codigo, ct);
-        if (colaborador is null) throw new PedidoInvalidoException("No se encontró un colaborador con ese código.");
-        if (!colaborador.Activo) throw new PedidoInvalidoException("El colaborador está inactivo y no puede registrar compras.");
+        var colaborador = await colaboradores.BuscarAsync(CodigoColaborador.Normalizar(codigo), ct)
+            ?? throw new ColaboradorNoEncontradoException();
+        if (!colaborador.Activo) throw new ColaboradorInactivoException();
         return colaborador;
     }
 
@@ -67,7 +67,7 @@ public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores cola
             NombreColaborador = colaborador.Nombre, IdUsuarioRegistro = usuarioId,
             FechaRegistroUtc = reloj.GetUtcNow().UtcDateTime, TipoComida = tipoComida,
             Observaciones = string.IsNullOrWhiteSpace(solicitud.Observaciones) ? null : solicitud.Observaciones.Trim(),
-            EsPrueba = colaboradores.EsPrueba
+            EsPrueba = colaborador.EsDemo
         };
         foreach (var linea in solicitud.Lineas)
         {

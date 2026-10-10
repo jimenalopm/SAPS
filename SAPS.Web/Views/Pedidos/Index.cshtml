@@ -1,71 +1,180 @@
 @{
     ViewData["Title"] = "Registrar pedido";
 }
-<h1>Registrar pedido</h1>
-<p>Atiende: <strong>@User.Identity?.Name</strong>. Los artículos se cargarán al colaborador que seleccione.</p>
+
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador actual" aria-current="page">Registrar pedido</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Registrar pedido</h1>
+        <p>Atiende: <strong>@User.Identity?.Name</strong>. Los artículos se cargarán al colaborador que seleccione.</p>
+    </div>
+</div>
+
 @if (ViewData["EsPrueba"] is true)
 {
-    <div class="alert alert-warning">Entorno de prueba: nombres y fotos ficticios. Códigos: <strong>DEMO001</strong> y <strong>DEMO002</strong> (activos); <strong>DEMO003</strong> (inactivo).</div>
+    <div class="alert alert-recyplast aviso-prueba" role="note">Entorno de prueba: colaboradores ficticios. Códigos: <strong>DEMO001</strong> y <strong>DEMO002</strong> (activos); <strong>DEMO003</strong> (inactivo).</div>
 }
+
+@* Indicador de pasos. Solo presentación: lo actualiza wwwroot/js/pedidos-pasos.js observando la pantalla. *@
+<ol class="pasos-pedido" id="pasos-pedido" aria-label="Pasos del pedido">
+    <li class="paso activo" data-paso="1" aria-current="step"><span class="paso-numero">1</span><span class="paso-nombre">Colaborador</span></li>
+    <li class="paso" data-paso="2"><span class="paso-numero">2</span><span class="paso-nombre">Pedido</span></li>
+    <li class="paso" data-paso="3"><span class="paso-numero">3</span><span class="paso-nombre">Confirmar</span></li>
+</ol>
+
 <div id="mensaje-pedido" class="alert d-none" role="alert" tabindex="-1"></div>
 <div id="pedido-app" data-colaborador-url="@Url.Action("Colaborador")" data-catalogo-url="@Url.Action("Catalogo")" data-registro-url="@Url.Action("Registrar")">
     @Html.AntiForgeryToken()
-    <fieldset id="controles-pedido">
-        <section class="card mb-3" aria-labelledby="titulo-colaborador">
-            <div class="card-body">
-                <h2 class="h4" id="titulo-colaborador">1. Identificar al colaborador</h2>
-                <form id="buscar-colaborador" class="row g-2 align-items-end">
-                    <div class="col-sm-6"><label class="form-label" for="codigo-colaborador">Código de empleado</label><input class="form-control" id="codigo-colaborador" maxlength="50" autocomplete="off" required /></div>
-                    <div class="col-sm-auto"><button class="btn btn-recyplast" type="submit">Buscar colaborador</button></div>
-                </form>
-                <div id="datos-colaborador" class="mt-3 d-none" aria-live="polite">
-                    <div id="foto-colaborador" role="img" class="foto-colaborador"></div>
-                    <p class="mb-1"><strong id="nombre-colaborador"></strong></p><p id="codigo-encontrado"></p>
-                    <p class="text-muted mb-0">Verifique que la foto corresponda a la persona que solicita el pedido.</p>
+    <fieldset id="controles-pedido" class="border-0 p-0 m-0 min-w-0">
+        <section class="card-recyplast mb-3" aria-labelledby="titulo-colaborador">
+            <h3 class="card-recyplast-titulo" id="titulo-colaborador">1. Identificar al colaborador</h3>
+            <form id="buscar-colaborador" class="row g-2 align-items-end">
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <label class="form-label" for="codigo-colaborador">Código de empleado</label>
+                    <input class="form-control" id="codigo-colaborador" maxlength="50" autocomplete="off" placeholder="Ej. EMP001" required />
+                </div>
+                <div class="col-12 col-sm-auto"><button class="btn btn-recyplast-secondary w-100" type="submit"><partial name="_Iconos" model="@("buscar icono-sm")" /> Buscar colaborador</button></div>
+            </form>
+            <div id="datos-colaborador" class="tarjeta-colaborador mt-3 d-none" aria-live="polite">
+                <div id="foto-colaborador" role="img" class="foto-colaborador"></div>
+                <div>
+                    <span class="badge-recyplast con-punto mb-2">Colaborador identificado</span>
+                    <p class="mb-1"><strong id="nombre-colaborador"></strong></p>
+                    <p id="codigo-encontrado" class="texto-suave mb-2"></p>
+                    <p class="texto-suave small mb-0">Verifique que la foto corresponda a la persona que solicita el pedido.</p>
                 </div>
             </div>
         </section>
         <div class="row g-3">
-            <section class="col-lg-5" aria-labelledby="titulo-articulos">
-                <div class="card h-100"><div class="card-body">
-                    <h2 class="h4" id="titulo-articulos">2. Agregar artículos</h2>
+            <section class="col-xl-5" aria-labelledby="titulo-articulos">
+                <div class="card-recyplast h-100">
+                    <h3 class="card-recyplast-titulo" id="titulo-articulos">2. Agregar artículos</h3>
                     <label class="form-label" for="tipo-comida">Tipo de comida</label>
                     @* Las opciones se cargan desde las categorías vigentes del catálogo. *@
                     <select id="tipo-comida" class="form-select mb-3"><option value="">Cargando categorías…</option></select>
                     <form id="agregar-articulo">
                         <label class="form-label" for="articulo">Producto, adicional o bebida</label>
                         <select id="articulo" class="form-select mb-2" required><option value="">Seleccione primero el tipo de comida</option></select>
-                        <p id="estado-catalogo" class="text-muted" aria-live="polite"></p>
+                        <p id="estado-catalogo" class="texto-suave small" aria-live="polite"></p>
                         <label class="form-label" for="cantidad">Cantidad</label>
-                        <input id="cantidad" class="form-control mb-2" type="number" min="1" max="999" step="1" value="1" required />
-                        <div class="form-text mb-2">Máximo 3 dígitos (hasta 999 unidades).</div>
-                        <button type="submit" class="btn btn-recyplast" id="agregar" disabled>Agregar al pedido</button>
-                        <button type="button" class="btn btn-outline-secondary mt-1" id="actualizar-catalogo">Actualizar catálogo</button>
+                        <input id="cantidad" class="form-control mb-3 campo-cantidad" type="number" min="1" max="999" step="1" value="1" required />
+                        <p class="texto-suave small">Máximo 3 dígitos (hasta 999 unidades).</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-recyplast" id="agregar" disabled><partial name="_Iconos" model="@("agregar icono-sm")" /> Agregar al pedido</button>
+                            <button type="button" class="btn btn-recyplast-outline" id="actualizar-catalogo">Actualizar catálogo</button>
+                        </div>
                     </form>
-                    <p class="text-muted mt-3">Seleccione también los acompañamientos y adicionales del catálogo. Los precios los define la administración.</p>
-                </div></div>
+                    <p class="texto-suave small mt-3 mb-0">Seleccione también los acompañamientos y adicionales del catálogo. Los precios los define la administración.</p>
+                </div>
             </section>
-            <section class="col-lg-7" aria-labelledby="titulo-detalle">
-                <div class="card"><div class="card-body">
-                    <h2 class="h4" id="titulo-detalle">3. Detalle del pedido</h2>
-                    <p id="pedido-vacio">Todavía no hay artículos en el pedido.</p>
-                    <div class="table-responsive"><table class="table" id="tabla-detalle" hidden>
+            <section class="col-xl-7" aria-labelledby="titulo-detalle">
+                <div class="card-recyplast h-100">
+                    <h3 class="card-recyplast-titulo" id="titulo-detalle">3. Resumen y confirmación</h3>
+                    <dl class="resumen-pedido" id="resumen-pedido">
+                        <div><dt>Colaborador</dt><dd id="resumen-colaborador">—</dd></div>
+                        <div><dt>Tipo de comida</dt><dd id="resumen-comida">—</dd></div>
+                    </dl>
+                    <div id="pedido-vacio" class="estado-vacio estado-vacio-compacto"><partial name="_Iconos" model="@("pedidos")" /><p class="mb-0">Todavía no hay artículos en el pedido.</p></div>
+                    <div class="tabla-contenedor mb-3"><table class="table table-recyplast tabla-apilable align-middle" id="tabla-detalle" hidden>
                         <thead><tr><th>Artículo</th><th>Precio</th><th>Cantidad</th><th>Subtotal</th><th><span class="visually-hidden">Acciones</span></th></tr></thead>
                         <tbody id="lineas-pedido"></tbody>
                     </table></div>
                     <div id="aviso-total" class="alert d-none" role="alert"></div>
-                    <p class="fs-4 text-end" aria-live="polite">Total: <strong id="total-pedido">₡0</strong></p>
-                    <p class="text-muted text-end">Sin impuestos. Cobro por rebajo de planilla.</p>
+                    <div class="total-pedido" aria-live="polite"><span>Total</span><strong id="total-pedido">₡0</strong></div>
+                    <p class="texto-suave small text-end">Sin impuestos. Cobro por rebajo de planilla.</p>
                     <label for="observaciones" class="form-label">Observaciones (opcional)</label>
                     <textarea id="observaciones" class="form-control mb-3" maxlength="500" rows="2" placeholder="Ejemplo: sin cebolla"></textarea>
-                    <button id="registrar-pedido" class="btn btn-recyplast" type="button" disabled>Registrar pedido</button>
-                    <button id="descartar-pedido" class="btn btn-outline-secondary" type="button">Descartar pedido</button>
-                    <p class="text-muted mt-2 mb-0">El pedido se guarda solamente al pulsar “Registrar pedido”. Si cierra sesión o recarga antes de registrarlo, se descarta.</p>
-                </div></div>
+                    <div class="d-flex flex-wrap gap-2 acciones-pedido">
+                        <button id="registrar-pedido" class="btn btn-recyplast btn-lg" type="button" disabled>Registrar pedido</button>
+                        <button id="descartar-pedido" class="btn btn-recyplast-outline btn-lg" type="button">Descartar pedido</button>
+                    </div>
+                    <p class="texto-suave small mt-3 mb-0">El pedido se guarda solamente después de confirmar el registro. Si cierra sesión o recarga antes de registrarlo, se descarta.</p>
+                </div>
             </section>
         </div>
     </fieldset>
 </div>
+<div class="modal fade" id="confirmar-registro-pedido" tabindex="-1" aria-labelledby="titulo-confirmar-registro" aria-describedby="texto-confirmar-registro" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="titulo-confirmar-registro">Confirmar registro del pedido</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cancelar registro"></button>
+            </div>
+            <div class="modal-body">
+                <p id="texto-confirmar-registro">¿Está segura de que desea registrar este pedido?</p>
+                <p class="mb-1">Colaborador: <strong id="confirmar-colaborador"></strong></p>
+                <p class="mb-0">Total: <strong id="confirmar-total"></strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-recyplast-outline" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-recyplast" id="aceptar-registro-pedido">Sí, registrar pedido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pedido-registrado" tabindex="-1" aria-labelledby="titulo-pedido-registrado" aria-describedby="detalle-pedido-registrado" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Cerrar mensaje de registro"></button>
+            </div>
+            <div class="modal-body text-center px-4 pb-4">
+                <h2 id="titulo-pedido-registrado" class="fs-2 fw-bold text-success mb-4">¡Pedido registrado correctamente!</h2>
+                <div id="detalle-pedido-registrado">
+                    <p class="fs-4 mb-3">Número de pedido: <strong id="numero-pedido-registrado"></strong></p>
+                    <p class="fs-3 mb-3">Total: <strong id="total-pedido-registrado"></strong></p>
+                    <p class="fs-5 texto-suave mb-0">El pedido se guardó correctamente. Ya puede preparar otro pedido.</p>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-recyplast btn-lg px-5" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmar-descarte-pedido" tabindex="-1" aria-labelledby="titulo-confirmar-descarte" aria-describedby="texto-confirmar-descarte" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="titulo-confirmar-descarte">Descartar pedido</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cancelar descarte"></button>
+            </div>
+            <div class="modal-body">
+                <p id="texto-confirmar-descarte" class="fs-5">¿Está segura de que desea descartar este pedido?</p>
+                <p class="mb-0">Se borrarán los artículos y los datos del pedido pendiente. No se guardará ninguna compra.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-recyplast-outline" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="aceptar-descarte-pedido">Sí, descartar pedido</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="pedido-descartado" tabindex="-1" aria-labelledby="titulo-pedido-descartado" aria-describedby="texto-pedido-descartado" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Cerrar mensaje de descarte"></button>
+            </div>
+            <div class="modal-body text-center px-4 pb-4">
+                <h2 id="titulo-pedido-descartado" class="fs-2 fw-bold mb-4">Pedido descartado</h2>
+                <p id="texto-pedido-descartado" class="fs-5 mb-0">No se guardó ninguna compra. Ya puede preparar otro pedido.</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-recyplast btn-lg px-5" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="~/js/pedidos.js" asp-append-version="true"></script>
+    <script src="~/js/pedidos-pasos.js" asp-append-version="true"></script>
 }
