@@ -1,22 +1,39 @@
 @model SAPS.Web.Models.Catalogo.TamanoFormViewModel
 @{ ViewData["Title"] = "Editar tamaño"; }
 
-<h1>Editar tamaño</h1>
-<div class="row">
-    <div class="col-md-5">
-        <form asp-action="EditarTamano" method="post">
-            <input type="hidden" asp-for="IdTamano" />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="NombreTamano" class="form-control" placeholder="Nombre del tamaño" autofocus />
-                <label asp-for="NombreTamano">Nombre del tamaño</label>
-                <span asp-validation-for="NombreTamano" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-recyplast">Guardar cambios</button>
-            <a asp-action="Catalogo" asp-route-tab="tamanos" class="btn btn-outline-secondary">Cancelar</a>
-        </form>
+@* [H1] Ruta de navegación: muestra dónde está la persona y permite volver a cualquier nivel. *@
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador"></span><a asp-action="Catalogo">Catálogo</a>
+    <span class="separador"></span><a asp-action="Catalogo" asp-route-tab="tamanos">Tamaños</a>
+    <span class="separador actual" aria-current="page">Editar tamaño</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Editar tamaño</h1>
+        <p>Actualiza la información del tamaño.</p>
     </div>
 </div>
+
+<form asp-action="EditarTamano" method="post" data-bloquear-envio class="form-card form-card-estrecho">
+    <input type="hidden" asp-for="IdTamano" />
+    <div asp-validation-summary="ModelOnly" class="alerta-error-recyplast" role="alert"></div>
+
+    <section aria-labelledby="titulo-info">
+        <h2 class="form-card-titulo" id="titulo-info">Información del tamaño</h2>
+        <div class="mb-1">
+            <label asp-for="NombreTamano" class="form-label">Nombre del tamaño <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <input asp-for="NombreTamano" class="form-control" autofocus />
+            <span asp-validation-for="NombreTamano" class="text-danger small"></span>
+        </div>
+    </section>
+
+    <div class="form-acciones">
+        <a asp-action="Catalogo" asp-route-tab="tamanos" class="btn btn-recyplast-outline">Cancelar</a>
+        <button type="submit" class="btn btn-recyplast">Guardar cambios</button>
+    </div>
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -6,35 +6,43 @@ using SAPS.Web.Services.Pedidos;
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// Los datos de prueba (usuarios EMP001/SODA001/ADM001, colaboradores DEMO) solo se siembran en
+// Development Y contra un servidor local. Cualquier otra base (p. ej. la de RecyPlast) se considera real.
+var sembrarPrueba = SembradoPrueba.Permitido(builder.Environment, connectionString);
+// El servidor de RecyPlast usa SQL Server 2012 (nivel de compatibilidad 110). Sin esto,
+// EF Core 8+ traduce consultas como lista.Contains(x) con OPENJSON, que no existe en 2012.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sql => sql.UseCompatibilityLevel(110)));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false;
-
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-})
+builder.Services.AddDefaultIdentity<IdentityUser>(IdentityConfig.Configurar)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddScoped<DbInitializer>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ServicioPedidos>();
-// Los datos ficticios nunca se habilitan automáticamente fuera de Development.
-if (builder.Environment.IsDevelopment())
-    builder.Services.AddSingleton<IColaboradores, ColaboradoresDePrueba>();
-else
-    builder.Services.AddSingleton<IColaboradores, ColaboradoresSinConexion>();
-builder.Services.AddControllersWithViews();
+// Los colaboradores salen de rrhh.tb_Colaborador. Los DEMO solo se insertan si sembrarPrueba (ver abajo).
+builder.Services.AddSingleton(new EntornoPrueba(sembrarPrueba));
+builder.Services.AddScoped<IColaboradores, ColaboradoresTabla>();
+builder.Services.AddControllersWithViews(options =>
+{
+    // [H9] Mensajes de conversión de datos en español (antes salían en inglés, por ejemplo
+    // "The value '1500.5' is not valid for Precio."). ValueMustBeANumber también se usa
+    // como mensaje de validación en el navegador (data-val-number).
+    var m = options.ModelBindingMessageProvider;
+    m.SetAttemptedValueIsInvalidAccessor((valor, campo) => $"El valor «{valor}» no es válido para {campo}.");
+    m.SetMissingBindRequiredValueAccessor(campo => $"Falta un valor para {campo}.");
+    m.SetMissingKeyOrValueAccessor(() => "El valor es obligatorio.");
+    m.SetMissingRequestBodyRequiredValueAccessor(() => "La solicitud no contiene datos.");
+    m.SetNonPropertyAttemptedValueIsInvalidAccessor(valor => $"El valor «{valor}» no es válido.");
+    m.SetNonPropertyUnknownValueIsInvalidAccessor(() => "El valor ingresado no es válido.");
+    m.SetNonPropertyValueMustBeANumberAccessor(() => "El valor debe ser un número.");
+    m.SetUnknownValueIsInvalidAccessor(campo => $"El valor ingresado no es válido para {campo}.");
+    m.SetValueIsInvalidAccessor(valor => $"El valor «{valor}» no es válido.");
+    m.SetValueMustBeANumberAccessor(campo => $"El campo {campo} debe ser un número entero.");
+    m.SetValueMustNotBeNullAccessor(campo => $"El campo {campo} es obligatorio.");
+});
 
 var app = builder.Build();
 
@@ -45,7 +53,12 @@ using (var scope = app.Services.CreateScope())
     await initializer.SeedRolesAsync();
 }
 
-if (app.Environment.IsDevelopment())
+if (!sembrarPrueba)
+{
+    if (app.Environment.IsDevelopment())
+        app.Logger.LogWarning("Sembrado de datos de prueba omitido: la base no es local.");
+}
+else
 {
     using var scope = app.Services.CreateScope();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
@@ -83,6 +96,9 @@ if (app.Environment.IsDevelopment())
     {
         await userManager.AddToRoleAsync(adminUser, "Administrador");
     }
+
+    // Colaboradores ficticios DEMO001-DEMO003: viven en tb_Colaborador, pero solo se insertan aquí.
+    await SembradoPrueba.SembrarColaboradoresAsync(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>());
 }
 
 if (app.Environment.IsDevelopment())

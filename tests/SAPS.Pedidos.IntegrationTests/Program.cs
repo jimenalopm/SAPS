@@ -12,11 +12,12 @@ using SAPS.Web.Models.Catalogo;
 using SAPS.Web.Models.Pedidos;
 using SAPS.Web.Services.Pedidos;
 
-// Crea y elimina una base independiente; nunca utiliza SAPS_Db para las pruebas.
+// Crea y elimina una base independiente; nunca utiliza SAPS_DB para las pruebas.
 if (args.Length is < 1 or > 2) throw new ArgumentException("Indique la ruta local de SAPS.Web/appsettings.json.");
 var archivo = Path.GetFullPath(args[0]);
 using var config = JsonDocument.Parse(await File.ReadAllTextAsync(archivo));
-var conexion = new SqlConnectionStringBuilder(config.RootElement.GetProperty("ConnectionStrings").GetProperty("DefaultConnection").GetString());
+var conexion = new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? config.RootElement.GetProperty("ConnectionStrings").GetProperty("DefaultConnection").GetString());
 if (conexion.DataSource is not ("localhost,1433" or "127.0.0.1,1433")) throw new InvalidOperationException("Solo se permite SQL Server local.");
 conexion.InitialCatalog = "SAPS_HU008_Pruebas_" + Guid.NewGuid().ToString("N");
 var servicios = new ServiceCollection();
@@ -26,7 +27,7 @@ servicios.AddDefaultIdentity<IdentityUser>(o => o.Password.RequireNonAlphanumeri
 await using var proveedor = servicios.BuildServiceProvider();
 await using var alcance = proveedor.CreateAsyncScope();
 var db = alcance.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-var empleados = new ColaboradoresDePrueba();
+var empleados = new ColaboradoresTabla(db);
 var reloj = new RelojPrueba();
 var pedidos = new ServicioPedidos(db, empleados, reloj);
 var verificaciones = 0;
@@ -47,6 +48,7 @@ async Task Rechazar(Func<Task> accion, string caso)
 try
 {
     await db.Database.MigrateAsync();
+    await SembradoPrueba.SembrarColaboradoresAsync(db);
     Verificar(!db.Database.HasPendingModelChanges(), "El modelo coincide con las migraciones");
     var usuario = new IdentityUser { UserName = "operadora-prueba" };
     db.Users.Add(usuario);
@@ -66,11 +68,10 @@ try
         Lineas = [new() { Clave = $"P:{precioId}", Cantidad = 2, PrecioMostrado = 1500 }, new() { Clave = $"B:{bebidaId}", Cantidad = 1, PrecioMostrado = 700 }]
     };
     Verificar((await pedidos.BuscarColaboradorAsync(" demo001 ")).Codigo == "DEMO001", "Buscar código normalizando espacios y mayúsculas");
-    Verificar((await pedidos.BuscarColaboradorAsync("DEMO002")).FotoUrl.EndsWith(".png"), "Colaborador devuelve nombre y fotografía de prueba");
+    Verificar((await pedidos.BuscarColaboradorAsync("DEMO002")).FotoUrl is null, "Colaborador sin foto devuelve FotoUrl nula");
     await Rechazar(async () => { await pedidos.BuscarColaboradorAsync(""); }, "Código vacío rechazado");
     await Rechazar(async () => { await pedidos.BuscarColaboradorAsync("NOEXISTE"); }, "Código inexistente rechazado");
     await Rechazar(async () => { await pedidos.BuscarColaboradorAsync("DEMO003"); }, "Colaborador inactivo rechazado");
-    await Rechazar(async () => { await new ColaboradoresSinConexion().BuscarAsync("DEMO001"); }, "Fuera de desarrollo no se consultan colaboradores ficticios");
     Verificar((await pedidos.CatalogoAsync()).Count == 3, "Catálogo ofrece producto, bebida y variante de tamaño activos");
     var solicitud = Solicitud(); solicitud.Observaciones = "  Sin ensalada  ";
     var resultado = await pedidos.RegistrarAsync(solicitud, usuarioId);
@@ -124,13 +125,13 @@ try
     guardado = await db.Pedidos.AsNoTracking().Include(p => p.Detalles).SingleAsync();
     Verificar(guardado.Total == 3700 && guardado.Detalles.Single(d => d.IdBebida != null).PrecioUnitario == 700, "Cambio de catálogo conserva precio y total históricos");
     await db.Bebidas.Where(b => b.IdBebida == bebidaId).ExecuteUpdateAsync(s => s.SetProperty(b => b.Precio, 700));
-    await db.Database.ExecuteSqlRawAsync("ALTER TABLE tb_DetallePedido ADD CONSTRAINT CK_PruebaFallo CHECK (Cantidad <> 7)");
+    await db.Database.ExecuteSqlRawAsync("ALTER TABLE soda.tb_DetallePedido ADD CONSTRAINT CK_PruebaFallo CHECK (Cantidad <> 7)");
     solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 7;
     var antes = await db.Pedidos.CountAsync(); var fallo = false;
     try { await pedidos.RegistrarAsync(solicitud, usuarioId); } catch (DbUpdateException) { fallo = true; }
     db.ChangeTracker.Clear();
     Verificar(fallo && await db.Pedidos.CountAsync() == antes, "Fallo de detalle revierte cabecera y todos los renglones");
-    await db.Database.ExecuteSqlRawAsync("ALTER TABLE tb_DetallePedido DROP CONSTRAINT CK_PruebaFallo");
+    await db.Database.ExecuteSqlRawAsync("ALTER TABLE soda.tb_DetallePedido DROP CONSTRAINT CK_PruebaFallo");
     solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 1000;
     await Rechazar(async () => { await pedidos.RegistrarAsync(solicitud, usuarioId); }, "Cantidad de más de 3 dígitos rechazada");
     solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 27;

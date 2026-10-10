@@ -1,0 +1,33 @@
+@page
+@model AccessDeniedModel
+@{
+    ViewData["Title"] = "Acceso no autorizado";
+    var autenticado = User.Identity?.IsAuthenticated == true;
+    // Mismos roles que el [Authorize] del Dashboard (HomeController.Index).
+    var tieneRol = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos") || User.IsInRole("Soda");
+}
+
+<section class="pagina-estado" aria-labelledby="titulo-estado">
+    <span class="pagina-estado-icono alerta"><partial name="_Iconos" model="@("candado icono-lg")" /></span>
+    <h1 id="titulo-estado">Acceso no autorizado</h1>
+    <p>Su cuenta no tiene permisos para acceder a esta sección.</p>
+    <p class="small mb-0">Si considera que debería tener acceso, comuníquese con el administrador del sistema.</p>
+
+    <div class="pagina-estado-acciones">
+        @if (autenticado && tieneRol)
+        {
+            <a class="btn btn-recyplast" asp-area="" asp-controller="Home" asp-action="Index"><partial name="_Iconos" model="@("dashboard icono-sm")" /> Volver al inicio</a>
+        }
+        else if (autenticado)
+        {
+            @* Cuenta sin rol: no tiene ninguna sección disponible; lo útil es cerrar sesión. *@
+            <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                <button type="submit" class="btn btn-recyplast"><partial name="_Iconos" model="@("salir icono-sm")" /> Cerrar sesión</button>
+            </form>
+        }
+        else
+        {
+            <a class="btn btn-recyplast" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a>
+        }
+    </div>
+</section>

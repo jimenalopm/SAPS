@@ -1,10 +1,20 @@
 @{ ViewData["Title"] = "Administración"; }
 
-<h1 class="mb-3">Panel de administración</h1>
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador actual" aria-current="page">Administración</span>
+</nav>
 
-<div class="list-group col-md-6">
-    <a asp-action="Catalogo" class="list-group-item list-group-item-action">
-        <strong>Catálogo</strong>
-        <div class="text-muted small">Categorías, tamaños, productos y bebidas del menú.</div>
-    </a>
+<div class="page-header">
+    <div>
+        <h1 class="h1">Panel de administración</h1>
+    </div>
 </div>
+
+<section class="card-recyplast form-card-estrecho" aria-labelledby="titulo-admin-catalogo">
+    <h2 class="card-recyplast-titulo" id="titulo-admin-catalogo">Catálogo</h2>
+    <p>Categorías, tamaños, productos y bebidas del menú.</p>
+    <div class="accesos-rapidos">
+        <a class="btn btn-recyplast" asp-action="Catalogo"><partial name="_Iconos" model="@("catalogo")" /> Administrar catálogo</a>
+    </div>
+</section>

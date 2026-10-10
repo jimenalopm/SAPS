@@ -11,7 +11,7 @@ using SAPS.Web.Controllers;
 using SAPS.Web.Data;
 using SAPS.Web.Models.Catalogo;
 
-// Ejecutar contra SQL Server local. No modifica SAPS_Db: crea y elimina su propia base.
+// Ejecutar contra SQL Server local. No modifica SAPS_DB: crea y elimina su propia base.
 if (args.Length != 1) throw new ArgumentException("Indique la ruta de appsettings.json del entorno local.");
 using var config = JsonDocument.Parse(await File.ReadAllTextAsync(args[0]));
 var connection = new SqlConnectionStringBuilder(config.RootElement.GetProperty("ConnectionStrings").GetProperty("DefaultConnection").GetString());
@@ -135,7 +135,7 @@ try
     activos = await Activos(id);
     Verificar(activos.Count == 1 && activos[0].IdTamano == null && activos[0].MontoPrecio == 1300, "Reparar mezcla anterior de precios al guardar producto");
 
-    await db.Database.ExecuteSqlRawAsync("ALTER TABLE tb_Precio ADD CONSTRAINT CK_PruebaRollback CHECK (precio <> 7777)");
+    await db.Database.ExecuteSqlRawAsync("ALTER TABLE soda.tb_Precio ADD CONSTRAINT CK_PruebaRollback CHECK (Monto <> 7777)");
     modelo = await Editar(id); modelo.PrecioUnico = 7777;
     var falloEsperado = false;
     try { await Controlador().EditarProducto(modelo); }

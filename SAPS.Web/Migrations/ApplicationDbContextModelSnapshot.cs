@@ -237,7 +237,7 @@ namespace SAPS.Web.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true)
-                        .HasColumnName("activo");
+                        .HasColumnName("EstaActivo");
 
                     b.Property<int?>("IdTamano")
                         .HasColumnType("int")
@@ -246,29 +246,32 @@ namespace SAPS.Web.Migrations
                     b.Property<string>("NombreBebida")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("nombreBebida");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("Nombre");
 
                     b.Property<int>("Precio")
                         .HasColumnType("int")
-                        .HasColumnName("precio");
+                        .HasColumnName("Precio");
 
                     b.Property<string>("TipoBebida")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasColumnName("tipoBebida");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("Tipo");
 
-                    b.HasKey("IdBebida");
+                    b.HasKey("IdBebida")
+                        .HasName("PK_Bebida");
 
                     b.HasIndex("IdTamano")
-                        .HasDatabaseName("IX_Bebida_Tamano");
+                        .HasDatabaseName("IX_Bebida_idTamano");
 
-                    b.ToTable("tb_Bebida", null, t =>
+                    b.ToTable("tb_Bebida", "soda", t =>
                         {
-                            t.HasCheckConstraint("CK_Bebida_PrecioPositivo", "[precio] > 0");
+                            t.HasCheckConstraint("CK_Bebida_Precio", "[Precio] > 0");
 
-                            t.HasCheckConstraint("CK_Bebida_TipoBebida", "[tipoBebida] IN ('Gaseosa','Embotellada','Energizante','Jugo')");
+                            t.HasCheckConstraint("CK_Bebida_Tipo", "[Tipo] IN ('Gaseosa','Embotellada','Energizante','Jugo')");
                         });
                 });
 
@@ -285,21 +288,23 @@ namespace SAPS.Web.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true)
-                        .HasColumnName("activo");
+                        .HasColumnName("EstaActivo");
 
                     b.Property<string>("NombreCategoria")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("nombreCategoria");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("Nombre");
 
-                    b.HasKey("IdCategoria");
+                    b.HasKey("IdCategoria")
+                        .HasName("PK_Categoria");
 
                     b.HasIndex("NombreCategoria")
                         .IsUnique()
-                        .HasDatabaseName("UQ_Categoria_NombreCategoria");
+                        .HasDatabaseName("UQ_Categoria_Nombre");
 
-                    b.ToTable("tb_Categoria", (string)null);
+                    b.ToTable("tb_Categoria", "soda");
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Precio", b =>
@@ -315,15 +320,15 @@ namespace SAPS.Web.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true)
-                        .HasColumnName("activo");
+                        .HasColumnName("EstaActivo");
 
                     b.Property<DateOnly>("FechaVigenciaDesde")
                         .HasColumnType("date")
-                        .HasColumnName("fechaVigenciaDesde");
+                        .HasColumnName("FechaVigenciaDesde");
 
                     b.Property<DateOnly?>("FechaVigenciaHasta")
                         .HasColumnType("date")
-                        .HasColumnName("fechaVigenciaHasta");
+                        .HasColumnName("FechaVigenciaHasta");
 
                     b.Property<int>("IdProducto")
                         .HasColumnType("int")
@@ -335,20 +340,24 @@ namespace SAPS.Web.Migrations
 
                     b.Property<int>("MontoPrecio")
                         .HasColumnType("int")
-                        .HasColumnName("precio");
+                        .HasColumnName("Monto");
 
-                    b.HasKey("IdPrecio");
+                    b.HasKey("IdPrecio")
+                        .HasName("PK_Precio");
 
-                    b.HasIndex("IdTamano");
+                    b.HasIndex("IdTamano")
+                        .HasDatabaseName("IX_Precio_idTamano");
 
                     b.HasIndex("IdProducto", "IdTamano")
                         .IsUnique()
-                        .HasDatabaseName("IX_Precio_Producto_Tamano")
-                        .HasFilter("[activo] = 1");
+                        .HasDatabaseName("IX_Precio_idProducto_idTamano")
+                        .HasFilter("[EstaActivo] = 1");
 
-                    b.ToTable("tb_Precio", null, t =>
+                    b.ToTable("tb_Precio", "soda", t =>
                         {
-                            t.HasCheckConstraint("CK_Precio_PrecioPositivo", "[precio] > 0");
+                            t.HasCheckConstraint("CK_Precio_Monto", "[Monto] > 0");
+
+                            t.HasCheckConstraint("CK_Precio_Vigencia", "[FechaVigenciaHasta] IS NULL OR [FechaVigenciaHasta] >= [FechaVigenciaDesde]");
                         });
                 });
 
@@ -365,13 +374,13 @@ namespace SAPS.Web.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true)
-                        .HasColumnName("activo");
+                        .HasColumnName("EstaActivo");
 
                     b.Property<bool>("EsEspecial")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
-                        .HasColumnName("esEspecial");
+                        .HasColumnName("EsEspecial");
 
                     b.Property<int>("IdCategoria")
                         .HasColumnType("int")
@@ -380,21 +389,23 @@ namespace SAPS.Web.Migrations
                     b.Property<string>("NombreProducto")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("nombreProducto");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("Nombre");
 
                     b.Property<bool>("RequiereTamano")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
-                        .HasColumnName("requiereTamano");
+                        .HasColumnName("TieneTamano");
 
-                    b.HasKey("IdProducto");
+                    b.HasKey("IdProducto")
+                        .HasName("PK_Producto");
 
                     b.HasIndex("IdCategoria")
-                        .HasDatabaseName("IX_Producto_Categoria");
+                        .HasDatabaseName("IX_Producto_idCategoria");
 
-                    b.ToTable("tb_Producto", (string)null);
+                    b.ToTable("tb_Producto", "soda");
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Tamano", b =>
@@ -410,28 +421,31 @@ namespace SAPS.Web.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true)
-                        .HasColumnName("activo");
+                        .HasColumnName("EstaActivo");
 
                     b.Property<string>("NombreTamano")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
-                        .HasColumnName("nombreTamano");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("Nombre");
 
-                    b.HasKey("IdTamano");
+                    b.HasKey("IdTamano")
+                        .HasName("PK_Tamano");
 
                     b.HasIndex("NombreTamano")
                         .IsUnique()
-                        .HasDatabaseName("UQ_Tamano_NombreTamano");
+                        .HasDatabaseName("UQ_Tamano_Nombre");
 
-                    b.ToTable("tb_Tamano", (string)null);
+                    b.ToTable("tb_Tamano", "soda");
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Pedidos.DetallePedido", b =>
                 {
                     b.Property<int>("IdDetallePedido")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("idDetallePedido");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdDetallePedido"));
 
@@ -439,22 +453,27 @@ namespace SAPS.Web.Migrations
                         .HasColumnType("int");
 
                     b.Property<int?>("IdBebida")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("idBebida");
 
                     b.Property<int>("IdPedido")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("idPedido");
 
                     b.Property<int?>("IdPrecio")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("idPrecio");
 
                     b.Property<string>("NombreArticulo")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("NombreTamano")
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
 
                     b.Property<int>("PrecioUnitario")
                         .HasColumnType("int");
@@ -462,21 +481,25 @@ namespace SAPS.Web.Migrations
                     b.Property<long>("Subtotal")
                         .HasColumnType("bigint");
 
-                    b.HasKey("IdDetallePedido");
+                    b.HasKey("IdDetallePedido")
+                        .HasName("PK_DetallePedido");
 
-                    b.HasIndex("IdBebida");
+                    b.HasIndex("IdBebida")
+                        .HasDatabaseName("IX_DetallePedido_idBebida");
 
-                    b.HasIndex("IdPedido");
+                    b.HasIndex("IdPedido")
+                        .HasDatabaseName("IX_DetallePedido_idPedido");
 
-                    b.HasIndex("IdPrecio");
+                    b.HasIndex("IdPrecio")
+                        .HasDatabaseName("IX_DetallePedido_idPrecio");
 
-                    b.ToTable("tb_DetallePedido", null, t =>
+                    b.ToTable("tb_DetallePedido", "soda", t =>
                         {
-                            t.HasCheckConstraint("CK_DetallePedido_Articulo", "([IdPrecio] IS NOT NULL AND [IdBebida] IS NULL) OR ([IdPrecio] IS NULL AND [IdBebida] IS NOT NULL)");
+                            t.HasCheckConstraint("CK_DetallePedido_Articulo", "([idPrecio] IS NOT NULL AND [idBebida] IS NULL) OR ([idPrecio] IS NULL AND [idBebida] IS NOT NULL)");
 
                             t.HasCheckConstraint("CK_DetallePedido_Cantidad", "[Cantidad] > 0");
 
-                            t.HasCheckConstraint("CK_DetallePedido_Precio", "[PrecioUnitario] > 0");
+                            t.HasCheckConstraint("CK_DetallePedido_PrecioUnitario", "[PrecioUnitario] > 0");
 
                             t.HasCheckConstraint("CK_DetallePedido_Subtotal", "[Subtotal] = CAST([Cantidad] AS bigint) * [PrecioUnitario]");
                         });
@@ -486,14 +509,16 @@ namespace SAPS.Web.Migrations
                 {
                     b.Property<int>("IdPedido")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("idPedido");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdPedido"));
 
                     b.Property<string>("CodigoColaborador")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<bool>("EsPrueba")
                         .HasColumnType("bit");
@@ -503,21 +528,25 @@ namespace SAPS.Web.Migrations
 
                     b.Property<string>("IdUsuarioRegistro")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("idUsuario");
 
                     b.Property<string>("NombreColaborador")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(150)");
 
                     b.Property<string>("Observaciones")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("TipoComida")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<Guid>("TokenRegistro")
                         .HasColumnType("uniqueidentifier");
@@ -525,19 +554,69 @@ namespace SAPS.Web.Migrations
                     b.Property<long>("Total")
                         .HasColumnType("bigint");
 
-                    b.HasKey("IdPedido");
+                    b.HasKey("IdPedido")
+                        .HasName("PK_Pedido");
 
-                    b.HasIndex("IdUsuarioRegistro");
+                    b.HasIndex("IdUsuarioRegistro")
+                        .HasDatabaseName("IX_Pedido_idUsuario");
 
                     b.HasIndex("TokenRegistro")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Pedido_TokenRegistro");
 
-                    b.HasIndex("CodigoColaborador", "FechaRegistroUtc");
+                    b.HasIndex("CodigoColaborador", "FechaRegistroUtc")
+                        .HasDatabaseName("IX_Pedido_CodigoColaborador_FechaRegistroUtc");
 
-                    b.ToTable("tb_Pedido", null, t =>
+                    b.ToTable("tb_Pedido", "soda", t =>
                         {
                             t.HasCheckConstraint("CK_Pedido_Total", "[Total] > 0");
                         });
+                });
+
+            modelBuilder.Entity("SAPS.Web.Models.Rrhh.ColaboradorRrhh", b =>
+                {
+                    b.Property<int>("IdColaborador")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("idColaborador");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdColaborador"));
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<bool>("EstaActivo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("NombreCompleto")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("RutaFoto")
+                        .HasMaxLength(260)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(260)");
+
+                    b.HasKey("IdColaborador")
+                        .HasName("PK_Colaborador");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Colaborador_Codigo");
+
+                    b.ToTable("tb_Colaborador", "rrhh");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -639,18 +718,21 @@ namespace SAPS.Web.Migrations
                     b.HasOne("SAPS.Web.Models.Catalogo.Bebida", null)
                         .WithMany()
                         .HasForeignKey("IdBebida")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_DetallePedido_Bebida");
 
                     b.HasOne("SAPS.Web.Models.Pedidos.Pedido", "Pedido")
                         .WithMany("Detalles")
                         .HasForeignKey("IdPedido")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_DetallePedido_Pedido");
 
                     b.HasOne("SAPS.Web.Models.Catalogo.Precio", null)
                         .WithMany()
                         .HasForeignKey("IdPrecio")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_DetallePedido_Precio");
 
                     b.Navigation("Pedido");
                 });
@@ -661,7 +743,8 @@ namespace SAPS.Web.Migrations
                         .WithMany()
                         .HasForeignKey("IdUsuarioRegistro")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_Pedido_Usuario");
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Categoria", b =>
