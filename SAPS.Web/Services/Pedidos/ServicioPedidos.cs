@@ -41,10 +41,12 @@ public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores cola
     {
         if (string.IsNullOrWhiteSpace(usuarioId)) throw new PedidoInvalidoException("Inicie sesión nuevamente.");
         if (solicitud.TokenRegistro == Guid.Empty) throw new PedidoInvalidoException("Recargue la pantalla antes de registrar.");
-        if (solicitud.TipoComida is not ("Desayuno" or "Almuerzo" or "Merienda")) throw new PedidoInvalidoException("Seleccione el tipo de comida.");
+        if (string.IsNullOrWhiteSpace(solicitud.TipoComida)) throw new PedidoInvalidoException("Seleccione el tipo de comida.");
         if (solicitud.Lineas is null || solicitud.Lineas.Count == 0) throw new PedidoInvalidoException("Agregue al menos un artículo al pedido.");
         if (solicitud.Lineas.Any(l => l is null || string.IsNullOrWhiteSpace(l.Clave) || l.Cantidad < 1 || l.PrecioMostrado < 1))
             throw new PedidoInvalidoException("Las cantidades y los precios deben ser enteros positivos.");
+        if (solicitud.Lineas.Any(l => l.Cantidad > ServicioLimites.CantidadMaxima))
+            throw new PedidoInvalidoException($"La cantidad de un artículo no puede superar {ServicioLimites.CantidadMaxima} unidades.");
         if (solicitud.Lineas.Select(l => l.Clave).Distinct().Count() != solicitud.Lineas.Count)
             throw new PedidoInvalidoException("Un artículo aparece repetido. Ajuste su cantidad en un solo renglón.");
         if (solicitud.Observaciones?.Length > 500) throw new PedidoInvalidoException("Las observaciones admiten hasta 500 caracteres.");
@@ -55,11 +57,15 @@ public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores cola
         // Mantiene los precios y estados consultados estables hasta guardar todo el pedido.
         await using var transaccion = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var catalogo = (await CatalogoAsync(ct)).ToDictionary(a => a.Clave);
+        // Los tipos de comida son las categorías vigentes del catálogo.
+        var tipoComida = solicitud.TipoComida.Trim();
+        if (!catalogo.Values.Any(a => a.Categoria == tipoComida))
+            throw new PedidoInvalidoException("El tipo de comida no es una categoría disponible del catálogo. Actualice el catálogo y seleccione otro.");
         var pedido = new Pedido
         {
             TokenRegistro = solicitud.TokenRegistro, CodigoColaborador = colaborador.Codigo,
             NombreColaborador = colaborador.Nombre, IdUsuarioRegistro = usuarioId,
-            FechaRegistroUtc = reloj.GetUtcNow().UtcDateTime, TipoComida = solicitud.TipoComida,
+            FechaRegistroUtc = reloj.GetUtcNow().UtcDateTime, TipoComida = tipoComida,
             Observaciones = string.IsNullOrWhiteSpace(solicitud.Observaciones) ? null : solicitud.Observaciones.Trim(),
             EsPrueba = colaborador.EsDemo
         };
@@ -79,6 +85,8 @@ public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores cola
             });
             pedido.Total = checked(pedido.Total + subtotal);
         }
+        if (pedido.Total > ServicioLimites.TotalMaximo)
+            throw new PedidoInvalidoException($"El pedido no puede superar ₡{ServicioLimites.TotalMaximo:N0}. Reduzca las cantidades o quite artículos.");
         db.Pedidos.Add(pedido);
         try
         {

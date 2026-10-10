@@ -15,14 +15,13 @@ internal static class PedidoConfiguration
             e.ToTable("tb_Pedido", ApplicationDbContext.EsquemaSoda, t =>
             {
                 t.HasCheckConstraint("CK_Pedido_Total", "[Total] > 0");
-                t.HasCheckConstraint("CK_Pedido_TipoComida", "[TipoComida] IN ('Desayuno','Almuerzo','Merienda')");
             });
             e.HasKey(p => p.IdPedido).HasName("PK_Pedido");
             e.Property(p => p.IdPedido).HasColumnName("idPedido");
             e.Property(p => p.IdUsuarioRegistro).HasColumnName("idUsuario");   // FK a AspNetUsers.Id (nvarchar(450))
             e.Property(p => p.CodigoColaborador).HasMaxLength(50).IsUnicode(false).IsRequired();
             e.Property(p => p.NombreColaborador).HasMaxLength(150).IsUnicode(false).IsRequired();
-            e.Property(p => p.TipoComida).HasMaxLength(20).IsUnicode(false).IsRequired();
+            e.Property(p => p.TipoComida).HasMaxLength(50).IsUnicode(false).IsRequired();
             e.Property(p => p.Observaciones).HasMaxLength(500).IsUnicode(false);
 
             e.HasIndex(p => p.TokenRegistro).IsUnique().HasDatabaseName("UQ_Pedido_TokenRegistro");
