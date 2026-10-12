@@ -31,10 +31,11 @@
         <div class="mb-3">
             <label asp-for="TipoBebida" class="form-label">Tipo de bebida <span class="campo-obligatorio" aria-hidden="true">*</span></label>
             <select asp-for="TipoBebida" class="form-select">
-                <option value="Gaseosa">Gaseosa</option>
-                <option value="Embotellada">Embotellada</option>
-                <option value="Energizante">Energizante</option>
-                <option value="Jugo">Jugo</option>
+                <option value="">Seleccione un tipo…</option>
+                @foreach (var tipo in Model.TiposDisponibles)
+                {
+                    <option value="@tipo.NombreTipo">@tipo.NombreTipo@(tipo.Activo ? "" : " (inactivo)")</option>
+                }
             </select>
             <span asp-validation-for="TipoBebida" class="text-danger small"></span>
         </div>
@@ -58,7 +59,7 @@
             <label asp-for="Precio" class="form-label">Precio <span class="campo-obligatorio" aria-hidden="true">*</span></label>
             <div class="input-group campo-monto">
                 <span class="input-group-text" aria-hidden="true">₡</span>
-                <input asp-for="Precio" class="form-control" min="1" step="1" inputmode="numeric" />
+                <input asp-for="Precio" class="form-control" min="1" max="10000" step="1" inputmode="numeric" />
             </div>
             <span asp-validation-for="Precio" class="text-danger small"></span>
         </div>
