@@ -44,35 +44,54 @@
         mas.addEventListener('click', () => ajustar(1));
     }
     const totalCarrito = () => carrito.reduce((suma, l) => suma + BigInt(l.precio) * BigInt(l.cantidad), 0n);
-    // Aviso permanente (no se borra con otros mensajes) mientras el total siga fuera de lo razonable.
-    function actualizarTotal(entrada = null) {
+    // Aviso grande y permanente (no se borra con otros mensajes) mientras el total siga fuera de lo razonable.
+    let nivelAviso = 0;
+    function actualizarTotal() {
         const total = totalCarrito();
-        byId('total-pedido').textContent = moneda(total);
-        const texto = total > TOTAL_MAXIMO
-            ? 'El máximo por pedido es ' + moneda(TOTAL_MAXIMO) + '. Reduzca esta cantidad o quite artículos.'
-            : total > TOTAL_ADVERTENCIA ? 'Revise esta cantidad: el total supera ' + moneda(TOTAL_ADVERTENCIA) + '.' : '';
-        app.querySelectorAll('.aviso-total-cantidad').forEach(aviso => aviso.className = 'aviso-total-cantidad d-none');
-        const campo = entrada || byId('cantidad-linea-' + (carrito.length - 1));
-        const avisoLocal = campo ? byId('aviso-total-' + campo.id) : null;
-        const avisoGeneral = byId('aviso-total');
-        avisoGeneral.className = 'alert d-none';
-        if (texto && avisoLocal && cantidadValida(campo.value)) {
-            avisoLocal.textContent = texto;
-            avisoLocal.className = 'aviso-total-cantidad small mt-1 mb-0 ' + (total > TOTAL_MAXIMO ? 'text-danger' : 'text-warning-emphasis');
+        const nivel = total > TOTAL_MAXIMO ? 2 : total > TOTAL_ADVERTENCIA ? 1 : 0;
+        const totalTexto = byId('total-pedido');
+        totalTexto.textContent = moneda(total);
+        totalTexto.classList.toggle('total-advertencia', nivel === 1);
+        totalTexto.classList.toggle('total-bloqueo', nivel === 2);
+        const aviso = byId('aviso-total');
+        if (!nivel) aviso.className = 'aviso-total d-none';
+        else {
+            const icono = document.createElement('span'); icono.className = 'aviso-icono'; icono.setAttribute('aria-hidden', 'true'); icono.textContent = nivel === 2 ? '⛔' : '⚠️';
+            const cuerpo = document.createElement('span');
+            const titulo = document.createElement('span');
+            titulo.textContent = nivel === 2
+                ? 'No se puede registrar: el pedido supera el máximo de ' + moneda(TOTAL_MAXIMO) + '.'
+                : 'Advertencia: este pedido excede el límite razonable de ' + moneda(TOTAL_ADVERTENCIA) + '.';
+            const detalle = document.createElement('span'); detalle.className = 'aviso-detalle';
+            detalle.textContent = nivel === 2
+                ? 'Total actual: ' + moneda(total) + '. Reduzca cantidades o quite artículos hasta que el total sea de ' + moneda(TOTAL_MAXIMO) + ' o menos.'
+                : 'Total actual: ' + moneda(total) + '. Verifique las cantidades. Recuerde que no se puede registrar un pedido de más de ' + moneda(TOTAL_MAXIMO) + '.';
+            cuerpo.append(titulo, detalle);
+            aviso.replaceChildren(icono, cuerpo);
+            aviso.className = 'aviso-total ' + (nivel === 2 ? 'aviso-bloqueo' : 'aviso-advertencia');
+            if (nivel > nivelAviso) aviso.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
+        nivelAviso = nivel;
         return total;
     }
+    const TIPOS_BEBIDA = ['Gaseosa', 'Embotellada', 'Energizante', 'Jugo'];
+    const grupoActual = () => app.querySelector('input[name="grupo-pedido"]:checked')?.value || 'Comida';
     function pintarTipos() {
-        const select = byId('tipo-comida'), anterior = select.value;
-        const categorias = [...new Set(catalogo.map(a => a.categoria))];
+        const select = byId('tipo-comida'), anterior = select.value, grupo = grupoActual();
+        const categorias = grupo === 'Bebida'
+            ? [...new Set([...TIPOS_BEBIDA, ...catalogo.filter(a => a.grupo === 'Bebida').map(a => a.categoria)])]
+            : [...new Set(catalogo.filter(a => a.grupo === 'Comida').map(a => a.categoria))];
+        byId('etiqueta-tipo').textContent = grupo === 'Bebida' ? 'Tipo de bebida' : 'Tipo de comida';
+        byId('etiqueta-articulo').textContent = grupo === 'Bebida' ? 'Bebida' : 'Producto o adicional';
         select.replaceChildren(new Option('Seleccione…', ''), ...categorias.map(c => new Option(c, c)));
         select.value = categorias.includes(anterior) ? anterior : '';
         pintarArticulos();
     }
     function pintarArticulos() {
-        const select = byId('articulo'), tipo = byId('tipo-comida').value;
-        const lista = catalogo.filter(a => a.categoria === tipo);
-        select.replaceChildren(new Option(tipo ? (lista.length ? 'Seleccione un artículo…' : 'No hay artículos en esta categoría') : 'Seleccione primero el tipo de comida', ''));
+        const select = byId('articulo'), tipo = byId('tipo-comida').value, grupo = grupoActual();
+        const lista = catalogo.filter(a => a.grupo === grupo && a.categoria === tipo);
+        const vacio = grupo === 'Bebida' ? 'No hay bebidas de este tipo' : 'No hay artículos en esta categoría';
+        select.replaceChildren(new Option(tipo ? (lista.length ? (grupo === 'Bebida' ? 'Seleccione una bebida…' : 'Seleccione un artículo…') : vacio) : 'Seleccione primero el tipo de ' + (grupo === 'Bebida' ? 'bebida' : 'comida'), ''));
         lista.forEach(a => select.append(new Option(a.nombre + (a.tamano ? ' · ' + a.tamano : '') + ' — ' + moneda(a.precio), a.clave)));
         bloquear();
     }
@@ -166,8 +185,8 @@
     }
     function reiniciar() {
         carrito = []; colaborador = null; pendiente = null; buscando = false; token = crypto.randomUUID(); busqueda++;
-        byId('codigo-colaborador').value = ''; byId('tipo-comida').value = ''; byId('observaciones').value = '';
-        pintarArticulos(); byId('cantidad').value = '1';
+        byId('grupo-comida').checked = true; byId('codigo-colaborador').value = ''; byId('tipo-comida').value = ''; byId('observaciones').value = '';
+        pintarTipos(); byId('cantidad').value = '1';
         ['codigo-colaborador', 'tipo-comida', 'articulo', 'cantidad'].forEach(id => errorCampo(byId(id), ''));
         byId('cantidad').setCustomValidity('');
         byId('datos-colaborador').classList.add('d-none'); pintar();
@@ -197,8 +216,8 @@
     byId('codigo-colaborador').addEventListener('input', () => {
         const teniaBorrador = carrito.length > 0 || byId('tipo-comida').value || byId('observaciones').value;
         busqueda++; buscando = false; errorCampo(byId('codigo-colaborador'), ''); colaborador = null; carrito = []; pendiente = null; token = crypto.randomUUID();
-        byId('tipo-comida').value = ''; byId('observaciones').value = '';
-        pintarArticulos(); byId('cantidad').value = '1';
+        byId('grupo-comida').checked = true; byId('tipo-comida').value = ''; byId('observaciones').value = '';
+        pintarTipos(); byId('cantidad').value = '1';
         ['tipo-comida', 'articulo', 'cantidad'].forEach(id => errorCampo(byId(id), ''));
         byId('cantidad').setCustomValidity('');
         byId('datos-colaborador').classList.add('d-none'); pintar();
@@ -250,6 +269,9 @@
         } else carrito.push({ ...articulo, cantidad: Number(cantidad) });
         limpiarMensaje(); pintar();
     });
+    app.querySelectorAll('input[name="grupo-pedido"]').forEach(r => r.addEventListener('change', () => {
+        byId('tipo-comida').value = ''; errorCampo(byId('tipo-comida'), ''); errorCampo(byId('articulo'), ''); pintarTipos();
+    }));
     byId('tipo-comida').addEventListener('change', () => { errorCampo(byId('tipo-comida'), ''); errorCampo(byId('articulo'), ''); pintarArticulos(); });
     byId('articulo').addEventListener('change', () => errorCampo(byId('articulo'), ''));
     byId('cantidad').addEventListener('input', () => validarCantidad(byId('cantidad')));

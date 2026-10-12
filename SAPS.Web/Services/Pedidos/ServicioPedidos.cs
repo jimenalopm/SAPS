@@ -31,10 +31,10 @@ public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores cola
                 Tamano = p.Tamano == null ? null : p.Tamano.NombreTamano, p.MontoPrecio }).ToListAsync(ct);
         var bebidas = await db.Bebidas.AsNoTracking()
             .Where(b => b.Activo && b.Precio > 0 && (b.IdTamano == null || b.Tamano!.Activo))
-            .Select(b => new { b.IdBebida, b.NombreBebida, Tamano = b.Tamano == null ? null : b.Tamano.NombreTamano, b.Precio }).ToListAsync(ct);
-        return productos.Select(p => new ArticuloPedido($"P:{p.IdPrecio}", p.NombreProducto, p.NombreCategoria, p.Tamano, p.MontoPrecio))
-            .Concat(bebidas.Select(b => new ArticuloPedido($"B:{b.IdBebida}", b.NombreBebida, "Bebidas", b.Tamano, b.Precio)))
-            .OrderBy(a => a.Categoria).ThenBy(a => a.Nombre).ThenBy(a => a.Tamano).ToList();
+            .Select(b => new { b.IdBebida, b.NombreBebida, b.TipoBebida, Tamano = b.Tamano == null ? null : b.Tamano.NombreTamano, b.Precio }).ToListAsync(ct);
+        return productos.Select(p => new ArticuloPedido($"P:{p.IdPrecio}", p.NombreProducto, "Comida", p.NombreCategoria, p.Tamano, p.MontoPrecio))
+            .Concat(bebidas.Select(b => new ArticuloPedido($"B:{b.IdBebida}", b.NombreBebida, "Bebida", b.TipoBebida, b.Tamano, b.Precio)))
+            .OrderBy(a => a.Grupo).ThenBy(a => a.Categoria).ThenBy(a => a.Nombre).ThenBy(a => a.Tamano).ToList();
     }
 
     public async Task<PedidoRegistrado> RegistrarAsync(RegistrarPedidoRequest solicitud, string usuarioId, CancellationToken ct = default)
@@ -57,9 +57,9 @@ public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores cola
         // Mantiene los precios y estados consultados estables hasta guardar todo el pedido.
         await using var transaccion = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var catalogo = (await CatalogoAsync(ct)).ToDictionary(a => a.Clave);
-        // Los tipos de comida son las categorías vigentes del catálogo.
+        // El tipo es una categoría de comida vigente del catálogo o uno de los tipos de bebida.
         var tipoComida = solicitud.TipoComida.Trim();
-        if (!catalogo.Values.Any(a => a.Categoria == tipoComida))
+        if (!ServicioLimites.TiposBebida.Contains(tipoComida) && !catalogo.Values.Any(a => a.Categoria == tipoComida))
             throw new PedidoInvalidoException("El tipo de comida no es una categoría disponible del catálogo. Actualice el catálogo y seleccione otro.");
         var pedido = new Pedido
         {

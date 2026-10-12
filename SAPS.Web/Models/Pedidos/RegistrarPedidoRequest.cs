@@ -27,7 +27,10 @@ public static class ServicioLimites
     public const long TotalAdvertencia = 25_000;
     /// <summary>Total máximo permitido para un pedido.</summary>
     public const long TotalMaximo = 40_000;
+    /// <summary>Tipos de bebida del catálogo (mismos valores que usa Administración).</summary>
+    public static readonly string[] TiposBebida = ["Gaseosa", "Embotellada", "Energizante", "Jugo"];
 }
 
-public record ArticuloPedido(string Clave, string Nombre, string Categoria, string? Tamano, int Precio);
+/// <summary>Grupo es "Comida" (categoría del catálogo) o "Bebida" (Categoria = tipo de bebida).</summary>
+public record ArticuloPedido(string Clave, string Nombre, string Grupo, string Categoria, string? Tamano, int Precio);
 public record PedidoRegistrado(int IdPedido, long Total);

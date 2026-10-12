@@ -139,6 +139,10 @@ try
     solicitud = Solicitud(); solicitud.Lineas[0].Cantidad = 26;
     resultado = await pedidos.RegistrarAsync(solicitud, usuarioId);
     Verificar(resultado.Total == 39_700, "Pedido por encima de ₡25.000 pero dentro de ₡40.000 se registra");
+    solicitud = Solicitud(); solicitud.TipoComida = "Jugo";
+    resultado = await pedidos.RegistrarAsync(solicitud, usuarioId);
+    Verificar(resultado.Total == 3700 && (await pedidos.CatalogoAsync()).Any(a => a.Grupo == "Bebida" && a.Categoria == "Jugo"),
+        "Los tipos de bebida son categorías válidas y las bebidas se agrupan por su tipo");
     solicitud = Solicitud(); solicitud.TipoComida = "Desayuno";
     await Rechazar(async () => { await pedidos.RegistrarAsync(solicitud, usuarioId); }, "Tipo de comida sin artículos en el catálogo rechazado");
     reloj.Hora = new DateTimeOffset(2026, 9, 20, 9, 0, 0, TimeSpan.Zero);

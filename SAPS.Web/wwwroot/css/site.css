@@ -656,3 +656,20 @@ body { margin-bottom: 0; }
 .selector-cantidad { width: 12rem; max-width: 100%; flex-wrap: nowrap; }
 .selector-cantidad .form-control { min-width: 3rem; text-align: center; }
 .selector-cantidad .btn { min-width: 2.75rem; min-height: 2.75rem; }
+
+/* ===== Registro de pedidos: aviso grande de límite de total ===== */
+.aviso-total {
+    display: flex; align-items: center; gap: 1rem;
+    margin: 1rem 0; padding: 1.25rem 1.5rem;
+    border: 4px solid; border-radius: .75rem;
+    font-size: 1.35rem; font-weight: 700; line-height: 1.3;
+    box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .25);
+}
+.aviso-total .aviso-icono { font-size: 2.75rem; line-height: 1; flex: none; }
+.aviso-total .aviso-detalle { display: block; margin-top: .25rem; font-size: 1.05rem; font-weight: 500; }
+.aviso-total.aviso-advertencia { background: #fff3cd; border-color: #e0a800; color: #664d03; }
+.aviso-total.aviso-bloqueo { background: #f8d7da; border-color: #b02a37; color: #58151c; animation: aviso-pulso 1.2s ease-in-out infinite; }
+.total-advertencia { color: #b58100; }
+.total-bloqueo { color: #b02a37; }
+@keyframes aviso-pulso { 50% { box-shadow: 0 0 0 .5rem rgba(176, 42, 55, .35); } }
+@media (prefers-reduced-motion: reduce) { .aviso-total.aviso-bloqueo { animation: none; } }
