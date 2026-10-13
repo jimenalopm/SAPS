@@ -34,12 +34,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<DetallePedido> DetallesPedido => Set<DetallePedido>();
 
     public DbSet<EstadoContrasenaUsuario> EstadosContrasena => Set<EstadoContrasenaUsuario>();
+    public DbSet<VinculoUsuarioColaborador> VinculosUsuarioColaborador => Set<VinculoUsuarioColaborador>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.ConfigurarPedidos();
         builder.ConfigurarEstadoContrasena();
+        builder.ConfigurarVinculoUsuarioColaborador();
 
         // ---------- rrhh.tb_Colaborador ----------
         builder.Entity<ColaboradorRrhh>(entity =>

@@ -80,6 +80,7 @@ public class HU003_ControlAccesoRolesTests
     [InlineData(typeof(AdministracionController), new[] { "Administrador", "RecursosHumanos" })]
     [InlineData(typeof(RecursosHumanosController), new[] { "Administrador", "RecursosHumanos" })]
     [InlineData(typeof(PedidosController), new[] { "Administrador", "Soda" })]
+    [InlineData(typeof(UsuariosController), new[] { "Administrador" })]
     public void Controlador_DeclaraLosRolesPermitidos(Type controlador, string[] rolesEsperados)
     {
         var attr = controlador.GetCustomAttribute<AuthorizeAttribute>();
@@ -114,6 +115,11 @@ public class HU003_ControlAccesoRolesTests
         { typeof(PedidosController), "Usuario",         false },
         { typeof(PedidosController), "RecursosHumanos", false },
         { typeof(PedidosController), null,              false },
+        { typeof(UsuariosController), "Administrador",   true  },
+        { typeof(UsuariosController), "RecursosHumanos", false },
+        { typeof(UsuariosController), "Soda",            false },
+        { typeof(UsuariosController), "Usuario",         false },
+        { typeof(UsuariosController), null,              false },
     };
 
     [Theory]

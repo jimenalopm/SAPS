@@ -1,0 +1,72 @@
+@model SAPS.Web.Models.Identity.CrearUsuarioViewModel
+@{ ViewData["Title"] = "Nueva cuenta"; }
+
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador"></span><a asp-action="Index">Usuarios</a>
+    <span class="separador actual" aria-current="page">Nueva cuenta</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Nueva cuenta</h1>
+        <p>La contraseña que asignes es solo temporal: en el primer ingreso se va a pedir cambiarla.</p>
+    </div>
+</div>
+
+<form asp-action="Crear" method="post" data-bloquear-envio class="form-card form-card-estrecho">
+    <div asp-validation-summary="ModelOnly" class="alerta-error-recyplast" role="alert"></div>
+
+    <section aria-labelledby="titulo-info">
+        <h2 class="form-card-titulo" id="titulo-info">Datos de acceso</h2>
+        <div class="mb-1">
+            <label asp-for="Correo" class="form-label">Correo de empleado <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <input asp-for="Correo" class="form-control" autofocus autocomplete="off" placeholder="nombre@recyplast.cr" />
+            <span asp-validation-for="Correo" class="text-danger small"></span>
+        </div>
+        <div class="mb-1">
+            <label asp-for="ContrasenaInicial" class="form-label">Contraseña inicial (temporal) <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <input asp-for="ContrasenaInicial" class="form-control" autocomplete="new-password" />
+            <span asp-validation-for="ContrasenaInicial" class="text-danger small"></span>
+        </div>
+        <div class="mb-1">
+            <label asp-for="Rol" class="form-label">Rol <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <select asp-for="Rol" class="form-select">
+                <option value="">Seleccioná un rol...</option>
+                @foreach (var rol in SAPS.Web.Models.Identity.CrearUsuarioViewModel.RolesDisponibles)
+                {
+                    <option value="@rol">@rol</option>
+                }
+            </select>
+            <span asp-validation-for="Rol" class="text-danger small"></span>
+        </div>
+    </section>
+
+    <section aria-labelledby="titulo-colaborador">
+        <h2 class="form-card-titulo" id="titulo-colaborador">Colaborador de RRHH</h2>
+        <div class="mb-1">
+            <label asp-for="IdColaborador" class="form-label">A qué colaborador pertenece esta cuenta <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <select asp-for="IdColaborador" class="form-select">
+                <option value="">Seleccioná un colaborador activo...</option>
+                @foreach (var c in Model.ColaboradoresDisponibles)
+                {
+                    <option value="@c.IdColaborador">@c.Codigo — @c.NombreCompleto</option>
+                }
+            </select>
+            <span asp-validation-for="IdColaborador" class="text-danger small"></span>
+            @if (!Model.ColaboradoresDisponibles.Any())
+            {
+                <p class="form-text">No hay colaboradores activos sin cuenta vinculada todavía.</p>
+            }
+        </div>
+    </section>
+
+    <div class="form-acciones">
+        <a asp-action="Index" class="btn btn-recyplast-outline">Cancelar</a>
+        <button type="submit" class="btn btn-recyplast">Crear cuenta</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

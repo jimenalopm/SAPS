@@ -12,7 +12,11 @@
 <div class="page-header">
     <div>
         <h1 class="h1">Cambiar contraseña</h1>
-        @if (Model.Obligatorio)
+        @if (Model.Obligatorio && Model.Motivo == "primerIngreso")
+        {
+            <p>Es tu primer ingreso. Establecé tu contraseña antes de continuar.</p>
+        }
+        else if (Model.Obligatorio)
         {
             <p>Tu contraseña venció. Debes establecer una nueva antes de continuar.</p>
         }
@@ -34,6 +38,7 @@
 <form method="post" novalidate data-bloquear-envio class="card-recyplast" style="max-width: 420px;">
     <div asp-validation-summary="ModelOnly" class="auth-alerta" role="alert"></div>
     <input type="hidden" asp-for="Obligatorio" />
+    <input type="hidden" asp-for="Motivo" />
 
     <div class="mb-3">
         <label asp-for="Input.ContrasenaActual" class="form-label"></label>

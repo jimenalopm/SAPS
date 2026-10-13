@@ -1,0 +1,72 @@
+@model List<SAPS.Web.Models.Identity.UsuarioListadoViewModel>
+@{ ViewData["Title"] = "Usuarios"; }
+
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador actual" aria-current="page">Usuarios</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Usuarios</h1>
+        <p>Cuentas del sistema, su rol y el colaborador de RRHH al que pertenecen.</p>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-recyplast alert-dismissible fade show" role="alert">
+        @TempData["Mensaje"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+<div class="catalogo-barra">
+    <div></div>
+    <a asp-action="Crear" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nueva cuenta</a>
+</div>
+
+<div class="tabla-contenedor">
+<table class="table table-recyplast tabla-apilable align-middle">
+    <thead><tr><th>Correo</th><th>Rol</th><th>Colaborador vinculado</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+    <tbody>
+    @foreach (var u in Model)
+    {
+        var clase = u.Estado switch { "Desactivada" => "error", "Bloqueada temporalmente" => "azul", _ => "" };
+        <tr class="@(u.Estado == "Activa" ? "" : "fila-inactiva")">
+            <td data-label="Correo" class="celda-principal">@u.Correo</td>
+            <td data-label="Rol">@u.Rol</td>
+            <td data-label="Colaborador vinculado">@(u.ColaboradorNombre ?? "—")</td>
+            <td data-label="Estado"><span class="badge-recyplast con-punto @clase">@u.Estado</span></td>
+            <td class="text-end celda-acciones">
+                @if (u.Estado == "Activa" || u.Estado == "Bloqueada temporalmente")
+                {
+                    <form asp-action="Desactivar" asp-route-id="@u.Id" method="post" class="d-inline" data-bloquear-envio
+                          data-confirmar="¿Desea desactivar la cuenta «@u.Correo»? No podrá iniciar sesión hasta que la reactiven.">
+                        <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm btn-outline-danger">Desactivar</button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="Reactivar" asp-route-id="@u.Id" method="post" class="d-inline" data-bloquear-envio>
+                        <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm btn-outline-success">Reactivar</button>
+                    </form>
+                }
+            </td>
+        </tr>
+    }
+    @if (!Model.Any())
+    {
+        <tr class="fila-vacia"><td colspan="5" class="estado-vacio">No hay usuarios para mostrar.</td></tr>
+    }
+    </tbody>
+</table>
+</div>

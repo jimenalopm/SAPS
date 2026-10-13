@@ -81,6 +81,15 @@
                                 </a>
                             </li>
                         }
+                        @if (esAdmin)
+                        {
+                            <li>
+                                <a class="sidebar-link @Activo(controlador == "Usuarios")" aria-current="@Actual(controlador == "Usuarios")"
+                                   asp-area="" asp-controller="Usuarios" asp-action="Index">
+                                    <partial name="_Iconos" model="@("usuarios")" /> Usuarios
+                                </a>
+                            </li>
+                        }
                     </ul>
                 </nav>
             </aside>

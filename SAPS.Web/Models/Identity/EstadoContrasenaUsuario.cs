@@ -5,4 +5,7 @@ public class EstadoContrasenaUsuario
 {
     public string IdUsuario { get; set; } = "";
     public DateTime FechaUltimoCambio { get; set; }
+
+    /// <summary>HU-001 (primer ingreso): true si la contraseña actual es la temporal asignada por el Administrador.</summary>
+    public bool RequiereCambioInicial { get; set; }
 }

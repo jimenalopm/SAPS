@@ -15,6 +15,7 @@ internal static class EstadoContrasenaConfiguration
             e.HasKey(x => x.IdUsuario).HasName("PK_EstadoContrasena");
             e.Property(x => x.IdUsuario).HasColumnName("idUsuario").HasMaxLength(450);   // mismo tipo que AspNetUsers.Id
             e.Property(x => x.FechaUltimoCambio).HasColumnType("datetime2").IsRequired();
+            e.Property(x => x.RequiereCambioInicial).HasDefaultValue(false);
 
             e.HasOne<IdentityUser>().WithOne()
              .HasForeignKey<EstadoContrasenaUsuario>(x => x.IdUsuario)
