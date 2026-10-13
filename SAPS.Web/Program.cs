@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Data;
+using SAPS.Web.Middleware;
 using SAPS.Web.Services.Pedidos;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,14 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(IdentityConfig.Configurar)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// HU-001 (criterio 9): la sesión no debe vencer por inactividad. El default de Identity
+// (14 días deslizantes) es corto para este uso; se fija en 1 año deslizante.
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.ExpireTimeSpan = TimeSpan.FromDays(365);
+    options.SlidingExpiration = true;
+});
 
 builder.Services.AddScoped<DbInitializer>();
 builder.Services.AddSingleton(TimeProvider.System);
@@ -116,6 +125,9 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// HU-001 (criterio 7): bloquea el acceso a toda la app si la contraseña venció.
+app.UseMiddleware<VencimientoContrasenaMiddleware>();
 
 app.MapStaticAssets();
 
