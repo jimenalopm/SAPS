@@ -109,7 +109,7 @@ public class HU008_RegistroPedidoTests(ITestOutputHelper salida) : PruebaBase("H
         var bebidas = Pedidos.BebidasConTamano();
         Skip.If(bebidas.Count == 0, "Omitida: el catálogo real no tiene bebidas con tamaño activas.");
 
-        Pedidos.ElegirTipoComida("Almuerzo");
+        // La pantalla quedó en "Bebida": AgregarOpcion elige el tipo de bebida donde está la opción.
         Pedidos.AgregarOpcion(bebidas[0]);
         Capturar("bebida_con_tamano_en_detalle");
 
@@ -144,9 +144,10 @@ public class HU008_RegistroPedidoTests(ITestOutputHelper salida) : PruebaBase("H
         AbrirPedidoParaColaborador(Configuracion.ColaboradorActivo);
         Pedidos.ElegirTipoComida("Almuerzo");
 
-        // Se agregan dos productos distintos: la Sopa (real) y la primera otra opción disponible del catálogo.
+        // Se agregan dos productos distintos: la Sopa (real) y la primera otra opción disponible del catálogo
+        // (de la misma categoría si la hay; si no, de otra categoría de comida).
         Pedidos.AgregarArticulo(DatosDePrueba.ProductoReal, cantidad: 2);
-        var otra = Pedidos.OpcionesDeArticulo().FirstOrDefault(o => !o.StartsWith(DatosDePrueba.ProductoReal, StringComparison.OrdinalIgnoreCase));
+        var otra = Pedidos.PrimeraOpcionDistintaDe(DatosDePrueba.ProductoReal);
         Assert.NotNull(otra);
         Pedidos.AgregarOpcion(otra);
         Capturar("total_con_dos_productos");
@@ -177,26 +178,54 @@ public class HU008_RegistroPedidoTests(ITestOutputHelper salida) : PruebaBase("H
         Assert.Contains("rebajo de planilla", texto, StringComparison.OrdinalIgnoreCase);
         foreach (var otraForma in new[] { "efectivo", "tarjeta", "sinpe", "transferencia", "cheque" })
             Assert.DoesNotContain(otraForma, texto, StringComparison.OrdinalIgnoreCase);
-        Assert.Empty(Driver.FindElements(By.CssSelector("input[type='radio']"))); // ningún selector de forma de pago
+        // Ningún selector de forma de pago: los únicos botones de opción son "Comida / Bebida" (grupo-pedido).
+        Assert.All(Driver.FindElements(By.CssSelector("input[type='radio']")),
+            r => Assert.Equal("grupo-pedido", r.GetDomAttribute("name")));
     }
 
-    // ===================================================================== Criterio 6: sin restricciones
+    // ===================================================================== Criterio 6: sin restricciones de consumo previo
 
-    [Fact(DisplayName = "HU-008 Sin restricciones: no hay límite de monto ni de consumo previo")]
-    public void SinRestricciones_cantidadGrande_noSeLimitaElMonto()
+    [Fact(DisplayName = "HU-008 Sin restricciones: el consumo previo del colaborador no impide otro pedido")]
+    public void SinRestricciones_consumoPrevio_noImpideOtroPedido()
     {
-        // El colaborador real tiene consumo previo; aun así el sistema debe permitir otro pedido, sin tope.
-        // (La hora no se puede forzar desde Selenium; la regla de horario no existe en el código, por eso solo se verifica el monto.)
+        // El colaborador real tiene consumo previo; aun así el sistema debe permitir otro pedido.
+        // (La hora no se puede forzar desde Selenium; la regla de horario no existe en el código.)
         AbrirPedidoParaColaborador(Configuracion.ColaboradorActivo);
-        Pedidos.ElegirTipoComida("Desayuno");
-        Pedidos.AgregarArticulo(DatosDePrueba.ProductoReal, cantidad: 500);
-        Capturar("pedido_de_500_unidades");
+        Pedidos.ElegirTipoComida("Almuerzo");
+        Pedidos.AgregarArticulo(DatosDePrueba.ProductoReal);
+        Capturar("pedido_con_consumo_previo");
+
+        Assert.Single(Pedidos.Lineas());
+        Assert.True(Pedidos.BotonRegistrarHabilitado, "El consumo previo no debe bloquear el registro.");
+        Assert.False(Pedidos.HayMensaje);
+        Assert.False(Pedidos.HayAvisoDeTotal, "Un pedido normal no debe mostrar aviso de total.");
+    }
+
+    // ===================================================================== Límite de total (decisión del equipo)
+
+    [SkippableFact(DisplayName = "HU-008 Límite de total: un pedido de más de ₡40.000 no se puede registrar")]
+    public void LimiteDeTotal_masDe40000_noSePuedeRegistrar()
+    {
+        // Regla agregada por el equipo (HU-008: topes de total): desde ₡25.000 se advierte y por encima de ₡40.000
+        // se bloquea el registro, para evitar errores de digitación. No se registra nada (colaborador real).
+        const int TotalMaximo = 40_000;
+        AbrirPedidoParaColaborador(Configuracion.ColaboradorActivo);
+        Pedidos.ElegirTipoComida("Almuerzo");
+        Pedidos.AgregarArticulo(DatosDePrueba.ProductoReal);
+        var precio = MontoEntero(Assert.Single(Pedidos.Lineas()).Precio);
+
+        // Cantidad mínima para pasar el máximo (la pantalla acepta hasta 999 unidades por artículo).
+        var cantidad = TotalMaximo / precio + 1;
+        Skip.If(cantidad > 999, $"Omitida: con un precio de ₡{precio} no se puede pasar de ₡{TotalMaximo:N0} con 999 unidades.");
+        Pedidos.AgregarArticulo(DatosDePrueba.ProductoReal, cantidad: cantidad - 1); // se suma al mismo renglón
+        Capturar("pedido_sobre_el_maximo");
 
         var linea = Assert.Single(Pedidos.Lineas());
-        Assert.Equal(500, linea.Cantidad);
-        Assert.Equal(MontoEntero(linea.Precio) * 500, MontoEntero(Pedidos.TotalTexto));
-        Assert.True(Pedidos.BotonRegistrarHabilitado, "No debe haber límite de consumo que bloquee el registro.");
-        Assert.False(Pedidos.HayMensaje);
+        Assert.Equal(cantidad, linea.Cantidad);
+        Assert.True(MontoEntero(Pedidos.TotalTexto) > TotalMaximo);
+        Assert.True(Pedidos.HayAvisoDeTotal, "Debe mostrarse el aviso de que el pedido supera el máximo.");
+        Assert.Contains("No se puede registrar", Pedidos.AvisoDeTotal);
+        Assert.False(Pedidos.BotonRegistrarHabilitado, "Por encima del máximo no se debe poder registrar.");
     }
 
     // ===================================================================== Criterio 7: sesión cerrada

@@ -10,7 +10,7 @@ namespace SAPS.FunctionalTests;
 /// <summary>
 /// HU-007 — Catálogo de productos y precios.
 /// Esto corre contra la BD REAL: NUNCA se modifica un producto, bebida ni precio real. Todo lo que se escribe usa un
-/// producto nuevo llamado ZZ_SELENIUM_&lt;fecha-hora&gt;, que cada prueba desactiva al terminar (bloque finally) para que
+/// producto nuevo llamado ZZ-SELENIUM-&lt;fecha-hora&gt;, que cada prueba desactiva al terminar (bloque finally) para que
 /// no aparezca en los pedidos reales. Las filas restantes se borran con Sql/limpieza_pruebas.sql.
 /// </summary>
 public class HU007_CatalogoPreciosTests(ITestOutputHelper salida) : PruebaBase("HU007", salida)

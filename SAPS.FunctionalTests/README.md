@@ -44,12 +44,19 @@ dotnet test SAPS.FunctionalTests --filter "FullyQualifiedName~HU001" --logger "h
 ## Seguridad: qué escriben (y qué no) en la BD real
 - HU-001 y HU-003 **no guardan nada**. Credenciales inválidas usan `noexiste@recyplast.cr`; el bloqueo de cuenta no se prueba.
 - Colaboradores reales: **solo consulta**.
-- HU-007 crea productos `ZZ_SELENIUM_<fecha-hora>` (y cada prueba los desactiva al terminar). Nunca toca productos, bebidas ni precios reales.
+- HU-007 crea productos `ZZ-SELENIUM-<fecha-hora>` (y cada prueba los desactiva al terminar). Nunca toca productos, bebidas ni precios reales.
 - HU-007 (cambio de precio vs. pedidos) y HU-008 (registro) guardan pedidos **solo para `DEMO001`**.
 - Scripts SQL (no se ejecutan solos, en `Sql\`):
   - `crear_colaborador_demo.sql` — crea DEMO001 si no existe.
-  - `limpieza_pruebas.sql` — borra ZZ_SELENIUM_%, los pedidos de DEMO001 y DEMO001. Por defecto es un ensayo (`@Confirmar = 0`).
+  - `limpieza_pruebas.sql` — borra ZZ-SELENIUM-%, los pedidos de DEMO001 y DEMO001. Por defecto es un ensayo (`@Confirmar = 0`).
   - `verificar_pedido_demo.sql` — consulta de solo lectura: pedido, usuaria que lo registró y detalle (evidencia de trazabilidad).
+
+## Cambios del 13/10/2026 (actualización al `main` actual)
+- Los productos de prueba ahora se llaman `ZZ-SELENIUM-...` (con guiones): la validación de nombres del catálogo no acepta `_`.
+- HU-007: el formulario de producto solo muestra los tamaños de la categoría elegida; las pruebas eligen la categoría activa con más tamaños.
+- HU-008: la pantalla pregunta primero «Comida / Bebida» y luego el tipo; las pruebas buscan solas el tipo donde está cada artículo.
+- HU-008: nueva prueba del tope de ₡40.000 por pedido (decisión del equipo); la de «sin restricciones» ahora verifica solo el consumo previo.
+- HU-001: el mensaje de credenciales incorrectas cambió (F-02); el vencimiento de contraseña ya existe, pero se prueba con las unitarias.
 
 ## Pruebas omitidas (visibles en el reporte con su motivo)
 Funcionalidad que no existe todavía en SAPS.Web: estado laboral en login, primer ingreso, contraseña vencida, bitácora (login, roles, precios),

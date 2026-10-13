@@ -45,7 +45,7 @@ Write-Host "URL de la app: $url"
 # 2) Advertir que HU007 y HU008 escriben en la BD real.
 if (-not $SinConfirmacion -and ($Hu -contains 'HU007' -or $Hu -contains 'HU008')) {
     Write-Host ''
-    Write-Host 'ATENCIÓN: HU007 y HU008 ESCRIBEN en la base de datos REAL (productos ZZ_SELENIUM_* y pedidos de DEMO001).' -ForegroundColor Yellow
+    Write-Host 'ATENCIÓN: HU007 y HU008 ESCRIBEN en la base de datos REAL (productos ZZ-SELENIUM-* y pedidos de DEMO001).' -ForegroundColor Yellow
     Write-Host 'Corra esas HU una sola vez y luego ejecute Sql\limpieza_pruebas.sql.'
     if ((Read-Host 'Escriba SI para continuar') -ne 'SI') { Write-Host 'Cancelado.'; exit 0 }
 }

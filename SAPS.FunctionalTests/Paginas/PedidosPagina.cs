@@ -46,48 +46,122 @@ public sealed class PedidosPagina(IWebDriver driver, WebDriverWait espera)
     public bool HayMensaje => driver.FindElement(By.Id("mensaje-pedido")).Displayed;
     public string Mensaje => driver.FindElement(By.Id("mensaje-pedido")).Text.Trim();
 
-    public void ElegirTipoComida(string tipo) =>
-        new SelectElement(driver.FindElement(By.Id("tipo-comida"))).SelectByText(tipo);
+    // ------------------------------------------------------------------ comida / bebida y tipo
+    // HU-008 (versión actual): la pantalla primero pregunta "Comida" o "Bebida". Luego el selector "tipo-comida" ofrece
+    // las categorías del catálogo (Comida) o los tipos de bebida (Bebida), y el selector "articulo" solo muestra los
+    // artículos de ese tipo. El tipo elegido es el "tipo de comida" con el que se registra el pedido.
 
-    /// <summary>Opciones del selector de artículos ("Sopa — ₡1.500", "Fresco · Grande — ₡2.000"...).</summary>
+    /// <summary>Elige "Comida" o "Bebida". El radio está oculto (estilo botón de Bootstrap): se pulsa su etiqueta.</summary>
+    public void ElegirGrupo(string grupo)
+    {
+        var id = grupo.Equals("Bebida", StringComparison.OrdinalIgnoreCase) ? "grupo-bebida" : "grupo-comida";
+        if (driver.FindElement(By.Id(id)).Selected) return;
+        driver.FindElement(By.CssSelector($"label[for='{id}']")).ClicSeguro();
+        espera.Until(d => d.FindElement(By.Id(id)).Selected);
+    }
+
+    /// <summary>Opciones del selector de tipo (sin la opción vacía "Seleccione…").</summary>
+    public List<string> TiposDisponibles() =>
+        new SelectElement(driver.FindElement(By.Id("tipo-comida"))).Options
+            .Where(o => !string.IsNullOrEmpty(o.GetDomAttribute("value"))).Select(o => o.Text.Trim()).ToList();
+
+    /// <summary>
+    /// Elige el tipo de comida (grupo "Comida"). Las categorías vienen del catálogo real: si <paramref name="tipo"/> no
+    /// existe en esta base, no se elige nada y <see cref="AgregarArticulo"/> elegirá la categoría del artículo.
+    /// </summary>
+    public void ElegirTipoComida(string tipo)
+    {
+        ElegirGrupo("Comida");
+        if (TiposDisponibles().Contains(tipo, StringComparer.OrdinalIgnoreCase)) ElegirTipo(tipo);
+    }
+
+    private void ElegirTipo(string tipo)
+    {
+        var select = new SelectElement(driver.FindElement(By.Id("tipo-comida")));
+        var opcion = select.Options.First(o => o.Text.Trim().Equals(tipo, StringComparison.OrdinalIgnoreCase));
+        select.SelectByValue(opcion.GetDomAttribute("value")!);
+    }
+
+    /// <summary>Opciones del selector de artículos del tipo elegido ("Sopa — ₡1.500", "Fresco · Grande — ₡2.000"...).</summary>
     public List<string> OpcionesDeArticulo() =>
         new SelectElement(driver.FindElement(By.Id("articulo"))).Options.Select(o => o.Text.Trim()).Where(t => t.Contains('—')).ToList();
 
     /// <summary>
-    /// Selecciona el artículo cuyo nombre es EXACTAMENTE <paramref name="nombre"/> (la opción se ve "Nombre — ₡precio"
-    /// o "Nombre · Tamaño — ₡precio") y lo agrega con la cantidad indicada.
+    /// Deja elegido el tipo (del grupo actual) cuyo selector de artículos tiene una opción que cumple
+    /// <paramref name="condicion"/>. Primero mira el tipo ya elegido; si ahí no está, recorre los demás.
+    /// Devuelve el texto de la opción encontrada.
+    /// </summary>
+    private string BuscarOpcion(Func<string, bool> condicion, string descripcion)
+    {
+        var enTipoActual = OpcionesDeArticulo().FirstOrDefault(condicion);
+        if (enTipoActual is not null) return enTipoActual;
+        foreach (var tipo in TiposDisponibles())
+        {
+            ElegirTipo(tipo);
+            var encontrada = OpcionesDeArticulo().FirstOrDefault(condicion);
+            if (encontrada is not null) return encontrada;
+        }
+        throw new NoSuchElementException($"{descripcion} no está en el catálogo de pedidos.");
+    }
+
+    /// <summary>
+    /// Agrega el artículo cuyo nombre es EXACTAMENTE <paramref name="nombre"/> (la opción se ve "Nombre — ₡precio"
+    /// o "Nombre · Tamaño — ₡precio"). Si no está en el tipo elegido, elige el tipo (categoría) donde sí está.
     /// </summary>
     public void AgregarArticulo(string nombre, int cantidad = 1)
     {
-        var select = new SelectElement(driver.FindElement(By.Id("articulo")));
-        var opcion = select.Options.FirstOrDefault(o =>
-            o.Text.StartsWith(nombre + " —", StringComparison.OrdinalIgnoreCase) ||
-            o.Text.StartsWith(nombre + " ·", StringComparison.OrdinalIgnoreCase))
-            ?? throw new NoSuchElementException($"El artículo «{nombre}» no está en el catálogo de pedidos.");
-        select.SelectByValue(opcion.GetDomAttribute("value")!);
-        var campoCantidad = driver.FindElement(By.Id("cantidad"));
-        campoCantidad.Clear();
-        campoCantidad.SendKeys(cantidad.ToString());
-        driver.FindElement(By.Id("agregar")).ClicSeguro();
-        espera.Until(d => d.FindElements(By.CssSelector("#lineas-pedido tr")).Count > 0);
+        var texto = BuscarOpcion(t =>
+            t.StartsWith(nombre + " —", StringComparison.OrdinalIgnoreCase) ||
+            t.StartsWith(nombre + " ·", StringComparison.OrdinalIgnoreCase), $"El artículo «{nombre}»");
+        AgregarOpcion(texto, cantidad);
     }
 
-    /// <summary>Agrega la opción cuyo texto completo es el indicado (p. ej. "Gaseosa · Grande — ₡1.200").</summary>
+    /// <summary>
+    /// Agrega la opción cuyo texto completo es el indicado (p. ej. "Coca-Cola · 600ml — ₡1.200"), buscándola en los
+    /// tipos del grupo actual si hace falta.
+    /// </summary>
     public void AgregarOpcion(string textoOpcion, int cantidad = 1)
     {
-        var select = new SelectElement(driver.FindElement(By.Id("articulo")));
-        select.SelectByText(textoOpcion);
+        BuscarOpcion(t => t == textoOpcion, $"La opción «{textoOpcion}»");
+        var antes = driver.FindElements(By.CssSelector("#lineas-pedido tr")).Count;
+        new SelectElement(driver.FindElement(By.Id("articulo"))).SelectByText(textoOpcion);
         var campoCantidad = driver.FindElement(By.Id("cantidad"));
         campoCantidad.Clear();
         campoCantidad.SendKeys(cantidad.ToString());
         driver.FindElement(By.Id("agregar")).ClicSeguro();
-        espera.Until(d => d.FindElements(By.CssSelector("#lineas-pedido tr")).Count > 0);
+        // Un artículo nuevo agrega un renglón; uno repetido solo suma cantidad. Se espera a que la tabla tenga algo.
+        espera.Until(d => d.FindElements(By.CssSelector("#lineas-pedido tr")).Count >= Math.Max(antes, 1));
     }
 
-    /// <summary>Opciones de la categoría "Bebidas" que tienen tamaño (el texto trae " · Tamaño").</summary>
-    public List<string> BebidasConTamano() =>
-        driver.FindElements(By.CssSelector("#articulo optgroup[label='Bebidas'] option"))
-            .Select(o => o.Text.Trim()).Where(t => t.Contains(" · ")).ToList();
+    /// <summary>
+    /// Primera opción del catálogo (grupo actual) que NO es el artículo indicado. Busca primero en el tipo elegido y,
+    /// si ahí no hay otra, en los demás tipos (dejando elegido el tipo donde la encontró).
+    /// </summary>
+    public string? PrimeraOpcionDistintaDe(string nombre)
+    {
+        try { return BuscarOpcion(t => !t.StartsWith(nombre, StringComparison.OrdinalIgnoreCase), "Otra opción"); }
+        catch (NoSuchElementException) { return null; }
+    }
+
+    /// <summary>
+    /// Bebidas que tienen tamaño (el texto trae " · Tamaño"), de todos los tipos de bebida. Deja la pantalla en el
+    /// grupo "Bebida".
+    /// </summary>
+    public List<string> BebidasConTamano()
+    {
+        ElegirGrupo("Bebida");
+        var bebidas = new List<string>();
+        foreach (var tipo in TiposDisponibles())
+        {
+            ElegirTipo(tipo);
+            bebidas.AddRange(OpcionesDeArticulo().Where(t => t.Contains(" · ")));
+        }
+        return bebidas;
+    }
+
+    /// <summary>¿Se ve el aviso de total (monto alto o por encima del máximo permitido)?</summary>
+    public bool HayAvisoDeTotal => driver.FindElement(By.Id("aviso-total")).Displayed;
+    public string AvisoDeTotal => driver.FindElement(By.Id("aviso-total")).Text.Trim();
 
     /// <summary>Quita el renglón indicado (0 = primero) con el botón "Quitar".</summary>
     public void QuitarLinea(int indice)

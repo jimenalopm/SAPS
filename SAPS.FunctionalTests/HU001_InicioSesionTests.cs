@@ -57,7 +57,8 @@ public class HU001_InicioSesionTests(ITestOutputHelper salida) : PruebaBase("HU0
         // El sistema muestra el mensaje de error del formulario...
         var alerta = Espera.Until(d => d.FindElements(By.CssSelector(".auth-alerta")).FirstOrDefault(a => a.Text.Trim().Length > 0));
         Capturar("mensaje_de_error");
-        Assert.Contains("inválidos", alerta.Text, StringComparison.OrdinalIgnoreCase);
+        // Mensaje vigente (F-02): "El correo de empleado o la contraseña son incorrectos...".
+        Assert.Contains("incorrectos", alerta.Text, StringComparison.OrdinalIgnoreCase);
 
         // ...y no concede el acceso: sigue en el login y no hay menú lateral ni usuaria autenticada.
         Assert.True(EstaEnLogin);
@@ -96,8 +97,9 @@ public class HU001_InicioSesionTests(ITestOutputHelper salida) : PruebaBase("HU0
                  "establezca su contraseña. Confirmar con el equipo si es del Sprint 1.")]
     public void PrimerIngreso_usuariaPermiteEstablecerSuPropiaContrasena() { }
 
-    [Fact(Skip = "No implementado en el código del Sprint 1: no hay control de vigencia (10 meses) de la contraseña ni " +
-                 "solicitud de cambio al iniciar sesión. Confirmar con el equipo si es del Sprint 1.")]
+    [Fact(Skip = "Ya implementado (criterio 7: middleware que obliga a cambiar la contraseña a los 10 meses), pero no se " +
+                 "automatiza con Selenium: exigiría alterar la fecha del último cambio en la BD real. Lo cubren las pruebas " +
+                 "unitarias SAPS.Tests/HU001_VencimientoContrasenaTests.")]
     public void ContrasenaVencida_solicitaCambiarlaAntesDeDarAcceso() { }
 
     [Fact(Skip = "No implementado en el código del Sprint 1: no existe bitácora (RNF-002) de inicios de sesión ni pantalla " +
@@ -115,7 +117,8 @@ public class HU001_InicioSesionTests(ITestOutputHelper salida) : PruebaBase("HU0
 
         var alerta = Espera.Until(d => d.FindElements(By.CssSelector(".auth-alerta")).FirstOrDefault(a => a.Text.Trim().Length > 0));
         Capturar("codigo_de_colaborador_rechazado");
-        Assert.Contains("inválidos", alerta.Text, StringComparison.OrdinalIgnoreCase);
+        // Mensaje vigente (F-02): "El correo de empleado o la contraseña son incorrectos...".
+        Assert.Contains("incorrectos", alerta.Text, StringComparison.OrdinalIgnoreCase);
         Assert.True(EstaEnLogin);
         Assert.Empty(Driver.FindElements(By.CssSelector(".app-usuario")));
     }

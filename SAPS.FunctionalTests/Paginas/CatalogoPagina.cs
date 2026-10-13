@@ -6,7 +6,8 @@ using SAPS.FunctionalTests.Infraestructura;
 namespace SAPS.FunctionalTests.Paginas;
 
 /// <summary>Artículo tal como lo ofrece la pantalla de pedidos (/Pedidos/Catalogo, JSON).</summary>
-public record ArticuloPedido(string Clave, string Nombre, string Categoria, string? Tamano, int Precio);
+/// <remarks>Grupo es "Comida" o "Bebida". Para una bebida, Categoria es su tipo (Gaseosa, Jugo...).</remarks>
+public record ArticuloPedido(string Clave, string Nombre, string Grupo, string Categoria, string? Tamano, int Precio);
 
 /// <summary>
 /// Acciones sobre la gestión del catálogo (/Administracion/Catalogo). Encapsula los selectores para que las
@@ -81,7 +82,7 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
 
     /// <summary>
     /// Llena y envía el formulario "Nuevo producto". Con <paramref name="preciosPorTamano"/> marca "Se vende en distintos
-    /// tamaños" y asigna, en orden, un precio a cada tamaño activo; si no, usa el precio único.
+    /// tamaños" y asigna, en orden, un precio a cada tamaño visible de la categoría; si no, usa el precio único.
     /// No espera el resultado: la prueba decide qué verificar (éxito o rechazo). Con enviar = false deja el formulario lleno sin enviarlo.
     /// </summary>
     public void CrearProducto(string nombre, string? precioUnico = null, bool especial = false,
@@ -91,9 +92,9 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
         espera.Until(d => d.FindElements(By.Id("NombreProducto")).Count > 0);
         driver.FindElement(By.Id("NombreProducto")).SendKeys(nombre);
 
-        // Categoría: la primera activa de la lista (no se modifica ninguna categoría, solo se asigna).
-        var categoria = new SelectElement(driver.FindElement(By.Id("IdCategoria")));
-        categoria.SelectByIndex(1);
+        // Categoría: una ACTIVA de la lista (no se modifica ninguna categoría, solo se asigna). Si el producto lleva
+        // tamaños, se elige la categoría que tiene más tamaños asignados (HU-007: tamaños por categoría).
+        ElegirCategoria(conTamanos: preciosPorTamano is not null);
 
         if (especial) driver.FindElement(By.Id("EsEspecial")).ClicSeguro();
 
@@ -106,7 +107,7 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
         else
         {
             driver.FindElement(By.Id("requiereTamano")).ClicSeguro();
-            var filas = driver.FindElements(By.CssSelector(".precio-tamano-fila"));
+            var filas = FilasDeTamanoVisibles();
             for (var i = 0; i < filas.Count && i < preciosPorTamano.Count; i++)
             {
                 filas[i].FindElement(By.CssSelector("input[type='checkbox']")).ClicSeguro();
@@ -123,12 +124,44 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
     {
         driver.Navigate().GoToUrl($"{Base}/Administracion/CrearProducto");
         espera.Until(d => d.FindElements(By.Id("NombreProducto")).Count > 0);
+        // HU-007: el formulario solo muestra los tamaños asignados a la categoría elegida. Se usa la misma regla
+        // que CrearProducto (la categoría activa con más tamaños), así ambas ven exactamente los mismos tamaños.
+        ElegirCategoria(conTamanos: true);
         // El bloque de tamaños está OCULTO hasta marcar "Se vende en distintos tamaños"; Selenium devuelve "" para
         // el texto de lo oculto. Se marca la casilla para mostrarlo (no se guarda nada: no se envía el formulario).
         driver.FindElement(By.Id("requiereTamano")).ClicSeguro();
         espera.Until(d => d.FindElement(By.Id("bloquePreciosPorTamano")).Displayed);
-        return driver.FindElements(By.CssSelector(".precio-tamano-fila .form-check-label")).Select(e => e.Text.Trim()).ToList();
+        return FilasDeTamanoVisibles().Select(f => f.FindElement(By.CssSelector(".form-check-label")).Text.Trim()).ToList();
     }
+
+    /// <summary>
+    /// Selecciona una categoría ACTIVA del formulario de producto. Con <paramref name="conTamanos"/> elige la que tiene
+    /// más tamaños asignados (en empate, la primera de la lista); si no, la primera activa. La regla es determinista:
+    /// dos llamadas seguidas eligen la misma categoría.
+    /// </summary>
+    private void ElegirCategoria(bool conTamanos)
+    {
+        var select = new SelectElement(driver.FindElement(By.Id("IdCategoria")));
+        var activas = select.Options
+            .Where(o => !string.IsNullOrEmpty(o.GetDomAttribute("value")) && !o.Text.Contains("(inactiva)"))
+            .ToList();
+        if (activas.Count == 0) throw new InvalidOperationException("No hay categorías activas en el catálogo.");
+
+        var elegida = activas[0];
+        if (conTamanos)
+        {
+            // Cada fila de tamaño trae data-categorias="1,3" con las categorías que la permiten.
+            var permitidasPorFila = driver.FindElements(By.CssSelector(".precio-tamano-fila"))
+                .Select(f => (f.GetDomAttribute("data-categorias") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .ToList();
+            elegida = activas.OrderByDescending(o => permitidasPorFila.Count(p => p.Contains(o.GetDomAttribute("value")!))).First();
+        }
+        select.SelectByValue(elegida.GetDomAttribute("value")!);
+    }
+
+    /// <summary>Filas de tamaño que la pantalla muestra para la categoría elegida (las demás quedan ocultas).</summary>
+    private List<IWebElement> FilasDeTamanoVisibles() =>
+        driver.FindElements(By.CssSelector(".precio-tamano-fila")).Where(f => f.Displayed).ToList();
 
     // ------------------------------------------------------------------ editar precio / desactivar
 
@@ -188,7 +221,7 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
         using var doc = JsonDocument.Parse(json);
         return doc.RootElement.EnumerateArray().Select(e => new ArticuloPedido(
             e.GetProperty("clave").GetString()!, e.GetProperty("nombre").GetString()!,
-            e.GetProperty("categoria").GetString()!,
+            e.GetProperty("grupo").GetString()!, e.GetProperty("categoria").GetString()!,
             e.TryGetProperty("tamano", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : null,
             e.GetProperty("precio").GetInt32())).ToList();
     }

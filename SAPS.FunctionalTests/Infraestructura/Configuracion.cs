@@ -63,12 +63,12 @@ public static class DatosDePrueba
     public const string ProductoReal = "Sopa";
 
     /// <summary>Prefijo de TODO producto/bebida creado por las pruebas; permite limpiarlos con SQL (Sql/limpieza_pruebas.sql).</summary>
-    public const string PrefijoProductoPrueba = "ZZ_SELENIUM_";
+    public const string PrefijoProductoPrueba = "ZZ-SELENIUM-";
 
     /// <summary>Correo que NO existe: se usa para probar credenciales inválidas sin tocar cuentas reales.</summary>
     public const string CorreoInexistente = "noexiste@recyplast.cr";
 
-    /// <summary>Nombre único por ejecución, p. ej. ZZ_SELENIUM_20261006_153045_a1b2.</summary>
+    /// <summary>Nombre único por ejecución, p. ej. ZZ-SELENIUM-20261006-153045-a1b2. Usa guiones y no guiones bajos porque la validación de nombres del catálogo (NombreCatalogoAttribute) no acepta «_».</summary>
     public static string NombreProductoPrueba() =>
-        PrefijoProductoPrueba + DateTime.Now.ToString("yyyyMMdd_HHmmss") + "_" + Guid.NewGuid().ToString("N")[..4];
+        PrefijoProductoPrueba + DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N")[..4];
 }
