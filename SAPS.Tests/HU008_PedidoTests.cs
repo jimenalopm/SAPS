@@ -143,7 +143,7 @@ public sealed class HU008_PedidoTests : IDisposable
         Assert.Contains(catalogo, a => a.Clave == P(_precioCasado) && a.Precio == 2800 && a.Tamano == null);
         Assert.Contains(catalogo, a => a.Clave == P(_precioFrescoPequeno) && a.Tamano == "Pequeño" && a.Precio == 600);
         Assert.Contains(catalogo, a => a.Clave == P(_precioFrescoGrande) && a.Tamano == "Grande" && a.Precio == 1000);
-        Assert.Contains(catalogo, a => a.Clave == B(_cocaCola) && a.Categoria == "Bebidas" && a.Precio == 1200);
+        Assert.Contains(catalogo, a => a.Clave == B(_cocaCola) && a.Grupo == "Bebida" && a.Categoria == "Gaseosa" && a.Precio == 1200);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public sealed class HU008_PedidoTests : IDisposable
 
         var catalogo = await _servicio.CatalogoAsync();
 
-        Assert.Equal(new[] { "Bebidas" }, catalogo.Select(a => a.Categoria).Distinct());
+        Assert.Equal(new[] { "Gaseosa" }, catalogo.Select(a => a.Categoria).Distinct());
     }
 
     [Fact]
@@ -182,12 +182,12 @@ public sealed class HU008_PedidoTests : IDisposable
     {
         _botella.Activo = false;
         await _db.SaveChangesAsync();
-        Assert.DoesNotContain(await _servicio.CatalogoAsync(), a => a.Categoria == "Bebidas");
+        Assert.DoesNotContain(await _servicio.CatalogoAsync(), a => a.Grupo == "Bebida");
 
         _botella.Activo = true;
         _cocaCola.Activo = false;
         await _db.SaveChangesAsync();
-        Assert.DoesNotContain(await _servicio.CatalogoAsync(), a => a.Categoria == "Bebidas");
+        Assert.DoesNotContain(await _servicio.CatalogoAsync(), a => a.Grupo == "Bebida");
     }
 
     [Fact]
