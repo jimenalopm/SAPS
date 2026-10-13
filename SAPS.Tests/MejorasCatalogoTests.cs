@@ -34,6 +34,7 @@ public class MejorasCatalogoTests
         await using var db = TestServices.CrearContextoInMemory();
         var cat = new Categoria { NombreCategoria = "Prueba" }; var tam = new Tamano { NombreTamano = "Grande" };
         db.AddRange(cat, tam); await db.SaveChangesAsync();
+        db.CategoriasTamanos.Add(new CategoriaTamano { IdCategoria = cat.IdCategoria, IdTamano = tam.IdTamano }); await db.SaveChangesAsync();
         var c = TestServices.ConContexto(new AdministracionController(db), "POST");
         var m = new ProductoFormViewModel { NombreProducto = "Prueba", IdCategoria = cat.IdCategoria, RequiereTamano = true,
             PreciosPorTamano = [new() { IdTamano = tam.IdTamano, Incluir = true, Monto = monto }] };

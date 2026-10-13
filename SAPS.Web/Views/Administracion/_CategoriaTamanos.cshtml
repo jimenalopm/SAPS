@@ -1,0 +1,20 @@
+@* HU-007: tamaños permitidos para los productos de la categoría. Se usa en Crear y Editar categoría. *@
+@model SAPS.Web.Models.Catalogo.CategoriaFormViewModel
+
+<section class="seccion-precio" aria-labelledby="titulo-tamanos-categoria">
+    <h2 class="form-card-titulo" id="titulo-tamanos-categoria">Tamaños permitidos</h2>
+    <p class="form-text">Marque los tamaños que pueden tener los productos de esta categoría. Si no marca ninguno, sus productos tendrán un precio único.</p>
+    @if (!Model.TamanosDisponibles.Any())
+    {
+        <p class="text-muted">No hay tamaños de comida activos. Cree uno primero en la pestaña Tamaños.</p>
+    }
+    @foreach (var t in Model.TamanosDisponibles)
+    {
+        var idCampo = $"tamano-{t.IdTamano}";
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="@idCampo" name="TamanosPermitidos" value="@t.IdTamano" checked="@Model.TamanosPermitidos.Contains(t.IdTamano)" />
+            <label class="form-check-label" for="@idCampo">@t.NombreTamano@(t.Activo ? "" : " (inactivo)")</label>
+        </div>
+    }
+    <span asp-validation-for="TamanosPermitidos" class="text-danger small d-block" role="alert"></span>
+</section>

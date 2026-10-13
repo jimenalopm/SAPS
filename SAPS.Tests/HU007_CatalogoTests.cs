@@ -177,13 +177,13 @@ public class HU007_CatalogoTests
     }
 
     [Fact]
-    public void Bebida_TieneRestriccionesDePrecioPositivoYTiposPermitidos()
+    public void Bebida_TieneRestriccionDePrecioPositivo_YLosTiposSeAdministranEnTabla()
     {
         var checks = Entidad<Bebida>().GetCheckConstraints().ToDictionary(c => c.Name!, c => c.Sql);
 
         Assert.Equal("[Precio] > 0", checks["CK_Bebida_Precio"]);
-        foreach (var tipo in new[] { "Gaseosa", "Embotellada", "Energizante", "Jugo" })
-            Assert.Contains($"'{tipo}'", checks["CK_Bebida_Tipo"]);
+        // Los tipos ya no son una lista fija en la BD: viven en tb_TipoBebida y se administran desde el catálogo.
+        Assert.DoesNotContain("CK_Bebida_Tipo", checks.Keys);
     }
 
     [Fact]
@@ -253,6 +253,11 @@ public class HU007_CatalogoTests
         var pequeno = new Tamano { NombreTamano = "Pequeño" };
         var grande = new Tamano { NombreTamano = "Grande" };
         db.AddRange(cat, pequeno, grande);
+        await db.SaveChangesAsync();
+        // HU-007: la categoría permite estos tamaños en sus productos.
+        db.CategoriasTamanos.AddRange(
+            new CategoriaTamano { IdCategoria = cat.IdCategoria, IdTamano = pequeno.IdTamano },
+            new CategoriaTamano { IdCategoria = cat.IdCategoria, IdTamano = grande.IdTamano });
         await db.SaveChangesAsync();
         return (cat, pequeno, grande);
     }
@@ -542,6 +547,8 @@ public class HU007_CatalogoTests
     {
         await using var db = TestServices.CrearContextoInMemory();
         var (_, pequeno, _) = await SembrarBaseAsync(db);
+        pequeno.EsParaBebida = true; // HU-007: las bebidas solo usan tamaños de bebida
+        await db.SaveChangesAsync();
 
         var resultado = await Controlador(db).CrearBebida(new BebidaFormViewModel
         {

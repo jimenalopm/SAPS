@@ -143,7 +143,7 @@ public sealed class HU008_PedidoTests : IDisposable
         Assert.Contains(catalogo, a => a.Clave == P(_precioCasado) && a.Precio == 2800 && a.Tamano == null);
         Assert.Contains(catalogo, a => a.Clave == P(_precioFrescoPequeno) && a.Tamano == "Pequeño" && a.Precio == 600);
         Assert.Contains(catalogo, a => a.Clave == P(_precioFrescoGrande) && a.Tamano == "Grande" && a.Precio == 1000);
-        Assert.Contains(catalogo, a => a.Clave == B(_cocaCola) && a.Categoria == "Bebidas" && a.Precio == 1200);
+        Assert.Contains(catalogo, a => a.Clave == B(_cocaCola) && a.Grupo == "Bebida" && a.Categoria == "Gaseosa" && a.Precio == 1200);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public sealed class HU008_PedidoTests : IDisposable
 
         var catalogo = await _servicio.CatalogoAsync();
 
-        Assert.Equal(new[] { "Bebidas" }, catalogo.Select(a => a.Categoria).Distinct());
+        Assert.Equal(new[] { "Gaseosa" }, catalogo.Select(a => a.Categoria).Distinct());
     }
 
     [Fact]
@@ -182,12 +182,12 @@ public sealed class HU008_PedidoTests : IDisposable
     {
         _botella.Activo = false;
         await _db.SaveChangesAsync();
-        Assert.DoesNotContain(await _servicio.CatalogoAsync(), a => a.Categoria == "Bebidas");
+        Assert.DoesNotContain(await _servicio.CatalogoAsync(), a => a.Grupo == "Bebida");
 
         _botella.Activo = true;
         _cocaCola.Activo = false;
         await _db.SaveChangesAsync();
-        Assert.DoesNotContain(await _servicio.CatalogoAsync(), a => a.Categoria == "Bebidas");
+        Assert.DoesNotContain(await _servicio.CatalogoAsync(), a => a.Grupo == "Bebida");
     }
 
     [Fact]
@@ -276,15 +276,51 @@ public sealed class HU008_PedidoTests : IDisposable
     [Theory]
     [InlineData("Desayuno")]
     [InlineData("Almuerzo")]
-    [InlineData("Merienda")] // se muestra como "Café"
-    public async Task Registrar_TiposDeComidaPermitidos_SonAceptados(string tipo)
+    [InlineData("Café")]
+    [InlineData("Categoría nueva")]
+    public async Task Registrar_CategoriasDisponibles_SonAceptadas(string tipo)
     {
         var solicitud = Solicitud((P(_precioCasado), 1, 2800));
         solicitud.TipoComida = tipo;
+        _almuerzo.NombreCategoria = tipo;
+        await _db.SaveChangesAsync();
 
         var resultado = await _servicio.RegistrarAsync(solicitud, UsuarioOperadora);
 
         Assert.True(resultado.IdPedido > 0);
+    }
+
+    [Theory]
+    [InlineData(25, true)]
+    [InlineData(40, true)]
+    [InlineData(41, false)]
+    public async Task Registrar_RespetaElTopeDeTotal(int cantidad, bool permitido)
+    {
+        var solicitud = Solicitud((P(_precioFrescoGrande), cantidad, 1000));
+        if (permitido)
+            Assert.Equal(cantidad * 1000, (await _servicio.RegistrarAsync(solicitud, UsuarioOperadora)).Total);
+        else
+        {
+            Assert.Contains("no puede superar", await MensajeDeErrorAsync(solicitud));
+            Assert.Empty(_db.Pedidos);
+        }
+    }
+
+    [Theory]
+    [InlineData(999, true)]
+    [InlineData(1000, false)]
+    public async Task Registrar_CantidadDeTresDigitos(int cantidad, bool permitido)
+    {
+        _precioFrescoGrande.MontoPrecio = 1;
+        await _db.SaveChangesAsync();
+        var solicitud = Solicitud((P(_precioFrescoGrande), cantidad, 1));
+        if (permitido)
+            Assert.Equal(cantidad, (await _servicio.RegistrarAsync(solicitud, UsuarioOperadora)).Total);
+        else
+        {
+            Assert.Contains("999", await MensajeDeErrorAsync(solicitud));
+            Assert.Empty(_db.Pedidos);
+        }
     }
 
     [Fact]

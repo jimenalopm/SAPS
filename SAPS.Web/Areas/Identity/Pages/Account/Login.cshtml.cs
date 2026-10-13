@@ -94,7 +94,8 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Usuario o contraseña inválidos.");
+                    // F-02 (H9): el mensaje nombra el campo real e indica qué hacer
+                    ModelState.AddModelError(string.Empty, "El correo de empleado o la contraseña son incorrectos. Revisa los datos e inténtalo de nuevo. Si olvidaste tu contraseña, comunícate con el administrador.");
                     return Page();
                 }
             }

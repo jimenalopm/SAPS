@@ -270,8 +270,6 @@ namespace SAPS.Web.Migrations
                     b.ToTable("tb_Bebida", "soda", t =>
                         {
                             t.HasCheckConstraint("CK_Bebida_Precio", "[Precio] > 0");
-
-                            t.HasCheckConstraint("CK_Bebida_Tipo", "[Tipo] IN ('Gaseosa','Embotellada','Energizante','Jugo')");
                         });
                 });
 
@@ -305,6 +303,25 @@ namespace SAPS.Web.Migrations
                         .HasDatabaseName("UQ_Categoria_Nombre");
 
                     b.ToTable("tb_Categoria", "soda");
+                });
+
+            modelBuilder.Entity("SAPS.Web.Models.Catalogo.CategoriaTamano", b =>
+                {
+                    b.Property<int>("IdCategoria")
+                        .HasColumnType("int")
+                        .HasColumnName("idCategoria");
+
+                    b.Property<int>("IdTamano")
+                        .HasColumnType("int")
+                        .HasColumnName("idTamano");
+
+                    b.HasKey("IdCategoria", "IdTamano")
+                        .HasName("PK_CategoriaTamano");
+
+                    b.HasIndex("IdTamano")
+                        .HasDatabaseName("IX_CategoriaTamano_idTamano");
+
+                    b.ToTable("tb_CategoriaTamano", "soda");
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Precio", b =>
@@ -423,6 +440,12 @@ namespace SAPS.Web.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("EstaActivo");
 
+                    b.Property<bool>("EsParaBebida")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("EsParaBebida");
+
                     b.Property<string>("NombreTamano")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -438,6 +461,80 @@ namespace SAPS.Web.Migrations
                         .HasDatabaseName("UQ_Tamano_Nombre");
 
                     b.ToTable("tb_Tamano", "soda");
+                });
+
+            modelBuilder.Entity("SAPS.Web.Models.Catalogo.TipoBebida", b =>
+                {
+                    b.Property<int>("IdTipoBebida")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("idTipoBebida");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdTipoBebida"));
+
+                    b.Property<bool>("Activo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("EstaActivo");
+
+                    b.Property<string>("NombreTipo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("Nombre");
+
+                    b.HasKey("IdTipoBebida")
+                        .HasName("PK_TipoBebida");
+
+                    b.HasIndex("NombreTipo")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_TipoBebida_Nombre");
+
+                    b.ToTable("tb_TipoBebida", "soda");
+
+                    b.HasData(
+                        new
+                        {
+                            IdTipoBebida = 1,
+                            Activo = true,
+                            NombreTipo = "Gaseosa"
+                        },
+                        new
+                        {
+                            IdTipoBebida = 2,
+                            Activo = true,
+                            NombreTipo = "Embotellada"
+                        },
+                        new
+                        {
+                            IdTipoBebida = 3,
+                            Activo = true,
+                            NombreTipo = "Energizante"
+                        },
+                        new
+                        {
+                            IdTipoBebida = 4,
+                            Activo = true,
+                            NombreTipo = "Jugo"
+                        });
+                });
+
+            modelBuilder.Entity("SAPS.Web.Models.Identity.EstadoContrasenaUsuario", b =>
+                {
+                    b.Property<string>("IdUsuario")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("idUsuario");
+
+                    b.Property<DateTime>("FechaUltimoCambio")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("IdUsuario")
+                        .HasName("PK_EstadoContrasena");
+
+                    b.ToTable("tb_EstadoContrasena", (string)null);
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Pedidos.DetallePedido", b =>
@@ -544,9 +641,9 @@ namespace SAPS.Web.Migrations
 
                     b.Property<string>("TipoComida")
                         .IsRequired()
-                        .HasMaxLength(20)
+                        .HasMaxLength(50)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(20)");
+                        .HasColumnType("varchar(50)");
 
                     b.Property<Guid>("TokenRegistro")
                         .HasColumnType("uniqueidentifier");
@@ -569,8 +666,6 @@ namespace SAPS.Web.Migrations
 
                     b.ToTable("tb_Pedido", "soda", t =>
                         {
-                            t.HasCheckConstraint("CK_Pedido_TipoComida", "[TipoComida] IN ('Desayuno','Almuerzo','Merienda')");
-
                             t.HasCheckConstraint("CK_Pedido_Total", "[Total] > 0");
                         });
                 });
@@ -683,6 +778,27 @@ namespace SAPS.Web.Migrations
                     b.Navigation("Tamano");
                 });
 
+            modelBuilder.Entity("SAPS.Web.Models.Catalogo.CategoriaTamano", b =>
+                {
+                    b.HasOne("SAPS.Web.Models.Catalogo.Categoria", "Categoria")
+                        .WithMany("TamanosPermitidos")
+                        .HasForeignKey("IdCategoria")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_CategoriaTamano_Categoria");
+
+                    b.HasOne("SAPS.Web.Models.Catalogo.Tamano", "Tamano")
+                        .WithMany("Categorias")
+                        .HasForeignKey("IdTamano")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_CategoriaTamano_Tamano");
+
+                    b.Navigation("Categoria");
+
+                    b.Navigation("Tamano");
+                });
+
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Precio", b =>
                 {
                     b.HasOne("SAPS.Web.Models.Catalogo.Producto", "Producto")
@@ -713,6 +829,16 @@ namespace SAPS.Web.Migrations
                         .HasConstraintName("FK_Producto_Categoria");
 
                     b.Navigation("Categoria");
+                });
+
+            modelBuilder.Entity("SAPS.Web.Models.Identity.EstadoContrasenaUsuario", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithOne()
+                        .HasForeignKey("SAPS.Web.Models.Identity.EstadoContrasenaUsuario", "IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_EstadoContrasena_Usuario");
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Pedidos.DetallePedido", b =>
@@ -752,6 +878,8 @@ namespace SAPS.Web.Migrations
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Categoria", b =>
                 {
                     b.Navigation("Productos");
+
+                    b.Navigation("TamanosPermitidos");
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Producto", b =>
@@ -762,6 +890,8 @@ namespace SAPS.Web.Migrations
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Tamano", b =>
                 {
                     b.Navigation("Bebidas");
+
+                    b.Navigation("Categorias");
 
                     b.Navigation("Precios");
                 });
