@@ -72,14 +72,15 @@ public class HU001_CambioContrasenaTests
         var resultado = await pagina.OnPostAsync();
 
         Assert.IsType<PageResult>(resultado);
-        Assert.NotEmpty(pagina.ModelState[string.Empty]!.Errors);
+        var error = Assert.Single(pagina.ModelState["Input.ContrasenaActual"]!.Errors);
+        Assert.Equal("La contraseña actual no es correcta.", error.ErrorMessage);
         Assert.True(await um.CheckPasswordAsync(usuario, ContrasenaValida));
     }
 
     [Fact]
-    public async Task CambiarContrasena_ModoObligatorio_RedirigeAlInicioEnVezDeQuedarseEnLaPagina()
+    public async Task CambiarContrasena_ModoObligatorio_CierraLaSesionYVuelveAlLogin()
     {
-        var (pagina, _, _, _) = await CrearPaginaConUsuarioAsync();
+        var (pagina, um, usuario, _) = await CrearPaginaConUsuarioAsync();
         pagina.Obligatorio = true;
         pagina.Input = new CambiarContrasenaModel.InputModel
         {
@@ -90,8 +91,51 @@ public class HU001_CambioContrasenaTests
 
         var resultado = await pagina.OnPostAsync();
 
-        var redirect = Assert.IsType<LocalRedirectResult>(resultado);
-        Assert.Equal("~/", redirect.Url);
+        var redirect = Assert.IsType<RedirectToPageResult>(resultado);
+        Assert.Equal("./Login", redirect.PageName);
+        Assert.Equal(true, redirect.RouteValues!["contrasenaActualizada"]);
+        Assert.True(await um.CheckPasswordAsync(usuario, ContrasenaNueva));
+    }
+
+    [Fact]
+    public async Task CambiarContrasena_ConLaMismaContrasenaDeAntes_NoLaAceptaNiLaCambia()
+    {
+        var (pagina, um, usuario, _) = await CrearPaginaConUsuarioAsync();
+        pagina.Obligatorio = true; // primer ingreso: la "actual" es la temporal
+        pagina.Input = new CambiarContrasenaModel.InputModel
+        {
+            ContrasenaActual = ContrasenaValida,
+            ContrasenaNueva = ContrasenaValida,
+            ConfirmarContrasenaNueva = ContrasenaValida
+        };
+
+        var resultado = await pagina.OnPostAsync();
+
+        Assert.IsType<PageResult>(resultado);
+        var error = Assert.Single(pagina.ModelState["Input.ContrasenaNueva"]!.Errors);
+        Assert.Equal("La contraseña nueva debe ser distinta de la actual.", error.ErrorMessage);
+        Assert.True(await um.CheckPasswordAsync(usuario, ContrasenaValida));
+    }
+
+    [Theory]
+    [InlineData("abc12", "La contraseña debe tener al menos 6 caracteres.")]
+    [InlineData("ABCDEF1", "La contraseña debe tener al menos una letra minúscula (a-z).")]
+    [InlineData("abcdefg", "La contraseña debe tener al menos un número (0-9).")]
+    public async Task CambiarContrasena_ConNuevaQueNoCumpleLaPolitica_MuestraElErrorEnEspanolEnSuCampo(string nueva, string mensaje)
+    {
+        var (pagina, um, usuario, _) = await CrearPaginaConUsuarioAsync();
+        pagina.Input = new CambiarContrasenaModel.InputModel
+        {
+            ContrasenaActual = ContrasenaValida,
+            ContrasenaNueva = nueva,
+            ConfirmarContrasenaNueva = nueva
+        };
+
+        var resultado = await pagina.OnPostAsync();
+
+        Assert.IsType<PageResult>(resultado);
+        Assert.Contains(pagina.ModelState["Input.ContrasenaNueva"]!.Errors, e => e.ErrorMessage == mensaje);
+        Assert.True(await um.CheckPasswordAsync(usuario, ContrasenaValida));
     }
 
     [Theory]

@@ -138,6 +138,8 @@ public class CatalogoIndexViewModel
     public List<TipoBebida> Tipos { get; set; } = [];
 
     public string? BebidaBuscar { get; set; }
+    public string? BebidaTipo { get; set; }
+    public List<TipoBebida> TiposFiltro { get; set; } = [];
     public bool BebidaIncluirInactivos { get; set; }
     public List<Bebida> Bebidas { get; set; } = [];
 }

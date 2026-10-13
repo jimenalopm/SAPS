@@ -308,6 +308,15 @@
                     <partial name="_Iconos" model="@("buscar icono-sm")" />
                     <input type="search" name="bebQ" value="@Model.BebidaBuscar" class="form-control" placeholder="Buscar bebida..." aria-label="Buscar bebida" />
                 </div>
+                <div>
+                    <select name="bebTipo" class="form-select" aria-label="Filtrar por tipo de bebida">
+                        <option value="">Todos los tipos</option>
+                        @foreach (var tipoFiltro in Model.TiposFiltro)
+                        {
+                            <option value="@tipoFiltro.NombreTipo" selected="@(Model.BebidaTipo == tipoFiltro.NombreTipo)">@tipoFiltro.NombreTipo@(tipoFiltro.Activo ? "" : " (inactivo)")</option>
+                        }
+                    </select>
+                </div>
                 <div class="form-check">
                     <input type="checkbox" name="bebInc" value="true" data-filtrar-estado class="form-check-input" id="bebInc" checked="@Model.BebidaIncluirInactivos" />
                     <label class="form-check-label" for="bebInc">Mostrar inactivas</label>

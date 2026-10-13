@@ -20,15 +20,18 @@ namespace SAPS.Web.Migrations
 
             // HU-007: los tamaños que ya existen reciben su posición de menor a mayor.
             // Pequeño = 1, Mediano = 2, Grande = 3; el resto (600ml, 1L...) queda después, por orden de creación.
+            // Va dentro de EXEC: en el script SQL la columna nueva y este UPDATE quedan en el mismo lote
+            // y, sin EXEC, SQL Server falla con "Invalid column name 'Orden'" al compilar el lote.
             migrationBuilder.Sql(@"
+EXEC(N'
 UPDATE soda.tb_Tamano
 SET Orden = CASE
-        WHEN Nombre LIKE 'Peque%' THEN 1
-        WHEN Nombre = 'Mediano'   THEN 2
-        WHEN Nombre = 'Grande'    THEN 3
+        WHEN Nombre LIKE ''Peque%'' THEN 1
+        WHEN Nombre = ''Mediano''   THEN 2
+        WHEN Nombre = ''Grande''    THEN 3
         ELSE 3 + idTamano
     END
-WHERE Orden = 0;");
+WHERE Orden = 0;');");
         }
 
         /// <inheritdoc />

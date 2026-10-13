@@ -57,9 +57,9 @@ public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores cola
         // Mantiene los precios y estados consultados estables hasta guardar todo el pedido.
         await using var transaccion = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var catalogo = (await CatalogoAsync(ct)).ToDictionary(a => a.Clave);
-        // El tipo es una categoría de comida vigente del catálogo o uno de los tipos de bebida.
+        // El tipo es una categoría de comida o un tipo de bebida con al menos un artículo vigente del catálogo.
         var tipoComida = solicitud.TipoComida.Trim();
-        if (!ServicioLimites.TiposBebida.Contains(tipoComida) && !catalogo.Values.Any(a => a.Categoria == tipoComida))
+        if (!catalogo.Values.Any(a => a.Categoria == tipoComida))
             throw new PedidoInvalidoException("El tipo de comida no es una categoría disponible del catálogo. Actualice el catálogo y seleccione otro.");
         var pedido = new Pedido
         {

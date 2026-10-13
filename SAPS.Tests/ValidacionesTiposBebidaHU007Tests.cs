@@ -30,14 +30,14 @@ public class ValidacionesTiposBebidaHU007Tests
 
         var nombres = await db.TiposBebida.Select(t => t.NombreTipo).OrderBy(n => n).ToListAsync();
 
-        Assert.Equal(new[] { "Embotellada", "Energizante", "Gaseosa", "Jugo" }, nombres);
+        Assert.Equal(new[] { "Energizante", "Frescos", "Gaseosa", "Tés y refrescos" }, nombres);
     }
 
     // ---------- Nombre ----------
 
     [Theory]
     [InlineData("Café frío")]
-    [InlineData("Jugo")]
+    [InlineData("Frescos")]
     [InlineData("Té frío")]
     public void NombreTipo_Valido_NoGeneraErrores(string nombre) =>
         Assert.Empty(Validar(new TipoBebidaFormViewModel { NombreTipo = nombre }));
@@ -47,7 +47,7 @@ public class ValidacionesTiposBebidaHU007Tests
     [InlineData("   ")]
     [InlineData("Té")]
     [InlineData("123")]
-    [InlineData("Jugo<script>")]
+    [InlineData("Frescos<script>")]
     [InlineData("Un nombre de tipo demasiado largo")]
     public void NombreTipo_Invalido_SeRechaza(string nombre) =>
         Assert.NotEmpty(Validar(new TipoBebidaFormViewModel { NombreTipo = nombre }));
@@ -87,27 +87,27 @@ public class ValidacionesTiposBebidaHU007Tests
     public async Task EditarTipoBebida_CambiarNombre_ActualizaLasBebidasQueLoUsan()
     {
         await using var db = TestServices.CrearContextoInMemory();
-        db.Bebidas.Add(new Bebida { NombreBebida = "Naranjada", TipoBebida = "Jugo", Precio = 800 });
+        db.Bebidas.Add(new Bebida { NombreBebida = "Naranjada", TipoBebida = "Frescos", Precio = 800 });
         await db.SaveChangesAsync();
-        var jugo = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Jugo");
+        var frescos = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Frescos");
 
         var resultado = await Controlador(db).EditarTipoBebida(new TipoBebidaFormViewModel
         {
-            IdTipoBebida = jugo.IdTipoBebida, NombreTipo = "Jugo natural",
+            IdTipoBebida = frescos.IdTipoBebida, NombreTipo = "Frescos naturales",
         });
 
         Assert.IsType<RedirectToActionResult>(resultado);
-        Assert.Equal("Jugo natural", (await db.Bebidas.AsNoTracking().SingleAsync()).TipoBebida);
+        Assert.Equal("Frescos naturales", (await db.Bebidas.AsNoTracking().SingleAsync()).TipoBebida);
     }
 
     [Fact]
     public async Task EditarTipoBebida_NombreDeOtroTipo_SeRechaza()
     {
         await using var db = TestServices.CrearContextoInMemory();
-        var jugo = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Jugo");
+        var frescos = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Frescos");
         var c = Controlador(db);
 
-        var resultado = await c.EditarTipoBebida(new TipoBebidaFormViewModel { IdTipoBebida = jugo.IdTipoBebida, NombreTipo = "Gaseosa" });
+        var resultado = await c.EditarTipoBebida(new TipoBebidaFormViewModel { IdTipoBebida = frescos.IdTipoBebida, NombreTipo = "Gaseosa" });
 
         Assert.IsType<ViewResult>(resultado);
         Assert.True(c.ModelState.ContainsKey(nameof(TipoBebidaFormViewModel.NombreTipo)));
@@ -119,14 +119,14 @@ public class ValidacionesTiposBebidaHU007Tests
     public async Task CambiarEstadoTipoBebida_ConBebidasActivas_NoSeDesactiva()
     {
         await using var db = TestServices.CrearContextoInMemory();
-        db.Bebidas.Add(new Bebida { NombreBebida = "Naranjada", TipoBebida = "Jugo", Precio = 800 });
+        db.Bebidas.Add(new Bebida { NombreBebida = "Naranjada", TipoBebida = "Frescos", Precio = 800 });
         await db.SaveChangesAsync();
-        var jugo = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Jugo");
+        var frescos = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Frescos");
         var c = Controlador(db);
 
-        await c.CambiarEstadoTipoBebida(jugo.IdTipoBebida);
+        await c.CambiarEstadoTipoBebida(frescos.IdTipoBebida);
 
-        Assert.True((await db.TiposBebida.AsNoTracking().SingleAsync(t => t.NombreTipo == "Jugo")).Activo);
+        Assert.True((await db.TiposBebida.AsNoTracking().SingleAsync(t => t.NombreTipo == "Frescos")).Activo);
         Assert.NotNull(c.TempData["Error"]);
     }
 
@@ -134,20 +134,20 @@ public class ValidacionesTiposBebidaHU007Tests
     public async Task CambiarEstadoTipoBebida_SinBebidasActivas_SiSeDesactiva()
     {
         await using var db = TestServices.CrearContextoInMemory();
-        var jugo = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Jugo");
+        var frescos = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Frescos");
 
-        await Controlador(db).CambiarEstadoTipoBebida(jugo.IdTipoBebida);
+        await Controlador(db).CambiarEstadoTipoBebida(frescos.IdTipoBebida);
 
-        Assert.False((await db.TiposBebida.AsNoTracking().SingleAsync(t => t.NombreTipo == "Jugo")).Activo);
+        Assert.False((await db.TiposBebida.AsNoTracking().SingleAsync(t => t.NombreTipo == "Frescos")).Activo);
     }
 
     [Fact]
     public async Task CambiarEstadoBebida_ActivarConTipoInactivo_NoSeActiva()
     {
         await using var db = TestServices.CrearContextoInMemory();
-        var jugo = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Jugo");
-        jugo.Activo = false;
-        var beb = new Bebida { NombreBebida = "Naranjada", TipoBebida = "Jugo", Precio = 800, Activo = false };
+        var frescos = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Frescos");
+        frescos.Activo = false;
+        var beb = new Bebida { NombreBebida = "Naranjada", TipoBebida = "Frescos", Precio = 800, Activo = false };
         db.Bebidas.Add(beb);
         await db.SaveChangesAsync();
         var c = Controlador(db);
@@ -164,12 +164,12 @@ public class ValidacionesTiposBebidaHU007Tests
     public async Task CrearBebida_ConTipoInactivo_SeRechaza()
     {
         await using var db = TestServices.CrearContextoInMemory();
-        var jugo = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Jugo");
-        jugo.Activo = false;
+        var frescos = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Frescos");
+        frescos.Activo = false;
         await db.SaveChangesAsync();
         var c = Controlador(db);
 
-        var resultado = await c.CrearBebida(new BebidaFormViewModel { NombreBebida = "Naranjada", TipoBebida = "Jugo", Precio = 800 });
+        var resultado = await c.CrearBebida(new BebidaFormViewModel { NombreBebida = "Naranjada", TipoBebida = "Frescos", Precio = 800 });
 
         Assert.IsType<ViewResult>(resultado);
         Assert.True(c.ModelState.ContainsKey(nameof(BebidaFormViewModel.TipoBebida)));
@@ -180,15 +180,15 @@ public class ValidacionesTiposBebidaHU007Tests
     public async Task EditarBebida_ConservaSuTipoAunqueEsteInactivo()
     {
         await using var db = TestServices.CrearContextoInMemory();
-        var beb = new Bebida { NombreBebida = "Naranjada", TipoBebida = "Jugo", Precio = 800 };
+        var beb = new Bebida { NombreBebida = "Naranjada", TipoBebida = "Frescos", Precio = 800 };
         db.Bebidas.Add(beb);
-        var jugo = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Jugo");
-        jugo.Activo = false;
+        var frescos = await db.TiposBebida.SingleAsync(t => t.NombreTipo == "Frescos");
+        frescos.Activo = false;
         await db.SaveChangesAsync();
 
         var resultado = await Controlador(db).EditarBebida(new BebidaFormViewModel
         {
-            IdBebida = beb.IdBebida, NombreBebida = "Naranjada", TipoBebida = "Jugo", Precio = 900,
+            IdBebida = beb.IdBebida, NombreBebida = "Naranjada", TipoBebida = "Frescos", Precio = 900,
         });
 
         Assert.IsType<RedirectToActionResult>(resultado);

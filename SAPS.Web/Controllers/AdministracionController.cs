@@ -20,7 +20,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         string? catQ = null, bool catInc = false,
         string? tamQ = null, bool tamInc = false,
         string? prodQ = null, bool prodInc = false, int? prodCat = null,
-        string? bebQ = null, bool bebInc = false,
+        string? bebQ = null, bool bebInc = false, string? bebTipo = null,
         string? tipoQ = null, bool tipoInc = false)
     {
         // Los textos de búsqueda se normalizan igual que los nombres guardados.
@@ -41,6 +41,7 @@ public class AdministracionController(ApplicationDbContext db) : Controller
             ProductoCategoria = prodCat,
             ProductoIncluirInactivos = prodInc,
             BebidaBuscar = bebQ,
+            BebidaTipo = bebTipo,
             BebidaIncluirInactivos = bebInc,
             TipoBuscar = tipoQ,
             TipoIncluirInactivos = tipoInc,
@@ -64,7 +65,12 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         productos = productos.Where(p => p.Activo == !prodInc);
         if (!string.IsNullOrWhiteSpace(prodQ)) productos = productos.Where(p => p.NombreProducto.Contains(prodQ));
         if (prodCat.HasValue) productos = productos.Where(p => p.IdCategoria == prodCat.Value);
-        vm.CategoriasFiltro = await db.Categorias.AsNoTracking().OrderBy(c => c.NombreCategoria).ToListAsync();
+        // Solo categorías con productos: una como "Fresco" (que únicamente define tamaños de bebida) filtraría una lista vacía.
+        // Si la categoría elegida quedara sin productos se mantiene en la lista para que el filtro no pierda su selección.
+        vm.CategoriasFiltro = await db.Categorias.AsNoTracking()
+            .Where(c => db.Productos.Any(p => p.IdCategoria == c.IdCategoria) || c.IdCategoria == prodCat)
+            .OrderBy(c => c.NombreCategoria)
+            .ToListAsync();
         vm.Productos = await productos.OrderBy(p => p.NombreProducto).ToListAsync();
 
         var tipos = db.TiposBebida.AsQueryable();
@@ -75,6 +81,8 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         var bebidas = db.Bebidas.Include(b => b.Tamano).AsQueryable();
         bebidas = bebidas.Where(b => b.Activo == !bebInc);
         if (!string.IsNullOrWhiteSpace(bebQ)) bebidas = bebidas.Where(b => b.NombreBebida.Contains(bebQ));
+        if (!string.IsNullOrWhiteSpace(bebTipo)) bebidas = bebidas.Where(b => b.TipoBebida == bebTipo);
+        vm.TiposFiltro = await db.TiposBebida.AsNoTracking().OrderBy(t => t.NombreTipo).ToListAsync();
         vm.Bebidas = await bebidas.OrderBy(b => b.NombreBebida).ToListAsync();
 
         return View(vm);

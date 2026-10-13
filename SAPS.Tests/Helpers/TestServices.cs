@@ -28,6 +28,7 @@ public static class TestServices
         services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(dbName));
 
         services.AddIdentity<IdentityUser, IdentityRole>(IdentityConfig.Configurar)
+                .AddErrorDescriber<IdentityErrorDescriberEs>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 

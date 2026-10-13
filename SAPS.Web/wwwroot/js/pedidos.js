@@ -74,13 +74,11 @@
         nivelAviso = nivel;
         return total;
     }
-    const TIPOS_BEBIDA = ['Gaseosa', 'Embotellada', 'Energizante', 'Jugo'];
     const grupoActual = () => app.querySelector('input[name="grupo-pedido"]:checked')?.value || 'Comida';
     function pintarTipos() {
         const select = byId('tipo-comida'), anterior = select.value, grupo = grupoActual();
-        const categorias = grupo === 'Bebida'
-            ? [...new Set([...TIPOS_BEBIDA, ...catalogo.filter(a => a.grupo === 'Bebida').map(a => a.categoria)])]
-            : [...new Set(catalogo.filter(a => a.grupo === 'Comida').map(a => a.categoria))];
+        // Los tipos salen del catálogo (categorías de comida o tipos de bebida con artículos vigentes).
+        const categorias = [...new Set(catalogo.filter(a => a.grupo === grupo).map(a => a.categoria))];
         byId('etiqueta-tipo').textContent = grupo === 'Bebida' ? 'Tipo de bebida' : 'Tipo de comida';
         byId('etiqueta-articulo').textContent = grupo === 'Bebida' ? 'Bebida' : 'Producto o adicional';
         select.replaceChildren(new Option('Seleccione…', ''), ...categorias.map(c => new Option(c, c)));

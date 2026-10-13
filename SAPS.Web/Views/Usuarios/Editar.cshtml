@@ -1,0 +1,70 @@
+@model SAPS.Web.Models.Identity.EditarUsuarioViewModel
+@{ ViewData["Title"] = "Editar cuenta"; }
+
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador"></span><a asp-action="Index">Usuarios</a>
+    <span class="separador actual" aria-current="page">Editar cuenta</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Editar cuenta</h1>
+        <p>Cambia el correo, el rol o el colaborador de RRHH de esta cuenta. La contraseña no se modifica aquí.</p>
+    </div>
+</div>
+
+<form asp-action="Editar" method="post" data-bloquear-envio class="form-card form-card-estrecho">
+    <div asp-validation-summary="ModelOnly" class="alerta-error-recyplast" role="alert"></div>
+    <input type="hidden" asp-for="Id" />
+
+    <section aria-labelledby="titulo-info">
+        <h2 class="form-card-titulo" id="titulo-info">Datos de acceso</h2>
+        <div class="mb-1">
+            <label asp-for="Correo" class="form-label">Correo de empleado <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <input asp-for="Correo" class="form-control" autofocus autocomplete="off" placeholder="nombre@recyplast.cr" />
+            <span asp-validation-for="Correo" class="text-danger small"></span>
+        </div>
+        <div class="mb-1">
+            <label asp-for="Rol" class="form-label">Rol <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <select asp-for="Rol" class="form-select" disabled="@Model.EsCuentaPropia">
+                <option value="">Seleccioná un rol...</option>
+                @foreach (var rol in SAPS.Web.Models.Identity.CrearUsuarioViewModel.RolesDisponibles)
+                {
+                    <option value="@rol">@rol</option>
+                }
+            </select>
+            @if (Model.EsCuentaPropia)
+            {
+                @* Un <select disabled> no se envía: se manda el rol actual aparte para no perderlo. *@
+                <input type="hidden" name="Rol" value="@Model.Rol" />
+                <p class="form-text">No podés cambiar el rol de tu propia cuenta.</p>
+            }
+            <span asp-validation-for="Rol" class="text-danger small"></span>
+        </div>
+    </section>
+
+    <section aria-labelledby="titulo-colaborador">
+        <h2 class="form-card-titulo" id="titulo-colaborador">Colaborador de RRHH</h2>
+        <div class="mb-1">
+            <label asp-for="IdColaborador" class="form-label">A qué colaborador pertenece esta cuenta <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <select asp-for="IdColaborador" class="form-select">
+                <option value="">Seleccioná un colaborador activo...</option>
+                @foreach (var c in Model.ColaboradoresDisponibles)
+                {
+                    <option value="@c.IdColaborador">@c.Codigo — @c.NombreCompleto</option>
+                }
+            </select>
+            <span asp-validation-for="IdColaborador" class="text-danger small"></span>
+        </div>
+    </section>
+
+    <div class="form-acciones">
+        <a asp-action="Index" class="btn btn-recyplast-outline">Cancelar</a>
+        <button type="submit" class="btn btn-recyplast" data-texto-procesando="Guardando...">Guardar cambios</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

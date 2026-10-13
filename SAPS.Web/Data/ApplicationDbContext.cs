@@ -173,7 +173,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // ---------- soda.tb_TipoBebida ----------
-        // Los tipos se administran desde el catálogo; estos cuatro son los iniciales.
+        // Los tipos se administran desde el catálogo; estos cuatro son los iniciales (migración TiposBebidaYFrescos).
         builder.Entity<TipoBebida>(entity =>
         {
             entity.ToTable("tb_TipoBebida", EsquemaSoda);
@@ -188,9 +188,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
             entity.HasData(
                 new TipoBebida { IdTipoBebida = 1, NombreTipo = "Gaseosa", Activo = true },
-                new TipoBebida { IdTipoBebida = 2, NombreTipo = "Embotellada", Activo = true },
+                new TipoBebida { IdTipoBebida = 2, NombreTipo = "Tés y refrescos", Activo = true },
                 new TipoBebida { IdTipoBebida = 3, NombreTipo = "Energizante", Activo = true },
-                new TipoBebida { IdTipoBebida = 4, NombreTipo = "Jugo", Activo = true });
+                new TipoBebida { IdTipoBebida = 4, NombreTipo = "Frescos", Activo = true });
         });
 
         // ---------- soda.tb_Bebida ----------

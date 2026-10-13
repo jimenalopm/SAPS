@@ -52,13 +52,16 @@ namespace SAPS.Web.Migrations
                 column: "idTamano");
 
             // HU-007: los tamaños que ningún producto usa (600ml, 1L...) pasan a ser tamaños de bebida.
+            // Va dentro de EXEC por la misma razón que en AgregarOrdenTamano: usa la columna EsParaBebida
+            // recién agregada en el mismo lote del script SQL.
             migrationBuilder.Sql(@"
+EXEC(N'
 UPDATE t
 SET t.EsParaBebida = 1
 FROM soda.tb_Tamano t
-WHERE t.Nombre NOT LIKE 'Peque%'
-  AND t.Nombre NOT IN ('Mediano', 'Grande')
-  AND NOT EXISTS (SELECT 1 FROM soda.tb_Precio p WHERE p.idTamano = t.idTamano);");
+WHERE t.Nombre NOT LIKE ''Peque%''
+  AND t.Nombre NOT IN (''Mediano'', ''Grande'')
+  AND NOT EXISTS (SELECT 1 FROM soda.tb_Precio p WHERE p.idTamano = t.idTamano);');");
 
             // HU-007: cada categoría conserva los tamaños que sus productos ya usan hoy.
             migrationBuilder.Sql(@"

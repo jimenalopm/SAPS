@@ -140,6 +140,144 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
         return RedirectToAction(nameof(Index));
     }
 
+    public async Task<IActionResult> Editar(string id)
+    {
+        var usuario = await userManager.FindByIdAsync(id);
+        if (usuario is null) return NotFound();
+
+        var modelo = new EditarUsuarioViewModel
+        {
+            Id = usuario.Id,
+            Correo = usuario.UserName ?? "",
+            Rol = (await userManager.GetRolesAsync(usuario)).FirstOrDefault() ?? "",
+            IdColaborador = await db.VinculosUsuarioColaborador
+                .Where(v => v.IdUsuario == usuario.Id)
+                .Select(v => (int?)v.IdColaborador)
+                .FirstOrDefaultAsync(),
+            EsCuentaPropia = usuario.Id == User.FindFirstValue(ClaimTypes.NameIdentifier),
+        };
+        await CargarColaboradoresParaEditar(modelo);
+        return View(modelo);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Editar(EditarUsuarioViewModel modelo)
+    {
+        var usuario = await userManager.FindByIdAsync(modelo.Id);
+        if (usuario is null) return NotFound();
+
+        modelo.EsCuentaPropia = usuario.Id == User.FindFirstValue(ClaimTypes.NameIdentifier);
+        await CargarColaboradoresParaEditar(modelo);
+        modelo.Correo = (modelo.Correo ?? "").Trim();
+
+        var rolActual = (await userManager.GetRolesAsync(usuario)).FirstOrDefault();
+        var cambiaRol = !string.Equals(rolActual, modelo.Rol, StringComparison.Ordinal);
+        var idColaboradorActual = await db.VinculosUsuarioColaborador
+            .Where(v => v.IdUsuario == usuario.Id)
+            .Select(v => (int?)v.IdColaborador)
+            .FirstOrDefaultAsync();
+
+        if (!CrearUsuarioViewModel.RolesDisponibles.Contains(modelo.Rol))
+        {
+            ModelState.AddModelError(nameof(modelo.Rol), "Seleccioná un rol válido.");
+        }
+        else if (cambiaRol && modelo.EsCuentaPropia)
+        {
+            ModelState.AddModelError(nameof(modelo.Rol), "No podés cambiar el rol de tu propia cuenta.");
+        }
+        else if (cambiaRol && rolActual == "Administrador" && !await QuedaOtroAdministradorActivoAsync(usuario.Id))
+        {
+            ModelState.AddModelError(nameof(modelo.Rol), "Debe quedar al menos un Administrador activo.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(modelo.Correo))
+        {
+            var existente = await userManager.FindByNameAsync(modelo.Correo);
+            if (existente is not null && existente.Id != usuario.Id)
+            {
+                ModelState.AddModelError(nameof(modelo.Correo), "Ya existe una cuenta con ese correo.");
+            }
+        }
+
+        // Solo se exige un colaborador activo y libre si se cambia: conservar el que ya tiene siempre se permite.
+        if (modelo.IdColaborador is int idColaborador && idColaborador != idColaboradorActual)
+        {
+            var colaborador = await db.Colaboradores.FirstOrDefaultAsync(c => c.IdColaborador == idColaborador);
+            if (colaborador is null || !colaborador.EstaActivo)
+            {
+                ModelState.AddModelError(nameof(modelo.IdColaborador), "Seleccioná un colaborador activo.");
+            }
+            else if (await db.VinculosUsuarioColaborador.AnyAsync(v => v.IdColaborador == idColaborador))
+            {
+                ModelState.AddModelError(nameof(modelo.IdColaborador), "Ese colaborador ya está vinculado a otra cuenta.");
+            }
+        }
+
+        if (!ModelState.IsValid) return View(modelo);
+
+        try
+        {
+            if (!string.Equals(usuario.UserName, modelo.Correo, StringComparison.Ordinal))
+            {
+                var resultadoNombre = await userManager.SetUserNameAsync(usuario, modelo.Correo);
+                if (resultadoNombre.Succeeded) resultadoNombre = await userManager.SetEmailAsync(usuario, modelo.Correo);
+                if (!resultadoNombre.Succeeded) return ErrorDeEdicion(modelo, resultadoNombre);
+            }
+
+            if (cambiaRol)
+            {
+                if (rolActual is not null)
+                {
+                    var quitar = await userManager.RemoveFromRoleAsync(usuario, rolActual);
+                    if (!quitar.Succeeded) return ErrorDeEdicion(modelo, quitar);
+                }
+                var agregar = await userManager.AddToRoleAsync(usuario, modelo.Rol);
+                if (!agregar.Succeeded) return ErrorDeEdicion(modelo, agregar);
+                // Fuerza a que la sesión abierta de la persona se revalide con el rol nuevo.
+                await userManager.UpdateSecurityStampAsync(usuario);
+            }
+
+            if (modelo.IdColaborador is int nuevoColaborador && nuevoColaborador != idColaboradorActual)
+            {
+                var vinculo = await db.VinculosUsuarioColaborador.FirstOrDefaultAsync(v => v.IdUsuario == usuario.Id);
+                if (vinculo is null)
+                {
+                    db.VinculosUsuarioColaborador.Add(new VinculoUsuarioColaborador
+                    {
+                        IdUsuario = usuario.Id,
+                        IdColaborador = nuevoColaborador,
+                        FechaVinculacion = DateTime.UtcNow,
+                    });
+                }
+                else
+                {
+                    vinculo.IdColaborador = nuevoColaborador;
+                    vinculo.FechaVinculacion = DateTime.UtcNow;
+                }
+                await db.SaveChangesAsync();
+            }
+        }
+        catch (DbUpdateException)
+        {
+            ModelState.AddModelError(string.Empty, "No se pudo guardar el cambio. Verificá los datos e intentá de nuevo.");
+            return View(modelo);
+        }
+
+        TempData["Mensaje"] = $"Cuenta \"{modelo.Correo}\" actualizada.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    private IActionResult ErrorDeEdicion(EditarUsuarioViewModel modelo, IdentityResult resultado)
+    {
+        foreach (var error in resultado.Errors)
+            ModelState.AddModelError(string.Empty, error.Description);
+        return View(modelo);
+    }
+
+    private async Task CargarColaboradoresParaEditar(EditarUsuarioViewModel modelo) =>
+        modelo.ColaboradoresDisponibles = await BusquedaColaboradores.BuscarParaEditarAsync(db, modelo.Id);
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Desactivar(string id)

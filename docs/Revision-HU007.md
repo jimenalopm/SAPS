@@ -29,7 +29,7 @@
 - Cada categoría define qué tamaños permite. No se puede quitar de una categoría un tamaño que usan productos activos, ni cambiar el tipo de un tamaño en uso.
 
 ### Tipos de bebida
-- Los tipos de bebida se administran desde la pestaña **Tipos de bebida** del Catálogo: se pueden crear, editar, desactivar y activar sin tocar el código. Quedan cuatro tipos iniciales: Gaseosa, Embotellada, Energizante y Jugo.
+- Los tipos de bebida se administran desde la pestaña **Tipos de bebida** del Catálogo: se pueden crear, editar, desactivar y activar sin tocar el código. Quedan cuatro tipos iniciales: Gaseosa, Tés y refrescos, Energizante y Frescos (antes eran Gaseosa, Embotellada, Energizante y Jugo; ver «Tipos de bebida y frescos»).
 - Nombre del tipo: mismas reglas de nombres (mínimo 3, máximo 20 caracteres, al menos una letra, caracteres permitidos, espacios normalizados) y sin duplicados.
 - Una bebida solo puede usar un tipo existente y activo. Al editar una bebida se conserva su tipo aunque haya quedado inactivo.
 - Si se cambia el nombre de un tipo, las bebidas que lo usan se actualizan con el nombre nuevo.
@@ -44,7 +44,15 @@
 ### Búsqueda y filtro
 - La pestaña Productos tiene filtro por categoría, además de la búsqueda por nombre.
 
+### Tipos de bebida y frescos
+- **Registrar pedido** ya no tiene una lista fija de tipos de bebida: el selector «Tipo de bebida» muestra los tipos del catálogo que tienen al menos una bebida activa con precio vigente, igual que «Tipo de comida» con las categorías. Un tipo nuevo aparece en cuanto tenga una bebida activa.
+- «Embotellada» y «Jugo» se unieron en **Tés y refrescos**. El tipo «Jugo» pasó a llamarse **Frescos**.
+- El fresco con tamaños dejó de ser un producto de la categoría «Fresco»: ahora es la bebida **Frescos naturales** (tipo Frescos) con los tamaños de bebida «Vaso pequeño», «Vaso mediano» y «Vaso grande». La categoría «Fresco» ya no existe y deja de aparecer como tipo de comida. «Almuerzo + vaso fresco» no cambia.
+- El filtro de categorías de Productos solo ofrece categorías con productos, y la pestaña Bebidas se puede filtrar por tipo.
+
 ## Datos anteriores
+
+La migración `TiposBebidaYFrescos` (solo datos, repetible) hace lo anterior en las bases existentes: une los tipos, crea los tamaños de bebida y la bebida «Frescos naturales» con los precios del producto «Fresco», y elimina ese producto y la categoría «Fresco». Si algún pedido ya usó ese fresco, no se elimina: el producto, sus precios y la categoría quedan desactivados para conservar el historial. También está incluida en `db/SAPS_DB_servidor.sql`.
 
 Hay cuatro migraciones nuevas, que se aplican con `dotnet ef database update --project SAPS.Web`:
 - `AgregarOrdenTamano` y `QuitarOrdenTamano`: la columna `Orden` se agregó y luego se eliminó, porque el orden se deduce del nombre.
