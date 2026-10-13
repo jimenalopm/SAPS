@@ -474,7 +474,246 @@ GO
 BEGIN TRANSACTION;
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261009032146_EstadoContrasena'
+    WHERE [MigrationId] = N'20261007181456_AgregarOrdenTamano'
+)
+BEGIN
+    ALTER TABLE [soda].[tb_Tamano] ADD [Orden] int NOT NULL DEFAULT 0;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007181456_AgregarOrdenTamano'
+)
+BEGIN
+
+    UPDATE soda.tb_Tamano
+    SET Orden = CASE
+            WHEN Nombre LIKE 'Peque%' THEN 1
+            WHEN Nombre = 'Mediano'   THEN 2
+            WHEN Nombre = 'Grande'    THEN 3
+            ELSE 3 + idTamano
+        END
+    WHERE Orden = 0;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007181456_AgregarOrdenTamano'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261007181456_AgregarOrdenTamano', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007183019_TamanosPorCategoria'
+)
+BEGIN
+    ALTER TABLE [soda].[tb_Tamano] ADD [EsParaBebida] bit NOT NULL DEFAULT CAST(0 AS bit);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007183019_TamanosPorCategoria'
+)
+BEGIN
+    CREATE TABLE [soda].[tb_CategoriaTamano] (
+        [idCategoria] int NOT NULL,
+        [idTamano] int NOT NULL,
+        CONSTRAINT [PK_CategoriaTamano] PRIMARY KEY ([idCategoria], [idTamano]),
+        CONSTRAINT [FK_CategoriaTamano_Categoria] FOREIGN KEY ([idCategoria]) REFERENCES [soda].[tb_Categoria] ([idCategoria]) ON DELETE CASCADE,
+        CONSTRAINT [FK_CategoriaTamano_Tamano] FOREIGN KEY ([idTamano]) REFERENCES [soda].[tb_Tamano] ([idTamano]) ON DELETE CASCADE
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007183019_TamanosPorCategoria'
+)
+BEGIN
+    CREATE INDEX [IX_CategoriaTamano_idTamano] ON [soda].[tb_CategoriaTamano] ([idTamano]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007183019_TamanosPorCategoria'
+)
+BEGIN
+
+    UPDATE t
+    SET t.EsParaBebida = 1
+    FROM soda.tb_Tamano t
+    WHERE t.Nombre NOT LIKE 'Peque%'
+      AND t.Nombre NOT IN ('Mediano', 'Grande')
+      AND NOT EXISTS (SELECT 1 FROM soda.tb_Precio p WHERE p.idTamano = t.idTamano);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007183019_TamanosPorCategoria'
+)
+BEGIN
+
+    INSERT INTO soda.tb_CategoriaTamano (idCategoria, idTamano)
+    SELECT DISTINCT pr.idCategoria, p.idTamano
+    FROM soda.tb_Precio p
+    JOIN soda.tb_Producto pr ON pr.idProducto = p.idProducto
+    WHERE p.idTamano IS NOT NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007183019_TamanosPorCategoria'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261007183019_TamanosPorCategoria', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007184230_QuitarOrdenTamano'
+)
+BEGIN
+    DECLARE @var nvarchar(max);
+    SELECT @var = QUOTENAME([d].[name])
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[soda].[tb_Tamano]') AND [c].[name] = N'Orden');
+    IF @var IS NOT NULL EXEC(N'ALTER TABLE [soda].[tb_Tamano] DROP CONSTRAINT ' + @var + ';');
+    ALTER TABLE [soda].[tb_Tamano] DROP COLUMN [Orden];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261007184230_QuitarOrdenTamano'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261007184230_QuitarOrdenTamano', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009120000_TiposDeBebida'
+)
+BEGIN
+    ALTER TABLE [soda].[tb_Bebida] DROP CONSTRAINT [CK_Bebida_Tipo];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009120000_TiposDeBebida'
+)
+BEGIN
+    CREATE TABLE [soda].[tb_TipoBebida] (
+        [idTipoBebida] int NOT NULL IDENTITY,
+        [Nombre] varchar(20) NOT NULL,
+        [EstaActivo] bit NOT NULL DEFAULT CAST(1 AS bit),
+        CONSTRAINT [PK_TipoBebida] PRIMARY KEY ([idTipoBebida])
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009120000_TiposDeBebida'
+)
+BEGIN
+    IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'idTipoBebida', N'Nombre') AND [object_id] = OBJECT_ID(N'[soda].[tb_TipoBebida]'))
+        SET IDENTITY_INSERT [soda].[tb_TipoBebida] ON;
+    EXEC(N'INSERT INTO [soda].[tb_TipoBebida] ([idTipoBebida], [Nombre])
+    VALUES (1, ''Gaseosa''),
+    (2, ''Embotellada''),
+    (3, ''Energizante''),
+    (4, ''Jugo'')');
+    IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'idTipoBebida', N'Nombre') AND [object_id] = OBJECT_ID(N'[soda].[tb_TipoBebida]'))
+        SET IDENTITY_INSERT [soda].[tb_TipoBebida] OFF;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009120000_TiposDeBebida'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [UQ_TipoBebida_Nombre] ON [soda].[tb_TipoBebida] ([Nombre]) WHERE [Nombre] IS NOT NULL');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009120000_TiposDeBebida'
+)
+BEGIN
+
+    INSERT INTO soda.tb_TipoBebida (Nombre, EstaActivo)
+    SELECT DISTINCT b.Tipo, 1
+    FROM soda.tb_Bebida b
+    WHERE NOT EXISTS (SELECT 1 FROM soda.tb_TipoBebida t WHERE t.Nombre = b.Tipo);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009120000_TiposDeBebida'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261009120000_TiposDeBebida', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009230000_TipoComidaDesdeCatalogo'
+)
+BEGIN
+    ALTER TABLE [soda].[tb_Pedido] DROP CONSTRAINT [CK_Pedido_TipoComida];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009230000_TipoComidaDesdeCatalogo'
+)
+BEGIN
+    DECLARE @var1 nvarchar(max);
+    SELECT @var1 = QUOTENAME([d].[name])
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[soda].[tb_Pedido]') AND [c].[name] = N'TipoComida');
+    IF @var1 IS NOT NULL EXEC(N'ALTER TABLE [soda].[tb_Pedido] DROP CONSTRAINT ' + @var1 + ';');
+    ALTER TABLE [soda].[tb_Pedido] ALTER COLUMN [TipoComida] varchar(50) NOT NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261009230000_TipoComidaDesdeCatalogo'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261009230000_TipoComidaDesdeCatalogo', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261013041602_EstadoContrasena'
 )
 BEGIN
     CREATE TABLE [tb_EstadoContrasena] (
@@ -487,11 +726,55 @@ END;
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261009032146_EstadoContrasena'
+    WHERE [MigrationId] = N'20261013041602_EstadoContrasena'
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20261009032146_EstadoContrasena', N'10.0.11');
+    VALUES (N'20261013041602_EstadoContrasena', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261013061613_GestionUsuarios'
+)
+BEGIN
+    ALTER TABLE [tb_EstadoContrasena] ADD [RequiereCambioInicial] bit NOT NULL DEFAULT CAST(0 AS bit);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261013061613_GestionUsuarios'
+)
+BEGIN
+    CREATE TABLE [tb_UsuarioColaborador] (
+        [idUsuario] nvarchar(450) NOT NULL,
+        [idColaborador] int NOT NULL,
+        [FechaVinculacion] datetime2 NOT NULL,
+        CONSTRAINT [PK_UsuarioColaborador] PRIMARY KEY ([idUsuario]),
+        CONSTRAINT [FK_UsuarioColaborador_Colaborador] FOREIGN KEY ([idColaborador]) REFERENCES [rrhh].[tb_Colaborador] ([idColaborador]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_UsuarioColaborador_Usuario] FOREIGN KEY ([idUsuario]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261013061613_GestionUsuarios'
+)
+BEGIN
+    CREATE UNIQUE INDEX [UQ_UsuarioColaborador_idColaborador] ON [tb_UsuarioColaborador] ([idColaborador]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261013061613_GestionUsuarios'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261013061613_GestionUsuarios', N'10.0.11');
 END;
 
 COMMIT;
