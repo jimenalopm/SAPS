@@ -276,15 +276,51 @@ public sealed class HU008_PedidoTests : IDisposable
     [Theory]
     [InlineData("Desayuno")]
     [InlineData("Almuerzo")]
-    [InlineData("Merienda")] // se muestra como "Café"
-    public async Task Registrar_TiposDeComidaPermitidos_SonAceptados(string tipo)
+    [InlineData("Café")]
+    [InlineData("Categoría nueva")]
+    public async Task Registrar_CategoriasDisponibles_SonAceptadas(string tipo)
     {
         var solicitud = Solicitud((P(_precioCasado), 1, 2800));
         solicitud.TipoComida = tipo;
+        _almuerzo.NombreCategoria = tipo;
+        await _db.SaveChangesAsync();
 
         var resultado = await _servicio.RegistrarAsync(solicitud, UsuarioOperadora);
 
         Assert.True(resultado.IdPedido > 0);
+    }
+
+    [Theory]
+    [InlineData(25, true)]
+    [InlineData(40, true)]
+    [InlineData(41, false)]
+    public async Task Registrar_RespetaElTopeDeTotal(int cantidad, bool permitido)
+    {
+        var solicitud = Solicitud((P(_precioFrescoGrande), cantidad, 1000));
+        if (permitido)
+            Assert.Equal(cantidad * 1000, (await _servicio.RegistrarAsync(solicitud, UsuarioOperadora)).Total);
+        else
+        {
+            Assert.Contains("no puede superar", await MensajeDeErrorAsync(solicitud));
+            Assert.Empty(_db.Pedidos);
+        }
+    }
+
+    [Theory]
+    [InlineData(999, true)]
+    [InlineData(1000, false)]
+    public async Task Registrar_CantidadDeTresDigitos(int cantidad, bool permitido)
+    {
+        _precioFrescoGrande.MontoPrecio = 1;
+        await _db.SaveChangesAsync();
+        var solicitud = Solicitud((P(_precioFrescoGrande), cantidad, 1));
+        if (permitido)
+            Assert.Equal(cantidad, (await _servicio.RegistrarAsync(solicitud, UsuarioOperadora)).Total);
+        else
+        {
+            Assert.Contains("999", await MensajeDeErrorAsync(solicitud));
+            Assert.Empty(_db.Pedidos);
+        }
     }
 
     [Fact]
