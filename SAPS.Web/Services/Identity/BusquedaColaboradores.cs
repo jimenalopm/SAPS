@@ -20,4 +20,16 @@ public static class BusquedaColaboradores
             .OrderBy(c => c.NombreCompleto)
             .Select(c => new ColaboradorCandidato(c.IdColaborador, c.Codigo, c.NombreCompleto))
             .ToListAsync(ct);
+
+    /// <summary>
+    /// Para editar una cuenta: los disponibles más el colaborador que ya tiene vinculado
+    /// (aunque hoy esté inactivo, para que el selector pueda mostrarlo y conservarlo).
+    /// </summary>
+    public static async Task<List<ColaboradorCandidato>> BuscarParaEditarAsync(ApplicationDbContext db, string idUsuario, CancellationToken ct = default) =>
+        await db.Colaboradores.AsNoTracking()
+            .Where(c => db.VinculosUsuarioColaborador.Any(v => v.IdUsuario == idUsuario && v.IdColaborador == c.IdColaborador)
+                || (c.EstaActivo && !db.VinculosUsuarioColaborador.Any(v => v.IdColaborador == c.IdColaborador)))
+            .OrderBy(c => c.NombreCompleto)
+            .Select(c => new ColaboradorCandidato(c.IdColaborador, c.Codigo, c.NombreCompleto))
+            .ToListAsync(ct);
 }

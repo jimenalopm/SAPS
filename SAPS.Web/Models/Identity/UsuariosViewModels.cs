@@ -41,3 +41,27 @@ public class CrearUsuarioViewModel
 
     public List<ColaboradorCandidato> ColaboradoresDisponibles { get; set; } = [];
 }
+
+// ---------- Edición ----------
+public class EditarUsuarioViewModel
+{
+    public string Id { get; set; } = "";
+
+    [Required(ErrorMessage = "El correo es obligatorio.")]
+    [EmailAddress(ErrorMessage = "Ingresá un correo válido.")]
+    [Display(Name = "Correo de empleado")]
+    public string Correo { get; set; } = "";
+
+    [Required(ErrorMessage = "Seleccioná un rol.")]
+    public string Rol { get; set; } = "";
+
+    [Required(ErrorMessage = "Seleccioná el colaborador de RRHH al que pertenece esta cuenta.")]
+    [Display(Name = "Colaborador de RRHH")]
+    public int? IdColaborador { get; set; }
+
+    /// <summary>Activos sin cuenta, más el colaborador que esta cuenta ya tiene vinculado.</summary>
+    public List<ColaboradorCandidato> ColaboradoresDisponibles { get; set; } = [];
+
+    /// <summary>Es la cuenta del Administrador que tiene la sesión abierta: no puede cambiarse su propio rol.</summary>
+    public bool EsCuentaPropia { get; set; }
+}

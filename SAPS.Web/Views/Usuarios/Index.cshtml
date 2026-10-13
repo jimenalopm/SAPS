@@ -47,6 +47,7 @@
             <td data-label="Colaborador vinculado">@(u.ColaboradorNombre ?? "—")</td>
             <td data-label="Estado"><span class="badge-recyplast con-punto @clase">@u.Estado</span></td>
             <td class="text-end celda-acciones">
+                <a asp-action="Editar" asp-route-id="@u.Id" class="btn btn-sm btn-outline-secondary me-1" aria-label="Editar la cuenta @u.Correo">Editar</a>
                 @if (u.Estado == "Activa" || u.Estado == "Bloqueada temporalmente")
                 {
                     <form asp-action="Desactivar" asp-route-id="@u.Id" method="post" class="d-inline" data-bloquear-envio
