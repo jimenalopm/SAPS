@@ -15,6 +15,11 @@
             <h1 class="auth-titulo">Bienvenido a SAPS</h1>
             <p class="auth-subtitulo">Inicia sesión para continuar</p>
 
+            @if (Model.ContrasenaActualizada)
+            {
+                <div class="alert alert-recyplast" role="status">Contraseña actualizada. Inicia sesión con tu contraseña nueva.</div>
+            }
+
             <form id="account" method="post" novalidate data-bloquear-envio>
                 <div asp-validation-summary="ModelOnly" class="auth-alerta" role="alert"></div>
 

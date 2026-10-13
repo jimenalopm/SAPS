@@ -64,11 +64,26 @@ public class CambiarContrasenaModel(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return Challenge();
 
+        // La nueva debe ser distinta de la actual; en el primer ingreso, la "actual" es la temporal del Administrador.
+        if (Input.ContrasenaNueva == Input.ContrasenaActual)
+        {
+            ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.ContrasenaNueva)}",
+                "La contraseña nueva debe ser distinta de la actual.");
+            return Page();
+        }
+
         var resultado = await userManager.ChangePasswordAsync(user, Input.ContrasenaActual, Input.ContrasenaNueva);
         if (!resultado.Succeeded)
         {
-            ModelState.AddModelError(string.Empty,
-                "La contraseña actual no es correcta, o la nueva no cumple la política de seguridad (alfanumérica, mínimo 6 caracteres).");
+            // La actual incorrecta se muestra en su campo; las reglas de la nueva (mínimo, minúscula, número)
+            // en el suyo. Los textos salen en español (IdentityErrorDescriberEs).
+            foreach (var error in resultado.Errors)
+            {
+                var campo = error.Code == nameof(IdentityErrorDescriber.PasswordMismatch)
+                    ? nameof(Input.ContrasenaActual)
+                    : nameof(Input.ContrasenaNueva);
+                ModelState.AddModelError($"{nameof(Input)}.{campo}", error.Description);
+            }
             return Page();
         }
 
@@ -85,11 +100,17 @@ public class CambiarContrasenaModel(
         }
         await context.SaveChangesAsync();
 
-        await signInManager.RefreshSignInAsync(user);
         logger.LogInformation("User changed their password.");
 
-        if (Obligatorio) return LocalRedirect("~/");
+        if (Obligatorio)
+        {
+            // Cambio obligatorio: se cierra la sesión (y con ella cualquier cookie "recordada" abierta
+            // con la contraseña temporal) y se pide iniciar sesión con la contraseña nueva.
+            await signInManager.SignOutAsync();
+            return RedirectToPage("./Login", new { contrasenaActualizada = true });
+        }
 
+        await signInManager.RefreshSignInAsync(user);
         Mensaje = "Contraseña actualizada correctamente.";
         return RedirectToPage();
     }

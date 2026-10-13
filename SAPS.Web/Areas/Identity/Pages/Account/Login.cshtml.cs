@@ -49,8 +49,22 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
         [BindProperty(SupportsGet = true)]
         public bool ColaboradorInactivo { get; set; }
 
+        // Se llega con ?bloqueoTemporal=true cuando el middleware cierra la sesión por 5 intentos fallidos.
+        [BindProperty(SupportsGet = true)]
+        public bool BloqueoTemporal { get; set; }
+
+        // Se llega con ?contrasenaActualizada=true tras el cambio obligatorio de contraseña.
+        [BindProperty(SupportsGet = true)]
+        public bool ContrasenaActualizada { get; set; }
+
         private const string MensajeColaboradorInactivo =
             "Tu perfil de colaborador está inactivo. Comunicate con Recursos Humanos o el administrador.";
+
+        public const string MensajeCuentaDesactivada =
+            "Tu cuenta fue desactivada por el administrador. Comunícate con el administrador del sistema.";
+
+        public const string MensajeBloqueoTemporal =
+            "Tu cuenta está bloqueada temporalmente por demasiados intentos fallidos. Inténtalo de nuevo más tarde o comunícate con el administrador.";
 
         public class InputModel
         {
@@ -74,7 +88,11 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
             }
             if (AccesoRevocado)
             {
-                ModelState.AddModelError(string.Empty, "Tu acceso fue desactivado. Comunicate con el administrador.");
+                ModelState.AddModelError(string.Empty, MensajeCuentaDesactivada);
+            }
+            if (BloqueoTemporal)
+            {
+                ModelState.AddModelError(string.Empty, MensajeBloqueoTemporal);
             }
             if (ColaboradorInactivo)
             {
@@ -120,6 +138,15 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                         return Page();
                     }
 
+                    // Con la contraseña temporal no se deja una sesión recordada: solo sirve para
+                    // llegar al cambio obligatorio (el middleware no permite nada más hasta hacerlo).
+                    var debeCambiarla = user is not null
+                        && await _db.EstadosContrasena.AnyAsync(e => e.IdUsuario == user.Id && e.RequiereCambioInicial);
+                    if (debeCambiarla && Input.RememberMe)
+                    {
+                        await _signInManager.SignInAsync(user, isPersistent: false);
+                    }
+
                     _logger.LogInformation("User logged in.");
                     return LocalRedirect(returnUrl);
                 }
@@ -129,6 +156,17 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                 }
                 if (result.IsLockedOut)
                 {
+                    // Cuenta desactivada por el administrador (LockoutEnd = MaxValue) ≠ bloqueo temporal
+                    // por 5 intentos fallidos: son motivos distintos y llevan mensajes distintos.
+                    var bloqueada = await _signInManager.UserManager.FindByNameAsync(Input.CodigoEmpleado);
+                    if (bloqueada is not null
+                        && await _signInManager.UserManager.GetLockoutEndDateAsync(bloqueada) == DateTimeOffset.MaxValue)
+                    {
+                        _logger.LogWarning("Login rejected: account deactivated by an administrator.");
+                        ModelState.AddModelError(string.Empty, MensajeCuentaDesactivada);
+                        return Page();
+                    }
+
                     _logger.LogWarning("User account locked out.");
                     return RedirectToPage("./Lockout");
                 }

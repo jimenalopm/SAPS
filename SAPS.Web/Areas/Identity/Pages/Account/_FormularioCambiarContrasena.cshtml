@@ -1,0 +1,34 @@
+@model CambiarContrasenaModel
+
+<form method="post" novalidate data-bloquear-envio class="@(Model.Obligatorio ? "" : "card-recyplast formulario-estrecho")">
+    <div asp-validation-summary="ModelOnly" class="auth-alerta" role="alert"></div>
+    <input type="hidden" asp-for="Obligatorio" />
+    <input type="hidden" asp-for="Motivo" />
+
+    <div class="mb-3">
+        <label asp-for="Input.ContrasenaActual" class="form-label">@(Model.Obligatorio && Model.Motivo == "primerIngreso" ? "Contraseña temporal" : "Contraseña actual")</label>
+        <input asp-for="Input.ContrasenaActual" class="form-control" autocomplete="current-password" aria-required="true" />
+        <span asp-validation-for="Input.ContrasenaActual" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.ContrasenaNueva" class="form-label"></label>
+        <input asp-for="Input.ContrasenaNueva" class="form-control" autocomplete="new-password" aria-required="true" aria-describedby="ayuda-contrasena-nueva" />
+        <span asp-validation-for="Input.ContrasenaNueva" class="text-danger small"></span>
+        <p class="form-text" id="ayuda-contrasena-nueva">Mínimo @SAPS.Web.Data.IdentityConfig.LongitudMinimaContrasena caracteres, con al menos una letra minúscula y un número. Debe ser distinta de la actual.</p>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.ConfirmarContrasenaNueva" class="form-label"></label>
+        <input asp-for="Input.ConfirmarContrasenaNueva" class="form-control" autocomplete="new-password" aria-required="true" />
+        <span asp-validation-for="Input.ConfirmarContrasenaNueva" class="text-danger small"></span>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-recyplast @(Model.Obligatorio ? "btn-lg w-100" : "")" data-texto-procesando="Guardando...">@(Model.Obligatorio ? "Guardar contraseña" : "Cambiar contraseña")</button>
+        @if (!Model.Obligatorio)
+        {
+            <a class="btn btn-recyplast-outline" asp-controller="Home" asp-action="Index">Cancelar</a>
+        }
+    </div>
+</form>

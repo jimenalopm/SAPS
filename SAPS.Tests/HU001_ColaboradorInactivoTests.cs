@@ -125,7 +125,8 @@ public class HU001_ColaboradorInactivoTests
         var dejoPasar = await EjecutarAsync(db, http);
 
         Assert.False(dejoPasar);
-        Assert.Equal("/Identity/Account/Login?accesoRevocado=true", http.Response.Headers.Location.ToString());
+        // Bloqueo por intentos fallidos: mensaje propio, distinto al de "desactivada por el administrador".
+        Assert.Equal("/Identity/Account/Login?bloqueoTemporal=true", http.Response.Headers.Location.ToString());
     }
 
     [Fact]
@@ -281,7 +282,8 @@ public class HU001_ColaboradorInactivoTests
 
         var resultado = await pagina.OnPostAsync();
 
-        Assert.IsType<LocalRedirectResult>(resultado);
+        // Cambio obligatorio: se cierra la sesión y se vuelve al login a entrar con la contraseña nueva.
+        Assert.Equal("./Login", Assert.IsType<RedirectToPageResult>(resultado).PageName);
         var estado = await db.EstadosContrasena.SingleAsync(e => e.IdUsuario == usuario.Id);
         Assert.False(estado.RequiereCambioInicial);
     }

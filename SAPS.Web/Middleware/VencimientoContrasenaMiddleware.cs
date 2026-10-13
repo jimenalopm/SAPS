@@ -75,9 +75,14 @@ public sealed class VencimientoContrasenaMiddleware(RequestDelegate siguiente)
         if (accesoRevocado || colaboradorInactivo)
         {
             await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-            context.Response.Redirect(accesoRevocado
-                ? "/Identity/Account/Login?accesoRevocado=true"
-                : "/Identity/Account/Login?colaboradorInactivo=true");
+            // Desactivada por el administrador (LockoutEnd = MaxValue) y bloqueo transitorio por intentos
+            // fallidos son motivos distintos: cada uno tiene su mensaje en el login.
+            var desactivadaPorAdmin = cuenta?.LockoutEnd == DateTimeOffset.MaxValue;
+            context.Response.Redirect(!accesoRevocado
+                ? "/Identity/Account/Login?colaboradorInactivo=true"
+                : desactivadaPorAdmin
+                    ? "/Identity/Account/Login?accesoRevocado=true"
+                    : "/Identity/Account/Login?bloqueoTemporal=true");
             return;
         }
 

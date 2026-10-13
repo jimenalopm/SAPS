@@ -565,6 +565,7 @@ body { margin-bottom: 0; }
 
 /* ---------- 19. Fase 10B: formularios de catálogo y objetivos táctiles ---------- */
 .form-card-estrecho { max-width: 560px; }
+.formulario-estrecho { max-width: 420px; }
 .btn-menu-movil { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
 @media (max-width: 767.98px) {
   .tabla-apilable tbody td.celda-acciones .btn { min-height: 44px; }
