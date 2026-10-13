@@ -11,3 +11,7 @@ TestResults/
 
 # Archivos generados con datos reales de colaboradores (repo público: NO commitear)
 datos-locales/
+
+# Pruebas funcionales (Selenium): capturas y reportes pueden contener datos reales; NO commitear
+SAPS.FunctionalTests/Evidencias/
+SAPS.FunctionalTests/Reportes/

@@ -122,3 +122,13 @@ Mientras no exista la pantalla, RH da de baja o de alta con estas consultas:
 UPDATE rrhh.tb_Colaborador SET EstaActivo = 0 WHERE Codigo = '0000000XXX';  -- baja
 UPDATE rrhh.tb_Colaborador SET EstaActivo = 1 WHERE Codigo = '0000000XXX';  -- alta
 ```
+
+## 10. Ejecutar las pruebas
+
+La solución tiene dos proyectos de pruebas. Corra cada uno por su ruta, **no** `dotnet test` a secas, porque así también se abrirían las pruebas de navegador:
+
+```powershell
+dotnet test SAPS.Tests              # pruebas unitarias: rápidas, no necesitan la app ni Docker
+```
+
+Las pruebas funcionales (Selenium, `SAPS.FunctionalTests`) manejan Chrome contra la app en ejecución y **escriben datos de prueba** (productos `ZZ-SELENIUM-*` y pedidos de `DEMO001`). Antes de correrlas lea `SAPS.FunctionalTests/README.md` (variables de entorno, limpieza y qué escribe cada una).
