@@ -13,4 +13,7 @@ public class Categoria
     public bool Activo { get; set; } = true;
 
     public ICollection<Producto> Productos { get; set; } = new List<Producto>();
+
+    /// <summary>Tamaños permitidos para los productos de esta categoría (HU-007).</summary>
+    public ICollection<CategoriaTamano> TamanosPermitidos { get; set; } = new List<CategoriaTamano>();
 }

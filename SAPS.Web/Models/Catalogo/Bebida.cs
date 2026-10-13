@@ -11,7 +11,7 @@ public class Bebida
 
     public required string NombreBebida { get; set; }
 
-    /// <summary>Uno de: Gaseosa, Embotellada, Energizante, Jugo.</summary>
+    /// <summary>Nombre de un tipo de bebida del catálogo (tb_TipoBebida).</summary>
     public required string TipoBebida { get; set; }
 
     public int? IdTamano { get; set; }
