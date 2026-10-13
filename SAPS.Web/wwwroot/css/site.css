@@ -395,7 +395,20 @@ body { margin-bottom: 0; }
 .input-buscar { position: relative; flex: 1 1 220px; max-width: 360px; min-width: 0; }
 .input-buscar .icono { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: var(--rp-gris-texto-suave); pointer-events: none; }
 .input-buscar .form-control { padding-left: 2.4rem; }
-.catalogo-filtros .form-check { margin: 0; }
+/* "Mostrar inactivos/inactivas": casilla con borde verde de marca, toda el área es clicable y al activarse se rellena. */
+.catalogo-filtros .form-check {
+  margin: 0; padding: 0; min-height: 38px;
+  display: inline-flex; align-items: center;
+  border: 1.5px solid var(--rp-verde-oscuro); border-radius: var(--rp-radio-sm);
+  background: var(--rp-blanco);
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+.catalogo-filtros .form-check:hover { background: var(--rp-verde-suave); }
+.catalogo-filtros .form-check:has(.form-check-input:checked) { background: var(--rp-verde-suave); box-shadow: inset 0 0 0 1px var(--rp-verde-oscuro); }
+.catalogo-filtros .form-check:has(.form-check-input:focus-visible) { outline: 2px solid var(--rp-azul-oscuro); outline-offset: 2px; }
+.catalogo-filtros .form-check .form-check-input { float: none; margin: 0 0 0 .75rem; cursor: pointer; border-color: var(--rp-verde-oscuro); }
+.catalogo-filtros .form-check .form-check-input:checked { background-color: var(--rp-verde-oscuro); border-color: var(--rp-verde-oscuro); }
+.catalogo-filtros .form-check .form-check-label { padding: .45rem .85rem .45rem .5rem; cursor: pointer; font-weight: 600; color: var(--rp-gris); user-select: none; }
 .fila-inactiva td { color: var(--rp-gris-texto-suave); }
 .celda-acciones { white-space: nowrap; }
 .celda-acciones .btn { margin-left: .25rem; }
