@@ -531,10 +531,39 @@ namespace SAPS.Web.Migrations
                     b.Property<DateTime>("FechaUltimoCambio")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("RequiereCambioInicial")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.HasKey("IdUsuario")
                         .HasName("PK_EstadoContrasena");
 
                     b.ToTable("tb_EstadoContrasena", (string)null);
+                });
+
+            modelBuilder.Entity("SAPS.Web.Models.Identity.VinculoUsuarioColaborador", b =>
+                {
+                    b.Property<string>("IdUsuario")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("idUsuario");
+
+                    b.Property<DateTime>("FechaVinculacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IdColaborador")
+                        .HasColumnType("int")
+                        .HasColumnName("idColaborador");
+
+                    b.HasKey("IdUsuario")
+                        .HasName("PK_UsuarioColaborador");
+
+                    b.HasIndex("IdColaborador")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_UsuarioColaborador_idColaborador");
+
+                    b.ToTable("tb_UsuarioColaborador", (string)null);
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Pedidos.DetallePedido", b =>
@@ -839,6 +868,23 @@ namespace SAPS.Web.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_EstadoContrasena_Usuario");
+                });
+
+            modelBuilder.Entity("SAPS.Web.Models.Identity.VinculoUsuarioColaborador", b =>
+                {
+                    b.HasOne("SAPS.Web.Models.Rrhh.ColaboradorRrhh", null)
+                        .WithOne()
+                        .HasForeignKey("SAPS.Web.Models.Identity.VinculoUsuarioColaborador", "IdColaborador")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_UsuarioColaborador_Colaborador");
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithOne()
+                        .HasForeignKey("SAPS.Web.Models.Identity.VinculoUsuarioColaborador", "IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UsuarioColaborador_Usuario");
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Pedidos.DetallePedido", b =>

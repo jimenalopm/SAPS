@@ -27,6 +27,10 @@ public class CambiarContrasenaModel(
     [BindProperty(SupportsGet = true)]
     public bool Obligatorio { get; set; }
 
+    // HU-001: distingue "primer ingreso" (contraseña temporal del Administrador) de "venció a los 10 meses".
+    [BindProperty(SupportsGet = true)]
+    public string? Motivo { get; set; }
+
     [TempData]
     public string? Mensaje { get; set; }
 
@@ -72,11 +76,12 @@ public class CambiarContrasenaModel(
         var estado = await context.EstadosContrasena.FindAsync(user.Id);
         if (estado is null)
         {
-            context.EstadosContrasena.Add(new EstadoContrasenaUsuario { IdUsuario = user.Id, FechaUltimoCambio = ahora });
+            context.EstadosContrasena.Add(new EstadoContrasenaUsuario { IdUsuario = user.Id, FechaUltimoCambio = ahora, RequiereCambioInicial = false });
         }
         else
         {
             estado.FechaUltimoCambio = ahora;
+            estado.RequiereCambioInicial = false;
         }
         await context.SaveChangesAsync();
 

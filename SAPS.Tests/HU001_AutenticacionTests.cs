@@ -174,7 +174,7 @@ public class HU001_AutenticacionTests
 
     private static LoginModel CrearLoginModel(Mock<SignInManager<IdentityUser>> signIn, string codigo = Codigo, string password = ContrasenaValida)
     {
-        return new LoginModel(signIn.Object, NullLogger<LoginModel>.Instance)
+        return new LoginModel(signIn.Object, TestServices.CrearContextoInMemory(), NullLogger<LoginModel>.Instance)
         {
             PageContext = new PageContext { HttpContext = new DefaultHttpContext() },
             Input = new LoginModel.InputModel { CodigoEmpleado = codigo, Password = password }
