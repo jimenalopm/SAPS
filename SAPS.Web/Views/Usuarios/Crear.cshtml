@@ -26,8 +26,9 @@
         </div>
         <div class="mb-1">
             <label asp-for="ContrasenaInicial" class="form-label">Contraseña inicial (temporal) <span class="campo-obligatorio" aria-hidden="true">*</span></label>
-            <input asp-for="ContrasenaInicial" class="form-control" autocomplete="new-password" />
+            <input asp-for="ContrasenaInicial" class="form-control" autocomplete="new-password" aria-describedby="ayuda-contrasena" />
             <span asp-validation-for="ContrasenaInicial" class="text-danger small"></span>
+            <p class="form-text" id="ayuda-contrasena">Mínimo @SAPS.Web.Data.IdentityConfig.LongitudMinimaContrasena caracteres, con al menos una letra minúscula y un número.</p>
         </div>
         <div class="mb-1">
             <label asp-for="Rol" class="form-label">Rol <span class="campo-obligatorio" aria-hidden="true">*</span></label>

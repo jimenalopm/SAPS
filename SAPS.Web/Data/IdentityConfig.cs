@@ -15,11 +15,13 @@ public static class IdentityConfig
     // Criterio 7: a los 10 meses sin cambiarla, la contraseña vence (ver VencimientoContrasenaMiddleware).
     public const int MesesVigenciaContrasena = 10;
 
+    public const int LongitudMinimaContrasena = 6;
+
     public static void Configurar(IdentityOptions options)
     {
         options.SignIn.RequireConfirmedAccount = false;
 
-        options.Password.RequiredLength = 6;
+        options.Password.RequiredLength = LongitudMinimaContrasena;
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequireUppercase = false;
         options.Password.RequireDigit = true;

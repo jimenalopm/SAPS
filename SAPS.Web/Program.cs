@@ -18,6 +18,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(IdentityConfig.Configurar)
     .AddRoles<IdentityRole>()
+    .AddErrorDescriber<IdentityErrorDescriberEs>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 // HU-001 (criterio 9): la sesión no debe vencer por inactividad. El default de Identity
