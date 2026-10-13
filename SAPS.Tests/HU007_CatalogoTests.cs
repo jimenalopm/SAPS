@@ -139,7 +139,7 @@ public class HU007_CatalogoTests
         Assert.True(new Tamano { NombreTamano = "X" }.Activo);
         Assert.True(new Producto { NombreProducto = "X" }.Activo);
         Assert.True(new Precio().Activo);
-        Assert.True(new Bebida { NombreBebida = "X", TipoBebida = "Jugo" }.Activo);
+        Assert.True(new Bebida { NombreBebida = "X", TipoBebida = "Frescos" }.Activo);
     }
 
     [Fact]
@@ -552,7 +552,7 @@ public class HU007_CatalogoTests
 
         var resultado = await Controlador(db).CrearBebida(new BebidaFormViewModel
         {
-            NombreBebida = "Agua Cristal", TipoBebida = "Embotellada", IdTamano = pequeno.IdTamano, Precio = 900
+            NombreBebida = "Agua Cristal", TipoBebida = "Tés y refrescos", IdTamano = pequeno.IdTamano, Precio = 900
         });
 
         Assert.IsType<RedirectToActionResult>(resultado);

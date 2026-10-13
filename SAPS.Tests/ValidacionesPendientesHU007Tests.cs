@@ -136,9 +136,9 @@ public class ValidacionesPendientesHU007Tests
 
     [Theory]
     [InlineData("Gaseosa")]
-    [InlineData("Embotellada")]
+    [InlineData("Tés y refrescos")]
     [InlineData("Energizante")]
-    [InlineData("Jugo")]
+    [InlineData("Frescos")]
     public async Task CrearBebida_TipoPermitido_SeGuarda(string tipo)
     {
         await using var db = TestServices.CrearContextoInMemory();

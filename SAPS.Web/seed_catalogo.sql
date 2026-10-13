@@ -27,8 +27,6 @@ IF NOT EXISTS (SELECT 1 FROM soda.tb_Categoria WHERE Nombre = 'Almuerzo')
     INSERT INTO soda.tb_Categoria (Nombre, EstaActivo) VALUES ('Almuerzo', 1);
 IF NOT EXISTS (SELECT 1 FROM soda.tb_Categoria WHERE Nombre = 'Café/Repostería')
     INSERT INTO soda.tb_Categoria (Nombre, EstaActivo) VALUES ('Café/Repostería', 1);
-IF NOT EXISTS (SELECT 1 FROM soda.tb_Categoria WHERE Nombre = 'Fresco')
-    INSERT INTO soda.tb_Categoria (Nombre, EstaActivo) VALUES ('Fresco', 1);
 
 -- ---------- Tamaños ----------
 IF NOT EXISTS (SELECT 1 FROM soda.tb_Tamano WHERE Nombre = 'Pequeño')
@@ -39,6 +37,13 @@ IF NOT EXISTS (SELECT 1 FROM soda.tb_Tamano WHERE Nombre = 'Grande')
     INSERT INTO soda.tb_Tamano (Nombre, EstaActivo) VALUES ('Grande', 1);
 IF NOT EXISTS (SELECT 1 FROM soda.tb_Tamano WHERE Nombre = '600ml')
     INSERT INTO soda.tb_Tamano (Nombre, EstaActivo) VALUES ('600ml', 1);
+-- Tamaños de bebida del fresco natural (las bebidas solo aceptan tamaños marcados EsParaBebida).
+IF NOT EXISTS (SELECT 1 FROM soda.tb_Tamano WHERE Nombre = 'Vaso pequeño')
+    INSERT INTO soda.tb_Tamano (Nombre, EsParaBebida, EstaActivo) VALUES ('Vaso pequeño', 1, 1);
+IF NOT EXISTS (SELECT 1 FROM soda.tb_Tamano WHERE Nombre = 'Vaso mediano')
+    INSERT INTO soda.tb_Tamano (Nombre, EsParaBebida, EstaActivo) VALUES ('Vaso mediano', 1, 1);
+IF NOT EXISTS (SELECT 1 FROM soda.tb_Tamano WHERE Nombre = 'Vaso grande')
+    INSERT INTO soda.tb_Tamano (Nombre, EsParaBebida, EstaActivo) VALUES ('Vaso grande', 1, 1);
 
 DECLARE @hoy date = CAST(GETDATE() AS date);
 
@@ -62,23 +67,6 @@ BEGIN
         VALUES (SCOPE_IDENTITY(), NULL, 1550, @hoy, 1);
 END
 
--- ---------- Producto CON tamaños (ejemplo de TieneTamano = 1) ----------
-IF NOT EXISTS (SELECT 1 FROM soda.tb_Producto WHERE Nombre = 'Fresco natural')
-BEGIN
-    DECLARE @idFresco INT = (SELECT idCategoria FROM soda.tb_Categoria WHERE Nombre = 'Fresco');
-    DECLARE @idProdFresco INT;
-    INSERT INTO soda.tb_Producto (Nombre, idCategoria, EsEspecial, TieneTamano, EstaActivo)
-        VALUES ('Fresco natural', @idFresco, 0, 1, 1);
-    SET @idProdFresco = SCOPE_IDENTITY();
-
-    INSERT INTO soda.tb_Precio (idProducto, idTamano, Monto, FechaVigenciaDesde, EstaActivo)
-        VALUES (@idProdFresco, (SELECT idTamano FROM soda.tb_Tamano WHERE Nombre = 'Pequeño'), 250, @hoy, 1);
-    INSERT INTO soda.tb_Precio (idProducto, idTamano, Monto, FechaVigenciaDesde, EstaActivo)
-        VALUES (@idProdFresco, (SELECT idTamano FROM soda.tb_Tamano WHERE Nombre = 'Mediano'), 300, @hoy, 1);
-    INSERT INTO soda.tb_Precio (idProducto, idTamano, Monto, FechaVigenciaDesde, EstaActivo)
-        VALUES (@idProdFresco, (SELECT idTamano FROM soda.tb_Tamano WHERE Nombre = 'Grande'), 350, @hoy, 1);
-END
-
 -- ---------- Café/Repostería ----------
 IF NOT EXISTS (SELECT 1 FROM soda.tb_Producto WHERE Nombre = 'Empanadas')
 BEGIN
@@ -90,6 +78,17 @@ BEGIN
 END
 
 -- ---------- Bebidas ----------
+-- El fresco natural es una bebida (tipo "Frescos") con un precio por tamaño.
+IF NOT EXISTS (SELECT 1 FROM soda.tb_Bebida WHERE Nombre = 'Frescos naturales')
+BEGIN
+    INSERT INTO soda.tb_Bebida (Nombre, Tipo, idTamano, Precio, EstaActivo)
+        VALUES ('Frescos naturales', 'Frescos', (SELECT idTamano FROM soda.tb_Tamano WHERE Nombre = 'Vaso pequeño'), 250, 1);
+    INSERT INTO soda.tb_Bebida (Nombre, Tipo, idTamano, Precio, EstaActivo)
+        VALUES ('Frescos naturales', 'Frescos', (SELECT idTamano FROM soda.tb_Tamano WHERE Nombre = 'Vaso mediano'), 300, 1);
+    INSERT INTO soda.tb_Bebida (Nombre, Tipo, idTamano, Precio, EstaActivo)
+        VALUES ('Frescos naturales', 'Frescos', (SELECT idTamano FROM soda.tb_Tamano WHERE Nombre = 'Vaso grande'), 350, 1);
+END
+
 IF NOT EXISTS (SELECT 1 FROM soda.tb_Bebida WHERE Nombre = 'Pepsi Cola 600ml')
     INSERT INTO soda.tb_Bebida (Nombre, Tipo, idTamano, Precio, EstaActivo)
     VALUES ('Pepsi Cola 600ml', 'Gaseosa', (SELECT idTamano FROM soda.tb_Tamano WHERE Nombre = '600ml'), 1000, 1);

@@ -505,7 +505,7 @@ namespace SAPS.Web.Migrations
                         {
                             IdTipoBebida = 2,
                             Activo = true,
-                            NombreTipo = "Embotellada"
+                            NombreTipo = "Tés y refrescos"
                         },
                         new
                         {
@@ -517,7 +517,7 @@ namespace SAPS.Web.Migrations
                         {
                             IdTipoBebida = 4,
                             Activo = true,
-                            NombreTipo = "Jugo"
+                            NombreTipo = "Frescos"
                         });
                 });
 

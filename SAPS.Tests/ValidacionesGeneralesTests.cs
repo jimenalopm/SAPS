@@ -364,7 +364,7 @@ public class ValidacionesGeneralesTests
         db.Bebidas.AddRange(
             new Bebida { NombreBebida = "Coca Cola", TipoBebida = "Gaseosa", Precio = 900 },
             new Bebida { NombreBebida = "Sprite", TipoBebida = "Gaseosa", Precio = 900 },
-            new Bebida { NombreBebida = "Del Valle", TipoBebida = "Jugo", Precio = 800 });
+            new Bebida { NombreBebida = "Del Valle", TipoBebida = "Tés y refrescos", Precio = 800 });
         await db.SaveChangesAsync();
 
         var vista = Assert.IsType<ViewResult>(await ControladorCatalogo(db).Catalogo(tab: "bebidas", bebTipo: "Gaseosa"));
@@ -382,7 +382,7 @@ public class ValidacionesGeneralesTests
         await using var db = TestServices.CrearContextoInMemory();
         db.Bebidas.AddRange(
             new Bebida { NombreBebida = "Coca Cola", TipoBebida = "Gaseosa", Precio = 900 },
-            new Bebida { NombreBebida = "Del Valle", TipoBebida = "Jugo", Precio = 800 });
+            new Bebida { NombreBebida = "Del Valle", TipoBebida = "Tés y refrescos", Precio = 800 });
         await db.SaveChangesAsync();
 
         var vista = Assert.IsType<ViewResult>(await ControladorCatalogo(db).Catalogo(tab: "bebidas"));
