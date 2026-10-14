@@ -143,6 +143,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 t.HasCheckConstraint("CK_Precio_Monto", "[Monto] > 0");
                 t.HasCheckConstraint("CK_Precio_Vigencia",
                     "[FechaVigenciaHasta] IS NULL OR [FechaVigenciaHasta] >= [FechaVigenciaDesde]");
+                // tr_AuditoriaPrecio registra los cambios de precio en la bitácora (HU-015). HasTrigger evita el OUTPUT directo de EF.
+                t.HasTrigger("tr_AuditoriaPrecio");
             });
 
             entity.HasKey(e => e.IdPrecio).HasName("PK_Precio");
@@ -203,6 +205,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.ToTable("tb_Bebida", EsquemaSoda, t =>
             {
                 t.HasCheckConstraint("CK_Bebida_Precio", "[Precio] > 0");
+                t.HasTrigger("tr_AuditoriaBebida");   // bitácora de cambios de precio (HU-015)
             });
 
             entity.HasKey(e => e.IdBebida).HasName("PK_Bebida");

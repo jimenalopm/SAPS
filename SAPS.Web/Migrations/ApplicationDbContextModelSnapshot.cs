@@ -379,8 +379,12 @@ namespace SAPS.Web.Migrations
 
                     b.ToTable("tb_Bebida", "soda", t =>
                         {
+                            t.HasTrigger("tr_AuditoriaBebida");
+
                             t.HasCheckConstraint("CK_Bebida_Precio", "[Precio] > 0");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Categoria", b =>
@@ -482,10 +486,14 @@ namespace SAPS.Web.Migrations
 
                     b.ToTable("tb_Precio", "soda", t =>
                         {
+                            t.HasTrigger("tr_AuditoriaPrecio");
+
                             t.HasCheckConstraint("CK_Precio_Monto", "[Monto] > 0");
 
                             t.HasCheckConstraint("CK_Precio_Vigencia", "[FechaVigenciaHasta] IS NULL OR [FechaVigenciaHasta] >= [FechaVigenciaDesde]");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Producto", b =>
