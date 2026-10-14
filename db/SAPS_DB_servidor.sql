@@ -848,6 +848,44 @@ GO
 BEGIN TRANSACTION;
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261014012238_BloquearBitacoraSoloLectura'
+)
+BEGIN
+
+    EXEC(N'
+    CREATE TRIGGER [soda].[tr_BitacoraSoloLectura]
+    ON [soda].[tb_Bitacora]
+    INSTEAD OF UPDATE, DELETE
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+        THROW 50001, N''La bitácora es de solo lectura: no se pueden modificar ni eliminar sus registros.'', 1;
+    END');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261014012238_BloquearBitacoraSoloLectura'
+)
+BEGIN
+    DENY UPDATE, DELETE ON [soda].[tb_Bitacora] TO [public];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261014012238_BloquearBitacoraSoloLectura'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261014012238_BloquearBitacoraSoloLectura', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20261014120000_TiposBebidaYFrescos'
 )
 BEGIN
