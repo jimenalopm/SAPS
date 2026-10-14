@@ -785,6 +785,69 @@ GO
 BEGIN TRANSACTION;
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261014005054_CrearBitacora'
+)
+BEGIN
+    CREATE TABLE [soda].[tb_Bitacora] (
+        [idBitacora] int NOT NULL IDENTITY,
+        [FechaHoraUtc] datetime2 NOT NULL DEFAULT (SYSUTCDATETIME()),
+        [Modulo] varchar(30) NOT NULL,
+        [TipoEvento] varchar(50) NOT NULL,
+        [Recurso] varchar(100) NOT NULL,
+        [IdRegistro] varchar(50) NULL,
+        [EsExitoso] bit NOT NULL,
+        [idUsuario] nvarchar(450) NULL,
+        [NombreUsuario] varchar(256) NULL,
+        [Rol] varchar(50) NULL,
+        [UsuarioBd] varchar(128) NOT NULL DEFAULT (SUSER_SNAME()),
+        [DireccionIp] varchar(45) NULL,
+        [Dispositivo] varchar(200) NULL,
+        [ValorAnterior] varchar(500) NULL,
+        [ValorNuevo] varchar(500) NULL,
+        [Descripcion] varchar(300) NULL,
+        CONSTRAINT [PK_Bitacora] PRIMARY KEY ([idBitacora])
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261014005054_CrearBitacora'
+)
+BEGIN
+    CREATE INDEX [IX_Bitacora_FechaHoraUtc] ON [soda].[tb_Bitacora] ([FechaHoraUtc] DESC);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261014005054_CrearBitacora'
+)
+BEGIN
+    CREATE INDEX [IX_Bitacora_idUsuario] ON [soda].[tb_Bitacora] ([idUsuario]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261014005054_CrearBitacora'
+)
+BEGIN
+    CREATE INDEX [IX_Bitacora_TipoEvento_FechaHoraUtc] ON [soda].[tb_Bitacora] ([TipoEvento], [FechaHoraUtc] DESC);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261014005054_CrearBitacora'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261014005054_CrearBitacora', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20261014120000_TiposBebidaYFrescos'
 )
 BEGIN
