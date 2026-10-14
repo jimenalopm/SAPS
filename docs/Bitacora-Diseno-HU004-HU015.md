@@ -135,3 +135,54 @@ Migración `BloquearBitacoraSoloLectura`. Dos capas sobre `soda.tb_Bitacora`:
 En el mapeo de EF (`BitacoraConfiguration`) la tabla se declara con `HasTrigger`, porque EF Core inserta con `OUTPUT` y eso falla en tablas con triggers si no se declaran.
 
 **Límite conocido.** SQL Server no permite blindar una tabla contra su propio dueño: un `sysadmin` o `dbo` puede ejecutar `TRUNCATE TABLE` (no dispara triggers), desactivar el trigger (`ALTER TABLE ... DISABLE TRIGGER`) o eliminar la tabla. Por eso, en producción la aplicación debe conectarse con una cuenta **sin** permisos de `db_owner` ni `sysadmin`, y el acceso administrativo a la BD de RecyPlast debe quedar restringido y fuera del uso diario. Esto se debe confirmar con el líder técnico.
+
+## 8. Trigger de cambios de precio (task 16)
+
+Migración `CrearTriggersAuditoriaPrecio`. Decisiones tomadas para esta task:
+
+| # | Decisión | Justificación |
+|---|---|---|
+| D8 | **Solo el trigger registra** los cambios de precio, vengan de la pantalla o directo de la BD. | Una sola fuente, sin registros duplicados, y la aplicación no puede omitir el log (HU-004 c7). La pantalla no escribe en la bitácora para los precios; solo le pasa el usuario al trigger. |
+| D9 | Se cubren **las dos tablas con precio**: `tb_Precio` y `tb_Bebida`. | Ningún precio del catálogo queda sin auditar. |
+
+### Objetos creados
+
+| Objeto | Descripción |
+|---|---|
+| `soda.fn_UsuarioContexto()` (EBD12) | Lee el usuario que la aplicación dejó en `CONTEXT_INFO` y devuelve `idUsuario`, `NombreUsuario` y `Rol`. Si no hay contexto (cambio directo en la BD), devuelve el usuario de SQL Server en `NombreUsuario`. |
+| `soda.tr_AuditoriaPrecio` (EBD09) sobre `soda.tb_Precio` | `AFTER INSERT, UPDATE`. Registra un `CambioPrecio` con `ValorAnterior` y `ValorNuevo`. |
+| `soda.tr_AuditoriaBebida` (EBD09) sobre `soda.tb_Bebida` | `AFTER UPDATE`. Registra un `CambioPrecio` cuando cambia `Precio`. |
+
+### Cuándo se registra un cambio en `tb_Precio`
+
+| Situación | ¿Se registra? | Cómo |
+|---|---|---|
+| La pantalla cierra la fila anterior (`EstaActivo = 0`) e inserta una fila nueva con otro monto. | Sí | El `INSERT` busca la fila cerrada más reciente del mismo producto y tamaño; ese es el precio anterior. |
+| La pantalla cierra la fila anterior (solo cambia `EstaActivo` y `FechaVigenciaHasta`). | No | El `UPDATE` no cambia `Monto`. |
+| `UPDATE` directo del `Monto` en la BD. | Sí | Compara `deleted` contra `inserted`. |
+| Alta de un producto o de un tamaño nuevo (sin fila anterior). | No | Es un alta, no un cambio. |
+| El monto nuevo es igual al anterior. | No | No hay cambio. |
+
+Cada fila del log lleva `Modulo = Catalogo`, `TipoEvento = CambioPrecio`, `Recurso = tb_Precio` o `tb_Bebida`, `IdRegistro` con el id del precio o de la bebida, y en `Descripcion` el nombre del producto o bebida y el tamaño.
+
+### Contrato con la aplicación (task 18, Tiber)
+
+Para que el log diga **quién** hizo el cambio desde la pantalla, la aplicación debe dejar el usuario en `CONTEXT_INFO` **en la misma conexión y transacción** donde guarda el precio, con el formato `idUsuario|nombreUsuario|rol` (solo caracteres ASCII, máximo 128 bytes). Al terminar debe limpiarlo, porque las conexiones se reutilizan. Ejemplo:
+
+```csharp
+await using var tx = await db.Database.BeginTransactionAsync();
+await db.Database.ExecuteSqlRawAsync(
+    "DECLARE @c varbinary(128) = CAST(CAST({0} AS varchar(128)) AS varbinary(128)); SET CONTEXT_INFO @c;",
+    $"{idUsuario}|{nombreUsuario}|{rol}");
+// ... cerrar la fila anterior y guardar la nueva (todos los SaveChanges) ...
+await db.Database.ExecuteSqlRawAsync("SET CONTEXT_INFO 0x00;");
+await tx.CommitAsync();
+```
+
+Sin ese paso el trigger igual registra el cambio, pero `NombreUsuario` queda con el usuario de SQL Server de la aplicación (p. ej. `sa`) y no con el de la persona.
+
+### Límites
+
+- `CONTEXT_INFO` no es una prueba de identidad: quien tenga una conexión a la BD puede escribirlo. Sirve para trazabilidad dentro de la aplicación; el usuario real de la BD siempre queda en `UsuarioBd`.
+- La aplicación no guarda `DireccionIp` ni `Dispositivo` en los cambios de precio: el trigger no los conoce.
+
