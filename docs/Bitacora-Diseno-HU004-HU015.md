@@ -122,3 +122,16 @@ CREATE INDEX IX_Bitacora_FechaHoraUtc ON soda.tb_Bitacora (FechaHoraUtc DESC);
 CREATE INDEX IX_Bitacora_TipoEvento_FechaHoraUtc ON soda.tb_Bitacora (TipoEvento, FechaHoraUtc DESC);
 CREATE INDEX IX_Bitacora_idUsuario ON soda.tb_Bitacora (idUsuario);
 ```
+
+## 7. Implementación del solo lectura (task 3)
+
+Migración `BloquearBitacoraSoloLectura`. Dos capas sobre `soda.tb_Bitacora`:
+
+| Capa | Qué hace | Qué cubre |
+|---|---|---|
+| Trigger `soda.tr_BitacoraSoloLectura` (`INSTEAD OF UPDATE, DELETE`, EBD09) | Rechaza toda modificación o eliminación con el error 50001: "La bitácora es de solo lectura...". | Cualquier usuario de la aplicación o de la BD que ejecute UPDATE o DELETE, incluido el Administrador de SAPS (HU-004 c6, HU-015 c5). |
+| `DENY UPDATE, DELETE` al rol `public` | Las cuentas normales de la BD no tienen el permiso. | Segunda barrera: la operación se niega antes de llegar al trigger. |
+
+En el mapeo de EF (`BitacoraConfiguration`) la tabla se declara con `HasTrigger`, porque EF Core inserta con `OUTPUT` y eso falla en tablas con triggers si no se declaran.
+
+**Límite conocido.** SQL Server no permite blindar una tabla contra su propio dueño: un `sysadmin` o `dbo` puede ejecutar `TRUNCATE TABLE` (no dispara triggers), desactivar el trigger (`ALTER TABLE ... DISABLE TRIGGER`) o eliminar la tabla. Por eso, en producción la aplicación debe conectarse con una cuenta **sin** permisos de `db_owner` ni `sysadmin`, y el acceso administrativo a la BD de RecyPlast debe quedar restringido y fuera del uso diario. Esto se debe confirmar con el líder técnico.
