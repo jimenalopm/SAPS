@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SAPS.Web.Models.Auditoria;
 using SAPS.Web.Models.Catalogo;
 using SAPS.Web.Models.Identity;
 using SAPS.Web.Models.Pedidos;
@@ -36,12 +37,15 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<EstadoContrasenaUsuario> EstadosContrasena => Set<EstadoContrasenaUsuario>();
     public DbSet<VinculoUsuarioColaborador> VinculosUsuarioColaborador => Set<VinculoUsuarioColaborador>();
 
+    public DbSet<Bitacora> Bitacoras => Set<Bitacora>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.ConfigurarPedidos();
         builder.ConfigurarEstadoContrasena();
         builder.ConfigurarVinculoUsuarioColaborador();
+        builder.ConfigurarBitacora();
 
         // ---------- rrhh.tb_Colaborador ----------
         builder.Entity<ColaboradorRrhh>(entity =>

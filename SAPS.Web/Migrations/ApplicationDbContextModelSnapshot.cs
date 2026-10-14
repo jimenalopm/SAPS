@@ -224,6 +224,116 @@ namespace SAPS.Web.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("SAPS.Web.Models.Auditoria.Bitacora", b =>
+                {
+                    b.Property<int>("IdBitacora")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("idBitacora");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdBitacora"));
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(300)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(300)");
+
+                    b.Property<string>("DireccionIp")
+                        .HasMaxLength(45)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<string>("Dispositivo")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool>("EsExitoso")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("FechaHoraUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("IdRegistro")
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("IdUsuario")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("idUsuario");
+
+                    b.Property<string>("Modulo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("NombreUsuario")
+                        .HasMaxLength(256)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("Recurso")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Rol")
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("TipoEvento")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("UsuarioBd")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(128)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(128)")
+                        .HasDefaultValueSql("SUSER_SNAME()");
+
+                    b.Property<string>("ValorAnterior")
+                        .HasMaxLength(500)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("ValorNuevo")
+                        .HasMaxLength(500)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(500)");
+
+                    b.HasKey("IdBitacora")
+                        .HasName("PK_Bitacora");
+
+                    b.HasIndex("FechaHoraUtc")
+                        .IsDescending()
+                        .HasDatabaseName("IX_Bitacora_FechaHoraUtc");
+
+                    b.HasIndex("IdUsuario")
+                        .HasDatabaseName("IX_Bitacora_idUsuario");
+
+                    b.HasIndex("TipoEvento", "FechaHoraUtc")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_Bitacora_TipoEvento_FechaHoraUtc");
+
+                    b.ToTable("tb_Bitacora", "soda", t =>
+                        {
+                            t.HasTrigger("tr_BitacoraSoloLectura");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Bebida", b =>
                 {
                     b.Property<int>("IdBebida")
