@@ -13,7 +13,9 @@ internal static class BitacoraConfiguration
         // TipoEvento, para poder agregar eventos nuevos sin alterar la tabla (HU-004 criterio 8).
         builder.Entity<Bitacora>(e =>
         {
-            e.ToTable("tb_Bitacora", ApplicationDbContext.EsquemaSoda);
+            // tr_BitacoraSoloLectura (migración BloquearBitacoraSoloLectura) rechaza UPDATE y DELETE.
+            // HasTrigger evita que EF use OUTPUT directo al insertar, que falla en tablas con triggers.
+            e.ToTable("tb_Bitacora", ApplicationDbContext.EsquemaSoda, t => t.HasTrigger("tr_BitacoraSoloLectura"));
             e.HasKey(b => b.IdBitacora).HasName("PK_Bitacora");
             e.Property(b => b.IdBitacora).HasColumnName("idBitacora");
 

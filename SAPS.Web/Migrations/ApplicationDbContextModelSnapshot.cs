@@ -326,7 +326,12 @@ namespace SAPS.Web.Migrations
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_Bitacora_TipoEvento_FechaHoraUtc");
 
-                    b.ToTable("tb_Bitacora", "soda");
+                    b.ToTable("tb_Bitacora", "soda", t =>
+                        {
+                            t.HasTrigger("tr_BitacoraSoloLectura");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("SAPS.Web.Models.Catalogo.Bebida", b =>
