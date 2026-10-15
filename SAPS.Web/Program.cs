@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Data;
 using SAPS.Web.Middleware;
+using SAPS.Web.Services.Auditoria;
 using SAPS.Web.Services.Pedidos;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddScoped<DbInitializer>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ServicioPedidos>();
+// HU-004: servicio central de bitácora (logs de actividad y accesos).
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IServicioBitacora, ServicioBitacora>();
 // Los colaboradores salen de rrhh.tb_Colaborador. Los DEMO solo se insertan si sembrarPrueba (ver abajo).
 builder.Services.AddSingleton(new EntornoPrueba(sembrarPrueba));
 builder.Services.AddScoped<IColaboradores, ColaboradoresTabla>();
