@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SAPS.Web.Data;
+using SAPS.Web.Services.Auditoria;
 
 namespace SAPS.Web.Areas.Identity.Pages.Account
 {
@@ -24,9 +25,14 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly ApplicationDbContext _db;
         private readonly ILogger<LoginModel> _logger;
+        private readonly IServicioBitacora _bitacora;
 
-        public LoginModel(SignInManager<IdentityUser> signInManager, ApplicationDbContext db, ILogger<LoginModel> logger)
+        // HU-004: la bitácora es opcional para no romper quien construye la página sin ella (pruebas);
+        // en la aplicación se registra en Program.cs y siempre llega.
+        public LoginModel(SignInManager<IdentityUser> signInManager, ApplicationDbContext db, ILogger<LoginModel> logger,
+            IServicioBitacora bitacora = null)
         {
+            _bitacora = bitacora;
             _signInManager = signInManager;
             _db = db;
             _logger = logger;
@@ -134,6 +140,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                     if (colaboradorActivo == false)
                     {
                         await _signInManager.SignOutAsync();
+                        await RegistrarInicioSesionAsync(false, "Colaborador inactivo", user);
                         ModelState.AddModelError(string.Empty, MensajeColaboradorInactivo);
                         return Page();
                     }
@@ -147,6 +154,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                         await _signInManager.SignInAsync(user, isPersistent: false);
                     }
 
+                    await RegistrarInicioSesionAsync(true, "Inicio de sesión exitoso", user);
                     _logger.LogInformation("User logged in.");
                     return LocalRedirect(returnUrl);
                 }
@@ -163,15 +171,23 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                         && await _signInManager.UserManager.GetLockoutEndDateAsync(bloqueada) == DateTimeOffset.MaxValue)
                     {
                         _logger.LogWarning("Login rejected: account deactivated by an administrator.");
+                        await RegistrarInicioSesionAsync(false, "Cuenta desactivada por el administrador", bloqueada);
                         ModelState.AddModelError(string.Empty, MensajeCuentaDesactivada);
                         return Page();
                     }
 
                     _logger.LogWarning("User account locked out.");
+                    await RegistrarInicioSesionAsync(false, "Cuenta bloqueada temporalmente", bloqueada);
                     return RedirectToPage("./Lockout");
                 }
                 else
                 {
+                    // Si la cuenta existe se guarda su id; si no, solo lo digitado. Nunca la contraseña.
+                    var cuentaFallida = _bitacora is null
+                        ? null
+                        : await _signInManager.UserManager.FindByNameAsync(Input.CodigoEmpleado);
+                    await RegistrarInicioSesionAsync(false, "Credenciales incorrectas", cuentaFallida);
+
                     // F-02 (H9): el mensaje nombra el campo real e indica qué hacer
                     ModelState.AddModelError(string.Empty, "El correo de empleado o la contraseña son incorrectos. Revisa los datos e inténtalo de nuevo. Si olvidaste tu contraseña, comunícate con el administrador.");
                     return Page();
@@ -179,6 +195,23 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
             }
 
             return Page();
+        }
+
+        // HU-004 criterio 1: inicio de sesión exitoso o fallido. El usuario va explícito porque en este
+        // punto el HttpContext aún no tiene la sesión. El servicio nunca lanza: el login no se rompe.
+        private async Task RegistrarInicioSesionAsync(bool exitoso, string descripcion, IdentityUser cuenta)
+        {
+            if (_bitacora is null) return;
+            var rol = cuenta is null ? null : (await _signInManager.UserManager.GetRolesAsync(cuenta)).FirstOrDefault();
+            await _bitacora.RegistrarAsync(new EventoBitacora(
+                ModulosBitacora.Seguridad, TiposEventoBitacora.InicioSesion, RecursosBitacora.Sesion, exitoso)
+            {
+                IdRegistro = cuenta?.Id,
+                IdUsuario = cuenta?.Id,
+                NombreUsuario = cuenta?.UserName ?? Input.CodigoEmpleado,
+                Rol = rol,
+                Descripcion = descripcion,
+            });
         }
     }
 }

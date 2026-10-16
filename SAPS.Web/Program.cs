@@ -33,6 +33,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddScoped<DbInitializer>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ServicioPedidos>();
+// HU-004: servicio central de bitácora (logs de actividad y accesos).
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IServicioBitacora, ServicioBitacora>();
 // HU-015: le pasa a los triggers de precios quién hace el cambio (CONTEXT_INFO).
 builder.Services.AddSingleton<IContextoAuditoria, ContextoAuditoria>();
 // Los colaboradores salen de rrhh.tb_Colaborador. Los DEMO solo se insertan si sembrarPrueba (ver abajo).
