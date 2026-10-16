@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using SAPS.Web.Services.Auditoria;
 
 namespace SAPS.Web.Areas.Identity.Pages.Account
 {
@@ -12,11 +13,22 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
     /// El botón "Cerrar sesión" del menú lateral envía un POST directo a esta página.
     /// </summary>
     [AllowAnonymous]
-    public class LogoutModel(SignInManager<IdentityUser> signInManager, ILogger<LogoutModel> logger) : PageModel
+    public class LogoutModel(SignInManager<IdentityUser> signInManager, ILogger<LogoutModel> logger,
+        IServicioBitacora? bitacora = null) : PageModel
     {
         public async Task<IActionResult> OnPost(string? returnUrl = null)
         {
+            // HU-004: el usuario se toma del request actual (SignOut no lo limpia). Sin sesión no hay cierre que registrar.
+            var tieneSesion = PageContext?.HttpContext?.User.Identity?.IsAuthenticated == true;
             await signInManager.SignOutAsync();
+            if (tieneSesion && bitacora is not null)
+            {
+                await bitacora.RegistrarAsync(new EventoBitacora(
+                    ModulosBitacora.Seguridad, TiposEventoBitacora.CierreSesion, RecursosBitacora.Sesion, true)
+                {
+                    Descripcion = "Cierre de sesión",
+                });
+            }
             logger.LogInformation("User logged out.");
             if (returnUrl != null)
             {
