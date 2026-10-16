@@ -4,12 +4,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Data;
 using SAPS.Web.Models.Catalogo;
+using SAPS.Web.Services.Auditoria;
 
 namespace SAPS.Web.Controllers;
 
 [Authorize(Roles = "Administrador,RecursosHumanos")]
-public class AdministracionController(ApplicationDbContext db) : Controller
+public class AdministracionController(ApplicationDbContext db, IContextoAuditoria? contextoAuditoria = null) : Controller
 {
+    // HU-015: los triggers de precios registran el cambio; aquí solo se les dice quién lo hizo.
+    private readonly IContextoAuditoria auditoria = contextoAuditoria ?? new ContextoAuditoria();
+
     public IActionResult Index() => View();
 
     // ==================================================================
@@ -387,18 +391,27 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         // Primero libera el índice de precio activo por producto/tamaño.
         // Si falla cualquiera de los dos guardados, se revierte toda la edición.
         await using var transaccion = await db.Database.BeginTransactionAsync();
-        await db.SaveChangesAsync();
-        foreach (var precio in nuevos)
+        // HU-015: el usuario va en CONTEXT_INFO en esta misma conexión y se limpia aunque falle el guardado.
+        await auditoria.EstablecerAsync(db.Database, User);
+        try
         {
-            db.Precios.Add(new Precio
+            await db.SaveChangesAsync();
+            foreach (var precio in nuevos)
             {
-                IdProducto = producto.IdProducto,
-                IdTamano = precio.IdTamano,
-                MontoPrecio = precio.Monto,
-                FechaVigenciaDesde = hoy,
-            });
+                db.Precios.Add(new Precio
+                {
+                    IdProducto = producto.IdProducto,
+                    IdTamano = precio.IdTamano,
+                    MontoPrecio = precio.Monto,
+                    FechaVigenciaDesde = hoy,
+                });
+            }
+            await db.SaveChangesAsync();
         }
-        await db.SaveChangesAsync();
+        finally
+        {
+            await auditoria.LimpiarAsync(db.Database);
+        }
         await transaccion.CommitAsync();
         TempData["Mensaje"] = "Producto actualizado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
@@ -717,7 +730,19 @@ public class AdministracionController(ApplicationDbContext db) : Controller
         bebida.IdTamano = modelo.IdTamano;
         bebida.Precio = modelo.Precio;
 
-        await db.SaveChangesAsync();
+        // HU-015: el trigger de tb_Bebida registra el cambio de precio; el usuario va en CONTEXT_INFO
+        // en la misma conexión y transacción del guardado.
+        await using var transaccion = await db.Database.BeginTransactionAsync();
+        await auditoria.EstablecerAsync(db.Database, User);
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        finally
+        {
+            await auditoria.LimpiarAsync(db.Database);
+        }
+        await transaccion.CommitAsync();
         TempData["Mensaje"] = "Bebida actualizada correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
     }
