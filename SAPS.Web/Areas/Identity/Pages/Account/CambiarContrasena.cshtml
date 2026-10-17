@@ -18,11 +18,11 @@
         <main class="auth-formulario" id="contenido-principal" tabindex="-1">
             <div class="auth-formulario-caja centrado">
                 <div class="auth-marca-movil"><partial name="_Marca" /></div>
-                <h1 class="auth-titulo">@(Model.Motivo == "primerIngreso" ? "Crea tu contraseña" : "Tu contraseña venció")</h1>
+                <h1 class="auth-titulo">@(Model.Motivo == "primerIngreso" ? "Cree su contraseña" : "Su contraseña venció")</h1>
                 <p class="auth-subtitulo">
                     @(Model.Motivo == "primerIngreso"
-                        ? "Es tu primer ingreso. Escribe la contraseña temporal que te dio el administrador y elige una contraseña nueva. Luego inicia sesión con ella."
-                        : "Debes establecer una contraseña nueva antes de continuar. Luego inicia sesión con ella.")
+                        ? "Es su primer ingreso. Escriba la contraseña temporal que le dio el administrador y elija una contraseña nueva. Luego inicie sesión con ella."
+                        : "Debe establecer una contraseña nueva antes de continuar. Luego inicie sesión con ella.")
                 </p>
 
                 <partial name="_FormularioCambiarContrasena" model="Model" />
@@ -42,7 +42,7 @@ else
     <div class="page-header">
         <div>
             <h1 class="h1">Cambiar contraseña</h1>
-            <p>Puedes cambiar tu contraseña cuando quieras. No es obligatorio.</p>
+            <p>Puede cambiar su contraseña cuando lo desee. No es obligatorio.</p>
         </div>
     </div>
 

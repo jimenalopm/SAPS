@@ -12,12 +12,12 @@
     <main class="auth-formulario" id="contenido-principal" tabindex="-1">
         <div class="auth-formulario-caja centrado">
             <div class="auth-marca-movil"><partial name="_Marca" /></div>
-            <h1 class="auth-titulo">Bienvenido a SAPS</h1>
-            <p class="auth-subtitulo">Inicia sesión para continuar</p>
+            <h1 class="auth-titulo">Le damos la bienvenida a SAPS</h1>
+            <p class="auth-subtitulo">Inicie sesión para continuar</p>
 
             @if (Model.ContrasenaActualizada)
             {
-                <div class="alert alert-recyplast" role="status">Contraseña actualizada. Inicia sesión con tu contraseña nueva.</div>
+                <div class="alert alert-recyplast" role="status">Contraseña actualizada. Inicie sesión con su contraseña nueva.</div>
             }
 
             <form id="account" method="post" novalidate data-bloquear-envio>
@@ -27,7 +27,7 @@
                     <label asp-for="Input.CodigoEmpleado" class="form-label">Correo de empleado</label>
                     <input asp-for="Input.CodigoEmpleado" class="form-control" autocomplete="username" autofocus
                            aria-required="true" placeholder="nombre@recyplast.cr"
-                           data-val-required="Ingresa tu correo de empleado." />
+                           data-val-required="Ingrese su correo de empleado." />
                     <span asp-validation-for="Input.CodigoEmpleado" class="text-danger small"></span>
                 </div>
 
@@ -35,8 +35,8 @@
                     <label asp-for="Input.Password" class="form-label">Contraseña</label>
                     <div class="input-grupo">
                         <input asp-for="Input.Password" class="form-control" autocomplete="current-password"
-                               aria-required="true" placeholder="Ingresa tu contraseña"
-                               data-val-required="Ingresa tu contraseña." />
+                               aria-required="true" placeholder="Ingrese su contraseña"
+                               data-val-required="Ingrese su contraseña." />
                         <button type="button" class="input-grupo-boton" id="ver-contrasena"
                                 aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña">
                             <span data-icono="ojo"><partial name="_Iconos" model="@("ojo")" /></span>
@@ -51,7 +51,7 @@
                         <input class="form-check-input" asp-for="Input.RememberMe" />
                         <label class="form-check-label" asp-for="Input.RememberMe">Recordar mi sesión en este equipo</label>
                     </div>
-                    <a asp-page="./ForgotPassword">¿Olvidaste tu contraseña?</a>
+                    <a asp-page="./ForgotPassword">¿Olvidó su contraseña?</a>
                 </div>
 
                 <button id="login-submit" type="submit" class="btn btn-recyplast btn-lg w-100"

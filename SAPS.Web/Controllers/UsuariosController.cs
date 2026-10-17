@@ -72,7 +72,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
 
         if (!CrearUsuarioViewModel.RolesDisponibles.Contains(modelo.Rol))
         {
-            ModelState.AddModelError(nameof(modelo.Rol), "Seleccioná un rol válido.");
+            ModelState.AddModelError(nameof(modelo.Rol), "Seleccione un rol válido.");
         }
 
         ColaboradorRrhh? colaborador = null;
@@ -81,7 +81,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             colaborador = await db.Colaboradores.FirstOrDefaultAsync(c => c.IdColaborador == idColaborador);
             if (colaborador is null || !colaborador.EstaActivo)
             {
-                ModelState.AddModelError(nameof(modelo.IdColaborador), "Seleccioná un colaborador activo.");
+                ModelState.AddModelError(nameof(modelo.IdColaborador), "Seleccione un colaborador activo.");
             }
             else if (await db.VinculosUsuarioColaborador.AnyAsync(v => v.IdColaborador == idColaborador))
             {
@@ -136,7 +136,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             await userManager.DeleteAsync(nuevo);
             await RegistrarEnBitacoraAsync(TiposEventoBitacora.CuentaCreada, false, nuevo.Id, null, modelo.Rol,
                 $"No se pudo completar el alta de la cuenta {modelo.Correo}; se revirtió");
-            ModelState.AddModelError(string.Empty, "No se pudo completar el alta. Verificá los datos e intentá de nuevo.");
+            ModelState.AddModelError(string.Empty, "No se pudo completar el alta. Verifique los datos e intente de nuevo.");
             return View(modelo);
         }
 
@@ -186,11 +186,11 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
 
         if (!CrearUsuarioViewModel.RolesDisponibles.Contains(modelo.Rol))
         {
-            ModelState.AddModelError(nameof(modelo.Rol), "Seleccioná un rol válido.");
+            ModelState.AddModelError(nameof(modelo.Rol), "Seleccione un rol válido.");
         }
         else if (cambiaRol && modelo.EsCuentaPropia)
         {
-            ModelState.AddModelError(nameof(modelo.Rol), "No podés cambiar el rol de tu propia cuenta.");
+            ModelState.AddModelError(nameof(modelo.Rol), "No puede cambiar el rol de su propia cuenta.");
         }
         else if (cambiaRol && rolActual == "Administrador" && !await QuedaOtroAdministradorActivoAsync(usuario.Id))
         {
@@ -212,7 +212,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             var colaborador = await db.Colaboradores.FirstOrDefaultAsync(c => c.IdColaborador == idColaborador);
             if (colaborador is null || !colaborador.EstaActivo)
             {
-                ModelState.AddModelError(nameof(modelo.IdColaborador), "Seleccioná un colaborador activo.");
+                ModelState.AddModelError(nameof(modelo.IdColaborador), "Seleccione un colaborador activo.");
             }
             else if (await db.VinculosUsuarioColaborador.AnyAsync(v => v.IdColaborador == idColaborador))
             {
@@ -277,7 +277,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
         }
         catch (DbUpdateException)
         {
-            ModelState.AddModelError(string.Empty, "No se pudo guardar el cambio. Verificá los datos e intentá de nuevo.");
+            ModelState.AddModelError(string.Empty, "No se pudo guardar el cambio. Verifique los datos e intente de nuevo.");
             return View(modelo);
         }
 
@@ -302,7 +302,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
         var idPropio = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (id == idPropio)
         {
-            TempData["Error"] = "No podés desactivar tu propia cuenta.";
+            TempData["Error"] = "No puede desactivar su propia cuenta.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -322,7 +322,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             $"Cuenta {usuario.UserName} desactivada");
         if (!resultado.Succeeded)
         {
-            TempData["Error"] = $"No se pudo desactivar la cuenta \"{usuario.UserName}\". Intentá de nuevo.";
+            TempData["Error"] = $"No se pudo desactivar la cuenta \"{usuario.UserName}\". Intente de nuevo.";
             return RedirectToAction(nameof(Index));
         }
         TempData["Mensaje"] = $"Cuenta \"{usuario.UserName}\" desactivada.";
@@ -345,7 +345,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             $"Cuenta {usuario.UserName} reactivada");
         if (!resultado.Succeeded)
         {
-            TempData["Error"] = $"No se pudo reactivar la cuenta \"{usuario.UserName}\". Intentá de nuevo.";
+            TempData["Error"] = $"No se pudo reactivar la cuenta \"{usuario.UserName}\". Intente de nuevo.";
             return RedirectToAction(nameof(Index));
         }
         TempData["Mensaje"] = $"Cuenta \"{usuario.UserName}\" reactivada.";

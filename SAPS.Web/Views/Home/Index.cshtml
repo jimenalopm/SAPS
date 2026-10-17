@@ -26,7 +26,7 @@
 @if (!autenticado)
 {
     <div class="text-center">
-        <h2 class="display-5">Bienvenido a SAPS</h2>
+        <h2 class="display-5">Le damos la bienvenida a SAPS</h2>
         <p class="lead">Sistema de Administración para la Soda de RecyPlast.</p>
         <a class="btn btn-recyplast" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a>
     </div>
@@ -35,8 +35,8 @@
 
 <div class="page-header">
     <div>
-        <h1 class="h1">Bienvenido, @User.Identity!.Name</h1>
-        <p>Aquí tienes un resumen del sistema.</p>
+        <h1 class="h1">Hola, @User.Identity!.Name</h1>
+        <p>Este es un resumen del sistema.</p>
     </div>
 </div>
 
