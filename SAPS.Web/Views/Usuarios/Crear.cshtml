@@ -36,17 +36,16 @@
                 <option value="">Seleccioná un rol...</option>
                 @foreach (var rol in SAPS.Web.Models.Identity.CrearUsuarioViewModel.RolesDisponibles)
                 {
-                    <option value="@rol">@rol</option>
+                    <option value="@rol">@SAPS.Web.Models.Identity.CrearUsuarioViewModel.NombreVisible(rol)</option>
                 }
             </select>
             <span asp-validation-for="Rol" class="text-danger small"></span>
         </div>
     </section>
 
-    <section aria-labelledby="titulo-colaborador">
-        <h2 class="form-card-titulo" id="titulo-colaborador">Colaborador de RRHH</h2>
+    <section>
         <div class="mb-1">
-            <label asp-for="IdColaborador" class="form-label">A qué colaborador pertenece esta cuenta <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <label asp-for="IdColaborador" class="form-label">Colaborador que usará esta cuenta <span class="campo-obligatorio" aria-hidden="true">*</span></label>
             <select asp-for="IdColaborador" class="form-select">
                 <option value="">Seleccioná un colaborador activo...</option>
                 @foreach (var c in Model.ColaboradoresDisponibles)

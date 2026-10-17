@@ -10,7 +10,7 @@
 <div class="page-header">
     <div>
         <h1 class="h1">Editar cuenta</h1>
-        <p>Cambia el correo, el rol o el colaborador de RRHH de esta cuenta. La contraseña no se modifica aquí.</p>
+        <p>Cambia el correo, el rol o el colaborador que usa esta cuenta. La contraseña no se modifica aquí.</p>
     </div>
 </div>
 
@@ -31,7 +31,7 @@
                 <option value="">Seleccioná un rol...</option>
                 @foreach (var rol in SAPS.Web.Models.Identity.CrearUsuarioViewModel.RolesDisponibles)
                 {
-                    <option value="@rol">@rol</option>
+                    <option value="@rol">@SAPS.Web.Models.Identity.CrearUsuarioViewModel.NombreVisible(rol)</option>
                 }
             </select>
             @if (Model.EsCuentaPropia)
@@ -44,10 +44,9 @@
         </div>
     </section>
 
-    <section aria-labelledby="titulo-colaborador">
-        <h2 class="form-card-titulo" id="titulo-colaborador">Colaborador de RRHH</h2>
+    <section>
         <div class="mb-1">
-            <label asp-for="IdColaborador" class="form-label">A qué colaborador pertenece esta cuenta <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <label asp-for="IdColaborador" class="form-label">Colaborador que usará esta cuenta <span class="campo-obligatorio" aria-hidden="true">*</span></label>
             <select asp-for="IdColaborador" class="form-select">
                 <option value="">Seleccioná un colaborador activo...</option>
                 @foreach (var c in Model.ColaboradoresDisponibles)
