@@ -9,7 +9,7 @@
 <div class="page-header">
     <div>
         <h1 class="h1">Usuarios</h1>
-        <p>Cuentas del sistema, su rol y el colaborador de RRHH al que pertenecen.</p>
+        <p>Cuentas del sistema, su rol y el colaborador que usa cada una.</p>
     </div>
 </div>
 
@@ -57,7 +57,8 @@
                 }
                 else
                 {
-                    <form asp-action="Reactivar" asp-route-id="@u.Id" method="post" class="d-inline" data-bloquear-envio>
+                    <form asp-action="Reactivar" asp-route-id="@u.Id" method="post" class="d-inline" data-bloquear-envio
+                          data-confirmar="¿Desea reactivar la cuenta «@u.Correo»? Podrá volver a iniciar sesión.">
                         <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm btn-outline-success">Reactivar</button>
                     </form>
                 }

@@ -34,9 +34,9 @@ public class CrearUsuarioViewModel
     public string Rol { get; set; } = "";
 
     // Obligatorio en los 3 roles, incluido Administrador: toda cuenta nueva declara a qué
-    // colaborador de RRHH pertenece (criterio de aceptación 2, RNF-006).
-    [Required(ErrorMessage = "Seleccioná el colaborador de RRHH al que pertenece esta cuenta.")]
-    [Display(Name = "Colaborador de RRHH")]
+    // colaborador pertenece (criterio de aceptación 2, RNF-006).
+    [Required(ErrorMessage = "Seleccioná el colaborador que usará esta cuenta.")]
+    [Display(Name = "Colaborador")]
     public int? IdColaborador { get; set; }
 
     public List<ColaboradorCandidato> ColaboradoresDisponibles { get; set; } = [];
@@ -55,8 +55,8 @@ public class EditarUsuarioViewModel
     [Required(ErrorMessage = "Seleccioná un rol.")]
     public string Rol { get; set; } = "";
 
-    [Required(ErrorMessage = "Seleccioná el colaborador de RRHH al que pertenece esta cuenta.")]
-    [Display(Name = "Colaborador de RRHH")]
+    [Required(ErrorMessage = "Seleccioná el colaborador que usará esta cuenta.")]
+    [Display(Name = "Colaborador")]
     public int? IdColaborador { get; set; }
 
     /// <summary>Activos sin cuenta, más el colaborador que esta cuenta ya tiene vinculado.</summary>
