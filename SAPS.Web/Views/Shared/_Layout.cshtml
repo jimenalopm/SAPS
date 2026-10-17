@@ -89,6 +89,13 @@
                                     <partial name="_Iconos" model="@("usuarios")" /> Usuarios
                                 </a>
                             </li>
+                            @* [HU-004] Bitácora: solo Administrador (mismo rol que el [Authorize] de BitacoraController). *@
+                            <li>
+                                <a class="sidebar-link @Activo(controlador == "Bitacora")" aria-current="@Actual(controlador == "Bitacora")"
+                                   asp-area="" asp-controller="Bitacora" asp-action="Index">
+                                    <partial name="_Iconos" model="@("bitacora")" /> Bitácora
+                                </a>
+                            </li>
                         }
                     </ul>
                 </nav>

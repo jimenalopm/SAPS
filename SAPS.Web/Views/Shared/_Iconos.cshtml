@@ -2,7 +2,7 @@
    Uso: <partial name="_Iconos" model='"dashboard"' />  (clases opcionales: model='"dashboard icono-lg"')
    Nombres: dashboard catalogo productos bebidas categorias tamanos pedidos usuarios rrhh configuracion
             salir candado alerta ojo ojo-cerrado editar eliminar buscar agregar menu cerrar flecha volver ayuda
-            telefono correo ubicacion *@
+            telefono correo ubicacion bitacora *@
 @model string
 @{
     var partes = (Model ?? "").Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
@@ -17,6 +17,7 @@
         "categorias"    => "<path d='M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z'/>",
         "tamanos"       => "<path d='M4 20L20 4'/><path d='M4 20h6M4 20v-6'/><path d='M20 4h-6M20 4v6'/>",
         "pedidos"       => "<path d='M3 4h2l2.4 11.2a1 1 0 001 .8h8.7a1 1 0 001-.8L20 8H6'/><circle cx='9' cy='20' r='1.2'/><circle cx='17' cy='20' r='1.2'/>",
+        "bitacora"      => "<rect x='5' y='4' width='14' height='17' rx='2'/><path d='M9 4V3h6v1'/><path d='M9 10h6M9 14h6M9 18h3'/>",
         "usuarios"      => "<circle cx='9' cy='8' r='3.5'/><path d='M2.5 20a6.5 6.5 0 0113 0'/><path d='M16 4.6a3.5 3.5 0 010 6.8'/><path d='M18 14.2A6.5 6.5 0 0121.5 20'/>",
         "rrhh"          => "<circle cx='12' cy='8' r='3.5'/><path d='M5 20a7 7 0 0114 0'/><path d='M12 13v3'/>",
         "configuracion" => "<circle cx='12' cy='12' r='3'/><path d='M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1'/>",
