@@ -1,0 +1,159 @@
+@model SAPS.Web.Models.Auditoria.BitacoraDetalleViewModel
+@{
+    var f = Model.Fila;
+    ViewData["Title"] = "Detalle del evento";
+    var rutaVolver = Model.Filtros.ComoRuta(Model.Pagina);
+    var esSesionFallida = !f.EsExitoso && f.TipoEvento == "InicioSesion";
+}
+
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <a class="separador" asp-action="Index" asp-all-route-data="rutaVolver">Bitácora</a>
+    <span class="separador actual" aria-current="page">Evento #@f.IdBitacora</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">@f.TipoEventoTexto</h1>
+        <p>Evento #@f.IdBitacora · @Model.FechaHoraTexto (hora de Costa Rica)</p>
+        <div class="d-flex flex-wrap gap-2 mt-2">
+            @if (f.EsExitoso)
+            {
+                <span class="badge-recyplast con-punto">Exitoso</span>
+            }
+            else
+            {
+                <span class="badge-recyplast error con-punto">Fallido</span>
+            }
+            <span class="badge-recyplast @(f.Modulo == "Catalogo" ? "" : "azul")">@f.ModuloTexto</span>
+            @if (f.EsCambioDirectoBd)
+            {
+                <span class="badge-recyplast gris">Cambio directo en BD</span>
+            }
+        </div>
+    </div>
+    <a class="btn btn-recyplast-outline" asp-action="Index" asp-all-route-data="rutaVolver">
+        <partial name="_Iconos" model="@("volver icono-sm")" /> Volver a la bitácora
+    </a>
+</div>
+
+@if (Model.TieneCambio)
+{
+    <section class="card-recyplast mb-3" aria-labelledby="t-cambio">
+        <h2 class="card-recyplast-titulo" id="t-cambio">Cambio registrado · @Model.TituloCambio</h2>
+        <div class="comparacion">
+            <div class="comparacion-caja">
+                <span class="comparacion-etiqueta">Valor anterior</span>
+                <span class="comparacion-valor">@(Model.ValorAnterior ?? "—")</span>
+            </div>
+            <div class="comparacion-flecha"><partial name="_Iconos" model="@("flecha icono-lg")" /></div>
+            <div class="comparacion-caja nuevo">
+                <span class="comparacion-etiqueta">Valor nuevo</span>
+                <span class="comparacion-valor">@(Model.ValorNuevo ?? "—")</span>
+            </div>
+        </div>
+        @if (Model.Diferencia is not null)
+        {
+            <p class="comparacion-diferencia">Diferencia: <strong>@Model.Diferencia</strong></p>
+        }
+    </section>
+}
+
+<div class="detalle-grid">
+    <section class="card-recyplast" aria-labelledby="t-evento">
+        <h2 class="card-recyplast-titulo" id="t-evento">Evento</h2>
+        <dl class="lista-campos">
+            <dt>Fecha y hora</dt>
+            <dd>@Model.FechaHoraTexto<span class="detalle-sub texto-mono">@Model.FechaHoraUtc.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) UTC</span></dd>
+
+            <dt>Tipo de evento</dt>
+            <dd>@f.TipoEventoTexto <span class="detalle-sub texto-mono">@f.TipoEvento</span></dd>
+
+            <dt>Módulo</dt>
+            <dd>@f.ModuloTexto</dd>
+
+            <dt>Recurso</dt>
+            <dd class="texto-mono">@f.Recurso</dd>
+
+            <dt>Registro involucrado</dt>
+            <dd class="texto-mono">@(Model.IdRegistro ?? "—")</dd>
+
+            @if (Model.CuentaAfectada is not null)
+            {
+                <dt>Cuenta afectada</dt>
+                <dd>@Model.CuentaAfectada</dd>
+            }
+            @if (Model.Producto is not null)
+            {
+                <dt>Producto</dt>
+                <dd>@Model.Producto</dd>
+            }
+
+            <dt>Resultado</dt>
+            <dd>
+                @if (f.EsExitoso)
+                {
+                    <span class="badge-recyplast con-punto">Exitoso</span>
+                }
+                else
+                {
+                    <span class="badge-recyplast error con-punto">Fallido</span>
+                }
+            </dd>
+
+            <dt>Descripción</dt>
+            <dd>@(Model.Descripcion ?? "—")</dd>
+        </dl>
+    </section>
+
+    <section class="card-recyplast" aria-labelledby="t-origen">
+        <h2 class="card-recyplast-titulo" id="t-origen">Quién y desde dónde</h2>
+        <dl class="lista-campos">
+            <dt>Usuario</dt>
+            <dd>
+                @(f.NombreUsuario ?? "—")
+                @if (esSesionFallida)
+                {
+                    <span class="detalle-sub">Texto escrito en el inicio de sesión@(Model.IdUsuario is null ? " (no existe una cuenta con ese usuario)" : "")</span>
+                }
+            </dd>
+
+            <dt>Rol</dt>
+            <dd>@(f.RolTexto ?? "—")</dd>
+
+            <dt>Id de la cuenta</dt>
+            <dd class="texto-mono">@(Model.IdUsuario ?? "—")</dd>
+
+            <dt>Usuario de base de datos</dt>
+            <dd class="texto-mono">@Model.UsuarioBd</dd>
+
+            <dt>Dirección IP</dt>
+            <dd class="texto-mono">@(Model.DireccionIp ?? "—")</dd>
+
+            <dt>Dispositivo</dt>
+            <dd>
+                @if (Model.Dispositivo is null)
+                {
+                    <text>—</text>
+                }
+                else
+                {
+                    @Model.DispositivoResumen
+                    <small class="ua-crudo texto-mono">@Model.Dispositivo</small>
+                }
+            </dd>
+        </dl>
+        @if (Model.EsCambioPrecio && Model.DireccionIp is null)
+        {
+            <p class="small texto-suave mt-3 mb-0">
+                <partial name="_Iconos" model="@("alerta icono-sm")" />
+                Los cambios de precio los registra la base de datos (trigger), por eso no incluyen IP ni dispositivo.
+            </p>
+        }
+    </section>
+</div>
+
+<p class="aviso-solo-lectura">
+    <partial name="_Iconos" model="@("candado icono-sm")" />
+    Este registro es de solo lectura: nadie puede modificarlo ni eliminarlo, incluido el Administrador.
+</p>
