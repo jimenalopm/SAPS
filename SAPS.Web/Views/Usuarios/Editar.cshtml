@@ -31,7 +31,7 @@
                 <option value="">Seleccioná un rol...</option>
                 @foreach (var rol in SAPS.Web.Models.Identity.CrearUsuarioViewModel.RolesDisponibles)
                 {
-                    <option value="@rol">@rol</option>
+                    <option value="@rol">@SAPS.Web.Models.Identity.CrearUsuarioViewModel.NombreVisible(rol)</option>
                 }
             </select>
             @if (Model.EsCuentaPropia)

@@ -141,7 +141,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
         }
 
         await RegistrarEnBitacoraAsync(TiposEventoBitacora.CuentaCreada, true, nuevo.Id, null, modelo.Rol,
-            $"Cuenta {modelo.Correo} creada con rol {modelo.Rol} (colaborador {colaborador!.Codigo})");
+            $"Cuenta {modelo.Correo} creada con rol {CrearUsuarioViewModel.NombreVisible(modelo.Rol)} (colaborador {colaborador!.Codigo})");
         TempData["Mensaje"] = $"Cuenta \"{modelo.Correo}\" creada correctamente.";
         return RedirectToAction(nameof(Index));
     }
@@ -234,7 +234,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             if (cambiaRol)
             {
                 var rolAnterior = rolActual ?? "Sin rol";
-                var descripcionRol = $"Cuenta {modelo.Correo}: rol {rolAnterior} -> {modelo.Rol}";
+                var descripcionRol = $"Cuenta {modelo.Correo}: rol {CrearUsuarioViewModel.NombreVisible(rolActual)} -> {CrearUsuarioViewModel.NombreVisible(modelo.Rol)}";
                 if (rolActual is not null)
                 {
                     var quitar = await userManager.RemoveFromRoleAsync(usuario, rolActual);

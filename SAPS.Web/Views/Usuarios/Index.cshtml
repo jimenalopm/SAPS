@@ -43,7 +43,7 @@
         var clase = u.Estado switch { "Desactivada" => "error", "Bloqueada temporalmente" => "azul", _ => "" };
         <tr class="@(u.Estado == "Activa" ? "" : "fila-inactiva")">
             <td data-label="Correo" class="celda-principal">@u.Correo</td>
-            <td data-label="Rol">@u.Rol</td>
+            <td data-label="Rol">@SAPS.Web.Models.Identity.CrearUsuarioViewModel.NombreVisible(u.Rol)</td>
             <td data-label="Colaborador vinculado">@(u.ColaboradorNombre ?? "—")</td>
             <td data-label="Estado"><span class="badge-recyplast con-punto @clase">@u.Estado</span></td>
             <td class="text-end celda-acciones">

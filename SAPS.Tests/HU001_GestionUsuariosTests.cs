@@ -323,4 +323,16 @@ public class HU001_GestionUsuariosTests
 
         Assert.Equal("Activa", UsuariosController.CalcularEstado(false, null, ahora));
     }
+
+    // ---------- Nombres de roles en pantalla ----------
+
+    [Theory]
+    [InlineData("RecursosHumanos", "Recursos Humanos")]
+    [InlineData("Administrador", "Administrador")]
+    [InlineData("Soda", "Soda")]
+    [InlineData(null, "Sin rol asignado")]
+    public void NombreVisible_MuestraElRolLegibleSinCambiarElValorInterno(string? rol, string esperado)
+    {
+        Assert.Equal(esperado, CrearUsuarioViewModel.NombreVisible(rol));
+    }
 }

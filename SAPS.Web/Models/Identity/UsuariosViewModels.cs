@@ -20,6 +20,14 @@ public class CrearUsuarioViewModel
 {
     public static readonly string[] RolesDisponibles = ["Administrador", "RecursosHumanos", "Soda"];
 
+    /// <summary>Nombre del rol para mostrar en pantalla; el valor interno (p. ej. "RecursosHumanos") no cambia.</summary>
+    public static string NombreVisible(string? rol) => rol switch
+    {
+        "RecursosHumanos" => "Recursos Humanos",
+        null or "" => "Sin rol asignado",
+        _ => rol,
+    };
+
     [Required(ErrorMessage = "El correo es obligatorio.")]
     [EmailAddress(ErrorMessage = "Ingresá un correo válido.")]
     [Display(Name = "Correo de empleado")]

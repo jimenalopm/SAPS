@@ -36,7 +36,7 @@
                 <option value="">Seleccioná un rol...</option>
                 @foreach (var rol in SAPS.Web.Models.Identity.CrearUsuarioViewModel.RolesDisponibles)
                 {
-                    <option value="@rol">@rol</option>
+                    <option value="@rol">@SAPS.Web.Models.Identity.CrearUsuarioViewModel.NombreVisible(rol)</option>
                 }
             </select>
             <span asp-validation-for="Rol" class="text-danger small"></span>
