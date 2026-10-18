@@ -20,8 +20,16 @@ public class CrearUsuarioViewModel
 {
     public static readonly string[] RolesDisponibles = ["Administrador", "RecursosHumanos", "Soda"];
 
+    /// <summary>Nombre del rol para mostrar en pantalla; el valor interno (p. ej. "RecursosHumanos") no cambia.</summary>
+    public static string NombreVisible(string? rol) => rol switch
+    {
+        "RecursosHumanos" => "Recursos Humanos",
+        null or "" => "Sin rol asignado",
+        _ => rol,
+    };
+
     [Required(ErrorMessage = "El correo es obligatorio.")]
-    [EmailAddress(ErrorMessage = "Ingresá un correo válido.")]
+    [EmailAddress(ErrorMessage = "Ingrese un correo válido.")]
     [Display(Name = "Correo de empleado")]
     public string Correo { get; set; } = "";
 
@@ -30,13 +38,13 @@ public class CrearUsuarioViewModel
     [Display(Name = "Contraseña inicial")]
     public string ContrasenaInicial { get; set; } = "";
 
-    [Required(ErrorMessage = "Seleccioná un rol.")]
+    [Required(ErrorMessage = "Seleccione un rol.")]
     public string Rol { get; set; } = "";
 
     // Obligatorio en los 3 roles, incluido Administrador: toda cuenta nueva declara a qué
-    // colaborador de RRHH pertenece (criterio de aceptación 2, RNF-006).
-    [Required(ErrorMessage = "Seleccioná el colaborador de RRHH al que pertenece esta cuenta.")]
-    [Display(Name = "Colaborador de RRHH")]
+    // colaborador pertenece (criterio de aceptación 2, RNF-006).
+    [Required(ErrorMessage = "Seleccione el colaborador que usará esta cuenta.")]
+    [Display(Name = "Colaborador")]
     public int? IdColaborador { get; set; }
 
     public List<ColaboradorCandidato> ColaboradoresDisponibles { get; set; } = [];
@@ -48,15 +56,15 @@ public class EditarUsuarioViewModel
     public string Id { get; set; } = "";
 
     [Required(ErrorMessage = "El correo es obligatorio.")]
-    [EmailAddress(ErrorMessage = "Ingresá un correo válido.")]
+    [EmailAddress(ErrorMessage = "Ingrese un correo válido.")]
     [Display(Name = "Correo de empleado")]
     public string Correo { get; set; } = "";
 
-    [Required(ErrorMessage = "Seleccioná un rol.")]
+    [Required(ErrorMessage = "Seleccione un rol.")]
     public string Rol { get; set; } = "";
 
-    [Required(ErrorMessage = "Seleccioná el colaborador de RRHH al que pertenece esta cuenta.")]
-    [Display(Name = "Colaborador de RRHH")]
+    [Required(ErrorMessage = "Seleccione el colaborador que usará esta cuenta.")]
+    [Display(Name = "Colaborador")]
     public int? IdColaborador { get; set; }
 
     /// <summary>Activos sin cuenta, más el colaborador que esta cuenta ya tiene vinculado.</summary>

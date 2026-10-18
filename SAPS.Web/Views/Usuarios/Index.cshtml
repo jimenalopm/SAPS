@@ -9,7 +9,7 @@
 <div class="page-header">
     <div>
         <h1 class="h1">Usuarios</h1>
-        <p>Cuentas del sistema, su rol y el colaborador de RRHH al que pertenecen.</p>
+        <p>Cuentas del sistema, su rol y el colaborador que usa cada una.</p>
     </div>
 </div>
 
@@ -43,7 +43,7 @@
         var clase = u.Estado switch { "Desactivada" => "error", "Bloqueada temporalmente" => "azul", _ => "" };
         <tr class="@(u.Estado == "Activa" ? "" : "fila-inactiva")">
             <td data-label="Correo" class="celda-principal">@u.Correo</td>
-            <td data-label="Rol">@u.Rol</td>
+            <td data-label="Rol">@SAPS.Web.Models.Identity.CrearUsuarioViewModel.NombreVisible(u.Rol)</td>
             <td data-label="Colaborador vinculado">@(u.ColaboradorNombre ?? "—")</td>
             <td data-label="Estado"><span class="badge-recyplast con-punto @clase">@u.Estado</span></td>
             <td class="text-end celda-acciones">
@@ -57,7 +57,8 @@
                 }
                 else
                 {
-                    <form asp-action="Reactivar" asp-route-id="@u.Id" method="post" class="d-inline" data-bloquear-envio>
+                    <form asp-action="Reactivar" asp-route-id="@u.Id" method="post" class="d-inline" data-bloquear-envio
+                          data-confirmar="¿Desea reactivar la cuenta «@u.Correo»? Podrá volver a iniciar sesión.">
                         <button type="submit" data-texto-procesando="Procesando..." class="btn btn-sm btn-outline-success">Reactivar</button>
                     </form>
                 }

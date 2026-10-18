@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Data;
 using SAPS.Web.Models.Identity;
 using SAPS.Web.Models.Rrhh;
+using SAPS.Web.Services.Auditoria;
 using SAPS.Web.Services.Identity;
 
 namespace SAPS.Web.Controllers;
@@ -15,11 +16,12 @@ namespace SAPS.Web.Controllers;
 /// RecursosHumanosController, que también permiten el rol RecursosHumanos). "Eliminar" una cuenta
 /// es siempre baja lógica (LockoutEnd), nunca borrado físico: tb_Pedido.idUsuario tiene FK a
 /// AspNetUsers.Id con ON DELETE NO ACTION (PedidoConfiguration.cs), así que un borrado físico
-/// rompería el historial de pedidos. No existe bitácora/auditoría (HU-004) en este repo; esta
-/// HU no la construye.
+/// rompería el historial de pedidos. HU-004 (criterio 3): las altas, bajas, reactivaciones y cambios
+/// de rol quedan en la bitácora con la cuenta afectada; quien hizo el cambio lo toma el servicio del request.
 /// </summary>
 [Authorize(Roles = "Administrador")]
-public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUser> userManager) : Controller
+public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUser> userManager,
+    IServicioBitacora? bitacora = null) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -70,7 +72,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
 
         if (!CrearUsuarioViewModel.RolesDisponibles.Contains(modelo.Rol))
         {
-            ModelState.AddModelError(nameof(modelo.Rol), "Seleccioná un rol válido.");
+            ModelState.AddModelError(nameof(modelo.Rol), "Seleccione un rol válido.");
         }
 
         ColaboradorRrhh? colaborador = null;
@@ -79,7 +81,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             colaborador = await db.Colaboradores.FirstOrDefaultAsync(c => c.IdColaborador == idColaborador);
             if (colaborador is null || !colaborador.EstaActivo)
             {
-                ModelState.AddModelError(nameof(modelo.IdColaborador), "Seleccioná un colaborador activo.");
+                ModelState.AddModelError(nameof(modelo.IdColaborador), "Seleccione un colaborador activo.");
             }
             else if (await db.VinculosUsuarioColaborador.AnyAsync(v => v.IdColaborador == idColaborador))
             {
@@ -132,10 +134,14 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             // ApplicationDbContext: si un paso posterior falla, se compensa eliminando la cuenta
             // recién creada para no dejarla huérfana (sin rol, sin vínculo o sin estado de contraseña).
             await userManager.DeleteAsync(nuevo);
-            ModelState.AddModelError(string.Empty, "No se pudo completar el alta. Verificá los datos e intentá de nuevo.");
+            await RegistrarEnBitacoraAsync(TiposEventoBitacora.CuentaCreada, false, nuevo.Id, null, modelo.Rol,
+                $"No se pudo completar el alta de la cuenta {modelo.Correo}; se revirtió");
+            ModelState.AddModelError(string.Empty, "No se pudo completar el alta. Verifique los datos e intente de nuevo.");
             return View(modelo);
         }
 
+        await RegistrarEnBitacoraAsync(TiposEventoBitacora.CuentaCreada, true, nuevo.Id, null, modelo.Rol,
+            $"Cuenta {modelo.Correo} creada con rol {CrearUsuarioViewModel.NombreVisible(modelo.Rol)} (colaborador {colaborador!.Codigo})");
         TempData["Mensaje"] = $"Cuenta \"{modelo.Correo}\" creada correctamente.";
         return RedirectToAction(nameof(Index));
     }
@@ -180,11 +186,11 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
 
         if (!CrearUsuarioViewModel.RolesDisponibles.Contains(modelo.Rol))
         {
-            ModelState.AddModelError(nameof(modelo.Rol), "Seleccioná un rol válido.");
+            ModelState.AddModelError(nameof(modelo.Rol), "Seleccione un rol válido.");
         }
         else if (cambiaRol && modelo.EsCuentaPropia)
         {
-            ModelState.AddModelError(nameof(modelo.Rol), "No podés cambiar el rol de tu propia cuenta.");
+            ModelState.AddModelError(nameof(modelo.Rol), "No puede cambiar el rol de su propia cuenta.");
         }
         else if (cambiaRol && rolActual == "Administrador" && !await QuedaOtroAdministradorActivoAsync(usuario.Id))
         {
@@ -206,7 +212,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             var colaborador = await db.Colaboradores.FirstOrDefaultAsync(c => c.IdColaborador == idColaborador);
             if (colaborador is null || !colaborador.EstaActivo)
             {
-                ModelState.AddModelError(nameof(modelo.IdColaborador), "Seleccioná un colaborador activo.");
+                ModelState.AddModelError(nameof(modelo.IdColaborador), "Seleccione un colaborador activo.");
             }
             else if (await db.VinculosUsuarioColaborador.AnyAsync(v => v.IdColaborador == idColaborador))
             {
@@ -227,15 +233,26 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
 
             if (cambiaRol)
             {
+                var rolAnterior = rolActual ?? "Sin rol";
+                var descripcionRol = $"Cuenta {modelo.Correo}: rol {CrearUsuarioViewModel.NombreVisible(rolActual)} -> {CrearUsuarioViewModel.NombreVisible(modelo.Rol)}";
                 if (rolActual is not null)
                 {
                     var quitar = await userManager.RemoveFromRoleAsync(usuario, rolActual);
-                    if (!quitar.Succeeded) return ErrorDeEdicion(modelo, quitar);
+                    if (!quitar.Succeeded)
+                    {
+                        await RegistrarEnBitacoraAsync(TiposEventoBitacora.RolCambiado, false, usuario.Id, rolAnterior, modelo.Rol, descripcionRol);
+                        return ErrorDeEdicion(modelo, quitar);
+                    }
                 }
                 var agregar = await userManager.AddToRoleAsync(usuario, modelo.Rol);
-                if (!agregar.Succeeded) return ErrorDeEdicion(modelo, agregar);
+                if (!agregar.Succeeded)
+                {
+                    await RegistrarEnBitacoraAsync(TiposEventoBitacora.RolCambiado, false, usuario.Id, rolAnterior, modelo.Rol, descripcionRol);
+                    return ErrorDeEdicion(modelo, agregar);
+                }
                 // Fuerza a que la sesión abierta de la persona se revalide con el rol nuevo.
                 await userManager.UpdateSecurityStampAsync(usuario);
+                await RegistrarEnBitacoraAsync(TiposEventoBitacora.RolCambiado, true, usuario.Id, rolAnterior, modelo.Rol, descripcionRol);
             }
 
             if (modelo.IdColaborador is int nuevoColaborador && nuevoColaborador != idColaboradorActual)
@@ -260,7 +277,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
         }
         catch (DbUpdateException)
         {
-            ModelState.AddModelError(string.Empty, "No se pudo guardar el cambio. Verificá los datos e intentá de nuevo.");
+            ModelState.AddModelError(string.Empty, "No se pudo guardar el cambio. Verifique los datos e intente de nuevo.");
             return View(modelo);
         }
 
@@ -285,7 +302,7 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
         var idPropio = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (id == idPropio)
         {
-            TempData["Error"] = "No podés desactivar tu propia cuenta.";
+            TempData["Error"] = "No puede desactivar su propia cuenta.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -298,8 +315,16 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
             return RedirectToAction(nameof(Index));
         }
 
-        await userManager.SetLockoutEnabledAsync(usuario, true);
-        await userManager.SetLockoutEndDateAsync(usuario, DateTimeOffset.MaxValue);
+        var estadoAnterior = CalcularEstado(usuario.LockoutEnabled, usuario.LockoutEnd, DateTimeOffset.UtcNow);
+        var resultado = await userManager.SetLockoutEnabledAsync(usuario, true);
+        if (resultado.Succeeded) resultado = await userManager.SetLockoutEndDateAsync(usuario, DateTimeOffset.MaxValue);
+        await RegistrarEnBitacoraAsync(TiposEventoBitacora.CuentaDesactivada, resultado.Succeeded, usuario.Id, estadoAnterior, "Desactivada",
+            $"Cuenta {usuario.UserName} desactivada");
+        if (!resultado.Succeeded)
+        {
+            TempData["Error"] = $"No se pudo desactivar la cuenta \"{usuario.UserName}\". Intente de nuevo.";
+            return RedirectToAction(nameof(Index));
+        }
         TempData["Mensaje"] = $"Cuenta \"{usuario.UserName}\" desactivada.";
         return RedirectToAction(nameof(Index));
     }
@@ -311,12 +336,35 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
         var usuario = await userManager.FindByIdAsync(id);
         if (usuario is null) return NotFound();
 
-        await userManager.SetLockoutEndDateAsync(usuario, null);
+        var estadoAnterior = CalcularEstado(usuario.LockoutEnabled, usuario.LockoutEnd, DateTimeOffset.UtcNow);
+        var resultado = await userManager.SetLockoutEndDateAsync(usuario, null);
         // Limpia también cualquier contador de intentos fallidos viejo (RNF-001), para que la
         // cuenta reactivada no vuelva a caer en un bloqueo transitorio por un conteo previo.
-        await userManager.ResetAccessFailedCountAsync(usuario);
+        if (resultado.Succeeded) resultado = await userManager.ResetAccessFailedCountAsync(usuario);
+        await RegistrarEnBitacoraAsync(TiposEventoBitacora.CuentaReactivada, resultado.Succeeded, usuario.Id, estadoAnterior, "Activa",
+            $"Cuenta {usuario.UserName} reactivada");
+        if (!resultado.Succeeded)
+        {
+            TempData["Error"] = $"No se pudo reactivar la cuenta \"{usuario.UserName}\". Intente de nuevo.";
+            return RedirectToAction(nameof(Index));
+        }
         TempData["Mensaje"] = $"Cuenta \"{usuario.UserName}\" reactivada.";
         return RedirectToAction(nameof(Index));
+    }
+
+    // HU-004 criterio 3: la cuenta afectada va en IdRegistro y en la descripción; el usuario, rol, IP y
+    // dispositivo de quien hizo el cambio los completa el servicio desde el request. El servicio nunca lanza.
+    private async Task RegistrarEnBitacoraAsync(string tipoEvento, bool exitoso, string idCuenta,
+        string? valorAnterior, string? valorNuevo, string descripcion)
+    {
+        if (bitacora is null) return;
+        await bitacora.RegistrarAsync(new EventoBitacora(ModulosBitacora.Seguridad, tipoEvento, RecursosBitacora.Cuentas, exitoso)
+        {
+            IdRegistro = idCuenta,
+            ValorAnterior = valorAnterior,
+            ValorNuevo = valorNuevo,
+            Descripcion = descripcion,
+        });
     }
 
     private async Task CargarColaboradoresDisponibles(CrearUsuarioViewModel modelo) =>
