@@ -73,7 +73,7 @@
             <dd>@f.ModuloTexto</dd>
 
             <dt>Recurso</dt>
-            <dd class="texto-mono">@f.Recurso</dd>
+            <dd>@f.RecursoTexto <span class="detalle-sub texto-mono">@f.Recurso</span></dd>
 
             <dt>Registro involucrado</dt>
             <dd class="texto-mono">@(Model.IdRegistro ?? "—")</dd>
@@ -81,12 +81,23 @@
             @if (Model.CuentaAfectada is not null)
             {
                 <dt>Cuenta afectada</dt>
-                <dd>@Model.CuentaAfectada</dd>
+                <dd>
+                    @Model.CuentaAfectada
+                    <a class="detalle-sub" asp-action="Index" asp-route-texto="@Model.CuentaAfectada">Ver todos los eventos de esta cuenta</a>
+                </dd>
             }
             @if (Model.Producto is not null)
             {
                 <dt>Producto</dt>
-                <dd>@Model.Producto</dd>
+                <dd>
+                    @Model.Producto
+                    @if (Model.NombreArticulo is not null)
+                    {
+                        <a class="detalle-sub" asp-action="Index"
+                           asp-route-tipoEvento="@SAPS.Web.Services.Auditoria.TiposEventoBitacora.CambioPrecio"
+                           asp-route-texto="@Model.NombreArticulo">Ver todos los cambios de precio de «@Model.NombreArticulo»</a>
+                    }
+                </dd>
             }
 
             <dt>Resultado</dt>
