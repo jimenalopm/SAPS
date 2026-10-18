@@ -36,17 +36,17 @@ public class CambiarContrasenaModel(
 
     public class InputModel
     {
-        [Required(ErrorMessage = "Ingresa tu contraseña actual.")]
+        [Required(ErrorMessage = "Ingrese su contraseña actual.")]
         [DataType(DataType.Password)]
         [Display(Name = "Contraseña actual")]
         public string ContrasenaActual { get; set; } = "";
 
-        [Required(ErrorMessage = "Ingresa tu contraseña nueva.")]
+        [Required(ErrorMessage = "Ingrese su contraseña nueva.")]
         [DataType(DataType.Password)]
         [Display(Name = "Contraseña nueva")]
         public string ContrasenaNueva { get; set; } = "";
 
-        [Required(ErrorMessage = "Confirma tu contraseña nueva.")]
+        [Required(ErrorMessage = "Confirme su contraseña nueva.")]
         [DataType(DataType.Password)]
         [Display(Name = "Confirmar contraseña nueva")]
         [Compare(nameof(ContrasenaNueva), ErrorMessage = "Las contraseñas no coinciden.")]

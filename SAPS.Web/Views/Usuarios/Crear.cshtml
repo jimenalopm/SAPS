@@ -33,7 +33,7 @@
         <div class="mb-1">
             <label asp-for="Rol" class="form-label">Rol <span class="campo-obligatorio" aria-hidden="true">*</span></label>
             <select asp-for="Rol" class="form-select">
-                <option value="">Seleccioná un rol...</option>
+                <option value="">Seleccione un rol...</option>
                 @foreach (var rol in SAPS.Web.Models.Identity.CrearUsuarioViewModel.RolesDisponibles)
                 {
                     <option value="@rol">@SAPS.Web.Models.Identity.CrearUsuarioViewModel.NombreVisible(rol)</option>
@@ -47,7 +47,7 @@
         <div class="mb-1">
             <label asp-for="IdColaborador" class="form-label">Colaborador que usará esta cuenta <span class="campo-obligatorio" aria-hidden="true">*</span></label>
             <select asp-for="IdColaborador" class="form-select">
-                <option value="">Seleccioná un colaborador activo...</option>
+                <option value="">Seleccione un colaborador activo...</option>
                 @foreach (var c in Model.ColaboradoresDisponibles)
                 {
                     <option value="@c.IdColaborador">@c.Codigo — @c.NombreCompleto</option>

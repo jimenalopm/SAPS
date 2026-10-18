@@ -64,13 +64,13 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
         public bool ContrasenaActualizada { get; set; }
 
         private const string MensajeColaboradorInactivo =
-            "Tu perfil de colaborador está inactivo. Comunicate con Recursos Humanos o el administrador.";
+            "Su perfil de colaborador está inactivo. Comuníquese con Recursos Humanos o con el administrador.";
 
         public const string MensajeCuentaDesactivada =
-            "Tu cuenta fue desactivada por el administrador. Comunícate con el administrador del sistema.";
+            "Su cuenta fue desactivada por el administrador. Comuníquese con el administrador del sistema.";
 
         public const string MensajeBloqueoTemporal =
-            "Tu cuenta está bloqueada temporalmente por demasiados intentos fallidos. Inténtalo de nuevo más tarde o comunícate con el administrador.";
+            "Su cuenta está bloqueada temporalmente por demasiados intentos fallidos. Inténtelo de nuevo más tarde o comuníquese con el administrador.";
 
         public class InputModel
         {
@@ -82,7 +82,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
             [DataType(DataType.Password)]
             public string Password { get; set; }
 
-            [Display(Name = "Remember me?")]
+            [Display(Name = "Recordar mi sesión en este equipo")]
             public bool RememberMe { get; set; }
         }
 
@@ -189,7 +189,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                     await RegistrarInicioSesionAsync(false, "Credenciales incorrectas", cuentaFallida);
 
                     // F-02 (H9): el mensaje nombra el campo real e indica qué hacer
-                    ModelState.AddModelError(string.Empty, "El correo de empleado o la contraseña son incorrectos. Revisa los datos e inténtalo de nuevo. Si olvidaste tu contraseña, comunícate con el administrador.");
+                    ModelState.AddModelError(string.Empty, "El correo de empleado o la contraseña son incorrectos. Revise los datos e inténtelo de nuevo. Si olvidó su contraseña, comuníquese con el administrador.");
                     return Page();
                 }
             }

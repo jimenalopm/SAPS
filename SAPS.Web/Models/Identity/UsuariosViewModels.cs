@@ -29,7 +29,7 @@ public class CrearUsuarioViewModel
     };
 
     [Required(ErrorMessage = "El correo es obligatorio.")]
-    [EmailAddress(ErrorMessage = "Ingresá un correo válido.")]
+    [EmailAddress(ErrorMessage = "Ingrese un correo válido.")]
     [Display(Name = "Correo de empleado")]
     public string Correo { get; set; } = "";
 
@@ -38,12 +38,12 @@ public class CrearUsuarioViewModel
     [Display(Name = "Contraseña inicial")]
     public string ContrasenaInicial { get; set; } = "";
 
-    [Required(ErrorMessage = "Seleccioná un rol.")]
+    [Required(ErrorMessage = "Seleccione un rol.")]
     public string Rol { get; set; } = "";
 
     // Obligatorio en los 3 roles, incluido Administrador: toda cuenta nueva declara a qué
     // colaborador pertenece (criterio de aceptación 2, RNF-006).
-    [Required(ErrorMessage = "Seleccioná el colaborador que usará esta cuenta.")]
+    [Required(ErrorMessage = "Seleccione el colaborador que usará esta cuenta.")]
     [Display(Name = "Colaborador")]
     public int? IdColaborador { get; set; }
 
@@ -56,14 +56,14 @@ public class EditarUsuarioViewModel
     public string Id { get; set; } = "";
 
     [Required(ErrorMessage = "El correo es obligatorio.")]
-    [EmailAddress(ErrorMessage = "Ingresá un correo válido.")]
+    [EmailAddress(ErrorMessage = "Ingrese un correo válido.")]
     [Display(Name = "Correo de empleado")]
     public string Correo { get; set; } = "";
 
-    [Required(ErrorMessage = "Seleccioná un rol.")]
+    [Required(ErrorMessage = "Seleccione un rol.")]
     public string Rol { get; set; } = "";
 
-    [Required(ErrorMessage = "Seleccioná el colaborador que usará esta cuenta.")]
+    [Required(ErrorMessage = "Seleccione el colaborador que usará esta cuenta.")]
     [Display(Name = "Colaborador")]
     public int? IdColaborador { get; set; }
 

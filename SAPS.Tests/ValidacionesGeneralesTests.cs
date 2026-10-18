@@ -236,7 +236,7 @@ public class ValidacionesGeneralesTests
         var resultado = await CrearControlador(db, um).Editar(Modelo(usuario, "a@recyplast.cr", "Soda", inactivo.IdColaborador));
 
         var vista = Assert.IsType<ViewResult>(resultado);
-        Assert.Contains("Seleccioná un colaborador activo.", vista.ViewData.ModelState["IdColaborador"]!.Errors.Select(e => e.ErrorMessage));
+        Assert.Contains("Seleccione un colaborador activo.", vista.ViewData.ModelState["IdColaborador"]!.Errors.Select(e => e.ErrorMessage));
     }
 
     [Fact]
@@ -249,7 +249,7 @@ public class ValidacionesGeneralesTests
         var resultado = await CrearControlador(db, um).Editar(Modelo(usuario, "a@recyplast.cr", "Hacker", c1.IdColaborador));
 
         var vista = Assert.IsType<ViewResult>(resultado);
-        Assert.Contains("Seleccioná un rol válido.", vista.ViewData.ModelState["Rol"]!.Errors.Select(e => e.ErrorMessage));
+        Assert.Contains("Seleccione un rol válido.", vista.ViewData.ModelState["Rol"]!.Errors.Select(e => e.ErrorMessage));
         Assert.Equal(["Soda"], await um.GetRolesAsync((await um.FindByIdAsync(usuario.Id))!));
     }
 
@@ -297,7 +297,7 @@ public class ValidacionesGeneralesTests
         var resultado = await CrearControlador(db, um, admin1.Id).Editar(Modelo(admin1, "admin1@recyplast.cr", "Soda", c1.IdColaborador));
 
         var vista = Assert.IsType<ViewResult>(resultado);
-        Assert.Contains("No podés cambiar el rol de tu propia cuenta.", vista.ViewData.ModelState["Rol"]!.Errors.Select(e => e.ErrorMessage));
+        Assert.Contains("No puede cambiar el rol de su propia cuenta.", vista.ViewData.ModelState["Rol"]!.Errors.Select(e => e.ErrorMessage));
     }
 
     [Fact]

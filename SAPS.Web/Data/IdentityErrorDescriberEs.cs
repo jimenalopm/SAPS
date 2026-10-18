@@ -12,7 +12,7 @@ public class IdentityErrorDescriberEs : IdentityErrorDescriber
         Error(nameof(DefaultError), "Ocurrió un error inesperado.");
 
     public override IdentityError ConcurrencyFailure() =>
-        Error(nameof(ConcurrencyFailure), "Otro usuario modificó este registro. Recarga la página e inténtalo de nuevo.");
+        Error(nameof(ConcurrencyFailure), "Otro usuario modificó este registro. Recargue la página e inténtelo de nuevo.");
 
     public override IdentityError PasswordMismatch() =>
         Error(nameof(PasswordMismatch), "La contraseña actual no es correcta.");
