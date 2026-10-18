@@ -1,0 +1,273 @@
+@using System.Globalization
+@using Microsoft.AspNetCore.Html
+@model SAPS.Web.Models.Auditoria.BitacoraListadoViewModel
+@{
+    ViewData["Title"] = "Bitácora";
+    var cultura = CultureInfo.GetCultureInfo("es-CR");
+    var filtros = Model.Filtros;
+    var activos = filtros.Activos();
+
+    // Correos largos: se permite cortar la línea en la arroba y no en cualquier letra.
+    IHtmlContent Correo(string? texto) =>
+        Html.Raw(Html.Encode(texto ?? "—").Replace("@", "<wbr>@"));
+
+    // <option> armado a mano: así "selected" solo aparece en la opción elegida.
+    IHtmlContent Opcion(string valor, string texto, string? actual) =>
+        Html.Raw($"<option value=\"{Html.Encode(valor)}\"{(valor == actual ? " selected" : "")}>{Html.Encode(texto)}</option>");
+
+    // Enlace al detalle: lleva el id, los filtros y la página para poder volver al mismo punto.
+    Dictionary<string, string> RutaDetalle(int id)
+    {
+        var ruta = filtros.ComoRuta(Model.Pagina);
+        ruta["id"] = id.ToString(CultureInfo.InvariantCulture);
+        return ruta;
+    }
+
+    string? FechaInput(DateTime? fecha) => fecha?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    // Ventana de páginas alrededor de la actual (1 … 4 5 [6] 7 8 … 20).
+    const int vecinas = 2;
+    var paginas = Enumerable.Range(1, Model.TotalPaginas)
+        .Where(p => p == 1 || p == Model.TotalPaginas || Math.Abs(p - Model.Pagina) <= vecinas)
+        .ToList();
+}
+
+<nav aria-label="Ruta de navegación" class="breadcrumb-recyplast">
+    <a asp-controller="Home" asp-action="Index">Inicio</a>
+    <span class="separador actual" aria-current="page">Bitácora</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="h1">Bitácora de actividad y accesos</h1>
+        <p>Inicios y cierres de sesión, cambios en cuentas de usuario y cambios de precio del catálogo. Horas en hora de Costa Rica.</p>
+    </div>
+    <span class="badge-solo-lectura" title="Los registros no se pueden modificar ni eliminar">
+        <partial name="_Iconos" model="@("candado icono-sm")" /> Solo lectura
+    </span>
+</div>
+
+@* Formulario GET: los filtros viajan en la URL (?tipoEvento=...&modulo=...), así la paginación y el detalle los conservan. *@
+<form method="get" asp-action="Index" class="filtros-card" role="search" aria-label="Filtros de la bitácora" data-bloquear-envio>
+    <div class="filtros-grid">
+        <div class="campo-ancho">
+            <label class="form-label" for="f-tipo">Tipo de evento</label>
+            <select class="form-select" id="f-tipo" name="tipoEvento">
+                @Opcion("", "Todos los eventos", filtros.TipoEvento ?? "")
+                @foreach (var grupo in Model.TiposPorModulo)
+                {
+                    <optgroup label="@grupo.Texto">
+                        @foreach (var o in grupo.Opciones)
+                        {
+                            @Opcion(o.Valor, o.Texto, filtros.TipoEvento)
+                        }
+                    </optgroup>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label" for="f-modulo">Módulo</label>
+            <select class="form-select" id="f-modulo" name="modulo">
+                @Opcion("", "Todos", filtros.Modulo ?? "")
+                @foreach (var o in Model.Modulos)
+                {
+                    @Opcion(o.Valor, o.Texto, filtros.Modulo)
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label" for="f-resultado">Resultado</label>
+            <select class="form-select" id="f-resultado" name="resultado">
+                @Opcion("", "Todos", filtros.Resultado ?? "")
+                @Opcion(SAPS.Web.Models.Auditoria.BitacoraFiltros.ResultadoExitoso, "Exitoso", filtros.Resultado)
+                @Opcion(SAPS.Web.Models.Auditoria.BitacoraFiltros.ResultadoFallido, "Fallido", filtros.Resultado)
+            </select>
+        </div>
+        <div class="campo-fecha">
+            <label class="form-label" for="f-desde">Desde</label>
+            <input class="form-control" type="date" id="f-desde" name="desde" value="@FechaInput(filtros.Desde)" />
+        </div>
+        <div class="campo-fecha">
+            <label class="form-label" for="f-hasta">Hasta</label>
+            <input class="form-control" type="date" id="f-hasta" name="hasta" value="@FechaInput(filtros.Hasta)" />
+        </div>
+        <div class="campo-ancho">
+            <label class="form-label" for="f-usuario">Usuario</label>
+            <div class="input-buscar">
+                <partial name="_Iconos" model="@("buscar icono-sm")" />
+                <input class="form-control" type="search" id="f-usuario" name="usuario" value="@filtros.Usuario"
+                       placeholder="Correo o usuario" autocomplete="off" maxlength="100" />
+            </div>
+        </div>
+        <div class="filtros-acciones">
+            <a class="btn btn-recyplast-outline" asp-action="Index">Limpiar</a>
+            <button type="submit" class="btn btn-recyplast" data-texto-procesando="Filtrando...">
+                <partial name="_Iconos" model="@("buscar icono-sm")" /> Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="resultados-barra">
+    <p class="resultados-total" aria-live="polite">
+        @if (Model.TotalRegistros > 0)
+        {
+            <text>Mostrando <strong>@Model.PrimeraFila–@Model.UltimaFila</strong> de <strong>@Model.TotalRegistros.ToString("N0", cultura)</strong> eventos</text>
+        }
+        else
+        {
+            <text>Sin resultados</text>
+        }
+    </p>
+    @if (activos.Count > 0)
+    {
+        <div class="filtros-activos">
+            @foreach (var a in activos)
+            {
+                <a class="chip-filtro" asp-action="Index" asp-all-route-data="@filtros.ComoRuta(null, a.Clave)"
+                   aria-label="Quitar filtro @a.Nombre: @a.Valor" title="Quitar filtro">
+                    @a.Nombre: @a.Valor <partial name="_Iconos" model="@("cerrar")" />
+                </a>
+            }
+        </div>
+    }
+</div>
+
+<div class="tabla-contenedor">
+<table class="table table-recyplast tabla-apilable align-middle">
+    <caption class="visually-hidden">Eventos de la bitácora, del más reciente al más antiguo</caption>
+    <thead>
+        <tr>
+            <th scope="col">Fecha y hora</th><th scope="col">Evento</th><th scope="col">Usuario</th><th scope="col">Detalle</th><th scope="col">Resultado</th>
+            <th scope="col" class="text-end"><span class="visually-hidden">Acciones</span></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var f in Model.Filas)
+    {
+        <tr class="@(f.EsExitoso ? "" : "fila-fallida")">
+            <td data-label="Fecha y hora" class="celda-fecha">
+                <div class="celda-valor">@f.Fecha<span class="hora">@f.Hora</span></div>
+            </td>
+            <td data-label="Evento" class="celda-principal">
+                <div class="celda-valor">
+                    <span class="evento-nombre">@f.TipoEventoTexto</span>
+                    <span class="evento-meta"><span class="marca-modulo @(f.Modulo == "Catalogo" ? "catalogo" : "seguridad")" aria-hidden="true"></span>@f.ModuloTexto · @f.Recurso</span>
+                </div>
+            </td>
+            <td data-label="Usuario">
+                <div class="celda-valor">
+                    @if (f.EsCambioDirectoBd)
+                    {
+                        <span class="usuario-nombre texto-mono">@f.NombreUsuario</span>
+                        <span class="badge-recyplast gris mt-1">Cambio directo en BD</span>
+                    }
+                    else
+                    {
+                        <span class="usuario-nombre">@Correo(f.NombreUsuario)</span>
+                        if (f.RolTexto is not null)
+                        {
+                            <span class="usuario-rol">@f.RolTexto</span>
+                        }
+                    }
+                </div>
+            </td>
+            <td data-label="Detalle" class="celda-detalle">
+                <div class="celda-valor">
+                    @if (!string.IsNullOrEmpty(f.DetallePrincipal))
+                    {
+                        <span class="usuario-nombre">@Correo(f.DetallePrincipal)</span>
+                    }
+                    @if (f.MuestraCambio)
+                    {
+                        <span class="cambio-valores">
+                            <span class="anterior"><span class="visually-hidden">Antes: </span>@f.ValorAnteriorTexto</span>
+                            <partial name="_Iconos" model="@("flecha")" />
+                            <span class="nuevo"><span class="visually-hidden">Después: </span>@f.ValorNuevoTexto</span>
+                        </span>
+                    }
+                    else if (!string.IsNullOrEmpty(f.DetalleSecundario))
+                    {
+                        <span class="detalle-sub">@f.DetalleSecundario</span>
+                    }
+                    @if (string.IsNullOrEmpty(f.DetallePrincipal) && !f.MuestraCambio && string.IsNullOrEmpty(f.DetalleSecundario))
+                    {
+                        <span class="texto-suave">—</span>
+                    }
+                </div>
+            </td>
+            <td data-label="Resultado">
+                <div class="celda-valor">
+                    @if (f.EsExitoso)
+                    {
+                        <span class="badge-recyplast con-punto">Exitoso</span>
+                    }
+                    else
+                    {
+                        <span class="badge-recyplast error con-punto">Fallido</span>
+                        if (!string.IsNullOrEmpty(f.MotivoFallo))
+                        {
+                            <span class="detalle-sub mt-1">@f.MotivoFallo</span>
+                        }
+                    }
+                </div>
+            </td>
+            <td class="text-end celda-acciones">
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Detalle"
+                   asp-all-route-data="@RutaDetalle(f.IdBitacora)" aria-label="Ver detalle del evento @f.IdBitacora">
+                    <partial name="_Iconos" model="@("ojo icono-sm")" /> Ver detalle
+                </a>
+            </td>
+        </tr>
+    }
+    @if (!Model.Filas.Any())
+    {
+        <tr class="fila-vacia">
+            <td colspan="6" class="estado-vacio">
+                @if (filtros.TieneFiltros)
+                {
+                    <text>No hay eventos que coincidan con los filtros. <a asp-action="Index">Limpiar filtros</a></text>
+                }
+                else
+                {
+                    <text>Todavía no hay eventos registrados en la bitácora.</text>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+</div>
+
+@if (Model.TotalPaginas > 1)
+{
+    <nav class="paginacion" aria-label="Páginas de la bitácora">
+        <span class="resultados-total">Página @Model.Pagina de @Model.TotalPaginas</span>
+        <ul class="pagination">
+            <li class="page-item @(Model.Pagina == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-all-route-data="@filtros.ComoRuta(Model.Pagina - 1)" aria-label="Página anterior">Anterior</a>
+            </li>
+            @for (var i = 0; i < paginas.Count; i++)
+            {
+                var n = paginas[i];
+                if (i > 0 && n - paginas[i - 1] > 1)
+                {
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                }
+                <li class="page-item @(n == Model.Pagina ? "active" : "")">
+                    @if (n == Model.Pagina)
+                    {
+                        <span class="page-link" aria-current="page">@n</span>
+                    }
+                    else
+                    {
+                        <a class="page-link" asp-action="Index" asp-all-route-data="@filtros.ComoRuta(n)">@n</a>
+                    }
+                </li>
+            }
+            <li class="page-item @(Model.Pagina == Model.TotalPaginas ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-all-route-data="@filtros.ComoRuta(Model.Pagina + 1)" aria-label="Página siguiente">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+}
