@@ -778,3 +778,75 @@ body { margin-bottom: 0; }
 .aviso-solo-lectura { display: flex; align-items: center; gap: .6rem; margin-top: 1rem; padding: .7rem 1rem; font-size: .85rem;
   border-radius: var(--rp-radio-sm); background: var(--rp-gris-fondo); border: 1px dashed var(--rp-gris-borde); color: var(--rp-gris-texto-suave); }
 .ua-crudo { display: block; margin-top: .25rem; color: var(--rp-gris-texto-suave); }
+
+/* ---------- 13. Modo claro / oscuro ----------
+   tema.js pone data-tema="claro|oscuro" (y data-bs-theme para Bootstrap) en <html>.
+   En oscuro se redefinen los tokens: casi todo el sistema usa var(--rp-...), así que cambia solo.
+   Debajo van los pocos colores fijos y el texto que va sobre verde o azul de marca (siempre oscuro). */
+.btn-tema .tema-icono-luna, .btn-tema .tema-icono-sol { display: inline-flex; }
+:root[data-tema="oscuro"] .btn-tema .tema-icono-luna,
+:root:not([data-tema="oscuro"]) .btn-tema .tema-icono-sol { display: none; }
+.btn-tema-flotante { position: fixed; top: 1rem; right: 1rem; z-index: 1050; padding: .45rem .6rem; }
+
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+  --rp-blanco: #1D2226;            /* superficies: tarjetas, header, menú, campos */
+  --rp-gris: #E3E6E8;              /* texto principal */
+  --rp-gris-fondo: #14181B;
+  --rp-gris-borde: #343B41;
+  --rp-gris-texto-suave: #A3ABB1;
+  --rp-verde-suave: #2C3312;
+  --rp-azul-suave: #0F2C36;
+  --rp-rojo-suave: #3B201D;
+  --rp-verde-oscuro: #C9DB3A;      /* verde para texto sobre fondo oscuro */
+  --rp-azul-oscuro: #5BC4E8;
+  --rp-rojo-texto: #F2897C;
+  --rp-tinta: #1B1F22;             /* texto sobre botones verdes o azules */
+  --rp-sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 2px 8px rgba(0, 0, 0, .3);
+  --rp-sombra-md: 0 4px 16px rgba(0, 0, 0, .5);
+}
+
+/* Texto sobre verde o azul de marca: se mantiene oscuro para conservar el contraste */
+:root[data-tema="oscuro"] .btn-recyplast,
+:root[data-tema="oscuro"] .btn-recyplast:hover, :root[data-tema="oscuro"] .btn-recyplast:focus,
+:root[data-tema="oscuro"] .btn-recyplast:active { color: var(--rp-tinta) !important; }
+:root[data-tema="oscuro"] .btn-primary { --bs-btn-color: var(--rp-tinta); --bs-btn-hover-color: var(--rp-tinta);
+  --bs-btn-active-color: var(--rp-tinta); --bs-btn-disabled-color: var(--rp-tinta); }
+:root[data-tema="oscuro"] .btn-outline-success { --bs-btn-hover-color: var(--rp-tinta); }
+:root[data-tema="oscuro"] .paso.activo .paso-numero { color: var(--rp-tinta); }
+:root[data-tema="oscuro"] .paginacion .pagination { --bs-pagination-active-color: var(--rp-tinta); }
+:root[data-tema="oscuro"] .marca-placeholder,
+:root[data-tema="oscuro"] .auth-panel,
+:root[data-tema="oscuro"] .auth-panel .marca-empresa, :root[data-tema="oscuro"] .auth-panel .marca-sistema,
+:root[data-tema="oscuro"] .auth-panel .sidebar-marca { color: #FFFFFF; }
+
+/* El logo oficial es oscuro: en modo oscuro se muestra en blanco, igual que sobre la foto del login */
+:root[data-tema="oscuro"] .marca-logo { filter: brightness(0) invert(1); }
+
+/* Colores fijos del modo claro */
+:root[data-tema="oscuro"] .badge-recyplast { color: #D3E36A; }
+:root[data-tema="oscuro"] .badge-recyplast.azul { color: var(--rp-azul-oscuro); }
+:root[data-tema="oscuro"] .badge-recyplast.gris,
+:root[data-tema="oscuro"] .badge-solo-lectura { background: #2C3237; color: #C2C8CC; }
+:root[data-tema="oscuro"] .badge-recyplast.error,
+:root[data-tema="oscuro"] .field-validation-error,
+:root[data-tema="oscuro"] .text-danger { color: var(--rp-rojo-texto) !important; }
+:root[data-tema="oscuro"] .table-recyplast tbody tr:hover td { background: #232A1E; }
+:root[data-tema="oscuro"] .foto-colaborador.sin-foto { background-color: #2C3237; color: #C2C8CC; }
+:root[data-tema="oscuro"] .tarjeta-colaborador,
+:root[data-tema="oscuro"] #mensaje-pedido.alert-info,
+:root[data-tema="oscuro"] .aviso-prueba { border-color: #24505E; }
+:root[data-tema="oscuro"] .auth-alerta,
+:root[data-tema="oscuro"] .alerta-error-recyplast,
+:root[data-tema="oscuro"] #mensaje-pedido.alert-danger { border-color: #6B2E27; color: var(--rp-rojo-texto); }
+:root[data-tema="oscuro"] #mensaje-pedido.alert-warning,
+:root[data-tema="oscuro"] .pagina-estado-icono.alerta { background: #3A3215; border-color: #6E5B16; }
+:root[data-tema="oscuro"] .pagina-estado-icono.alerta { color: #E8C547; }
+:root[data-tema="oscuro"] .pagina-estado-icono.error { color: var(--rp-rojo-texto); }
+:root[data-tema="oscuro"] .btn-recyplast-azul-suave { color: #7FD3EE; }
+:root[data-tema="oscuro"] .btn-recyplast-azul-suave:hover, :root[data-tema="oscuro"] .btn-recyplast-azul-suave:focus,
+:root[data-tema="oscuro"] .chip-filtro:hover, :root[data-tema="oscuro"] .chip-filtro:focus { background: #17404D; color: #7FD3EE; }
+:root[data-tema="oscuro"] .aviso-total.aviso-advertencia { background: #3A3215; border-color: #B58A00; color: #F5D77A; }
+:root[data-tema="oscuro"] .aviso-total.aviso-bloqueo { background: #3B1D20; border-color: #D9534F; color: #F5B5BB; }
+:root[data-tema="oscuro"] .total-advertencia { color: #E8C547; }
+:root[data-tema="oscuro"] .total-bloqueo { color: #F28B95; }

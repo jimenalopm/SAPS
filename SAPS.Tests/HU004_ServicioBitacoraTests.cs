@@ -367,7 +367,7 @@ public class HU004_ServicioBitacoraTests
     }
 
     [Fact]
-    public async Task Login_CuentaInexistente_RegistraFallidoConLoDigitadoYSinIdDeUsuario()
+    public async Task Login_CuentaInexistente_RegistraFallidoSinGuardarLoDigitadoNiIdDeUsuario()
     {
         var (pagina, _, _, opciones) = await CrearLoginAsync("EMP702", "Prueba123");
         pagina.Input.CodigoEmpleado = "NOEXISTE";
@@ -378,7 +378,10 @@ public class HU004_ServicioBitacoraTests
         Assert.False(fila.EsExitoso);
         Assert.Null(fila.IdUsuario);
         Assert.Null(fila.Rol);
-        Assert.Equal("NOEXISTE", fila.NombreUsuario);
+        // Lo digitado pudo ser la contraseña escrita en el campo equivocado: no se guarda.
+        Assert.Equal(PresentacionBitacora.UsuarioNoReconocido, fila.NombreUsuario);
+        Assert.DoesNotContain(typeof(Bitacora).GetProperties().Where(p => p.PropertyType == typeof(string))
+            .Select(p => (string?)p.GetValue(fila) ?? ""), t => t.Contains("NOEXISTE"));
     }
 
     [Fact]

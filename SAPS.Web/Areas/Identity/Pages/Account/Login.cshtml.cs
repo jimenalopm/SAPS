@@ -182,7 +182,8 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    // Si la cuenta existe se guarda su id; si no, solo lo digitado. Nunca la contraseña.
+                    // Si la cuenta existe se guarda su id y su usuario. Si no existe, NO se guarda lo digitado: la persona
+                    // pudo escribir su contraseña en el campo del usuario y la bitácora no se puede borrar.
                     var cuentaFallida = _bitacora is null
                         ? null
                         : await _signInManager.UserManager.FindByNameAsync(Input.CodigoEmpleado);
@@ -208,7 +209,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
             {
                 IdRegistro = cuenta?.Id,
                 IdUsuario = cuenta?.Id,
-                NombreUsuario = cuenta?.UserName ?? Input.CodigoEmpleado,
+                NombreUsuario = cuenta?.UserName ?? PresentacionBitacora.UsuarioNoReconocido,
                 Rol = rol,
                 Descripcion = descripcion,
             });

@@ -91,7 +91,9 @@ public class BitacoraFiltros
 
         if (Usuario is string texto)
         {
-            consulta = consulta.Where(b => b.NombreUsuario != null && b.NombreUsuario.Contains(texto));
+            // Los intentos fallidos sin cuenta no se buscan por lo digitado: pudo ser una contraseña.
+            consulta = consulta.Where(b => b.NombreUsuario != null && b.NombreUsuario.Contains(texto)
+                && !(b.TipoEvento == TiposEventoBitacora.InicioSesion && !b.EsExitoso && b.IdUsuario == null));
         }
 
         if (Texto is string buscado)

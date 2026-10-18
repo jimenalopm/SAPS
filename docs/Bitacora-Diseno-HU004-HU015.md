@@ -64,6 +64,7 @@ Las propiedades C# se nombran en PascalCase (EP05) y la entidad se llamará `Bit
 | Seguridad | `CuentaCreada` | `AspNetUsers` | El Administrador crea una cuenta (HU-003). | — / rol asignado |
 | Seguridad | `CuentaDesactivada` | `AspNetUsers` | El Administrador desactiva una cuenta. | activa / inactiva |
 | Seguridad | `CuentaReactivada` | `AspNetUsers` | El Administrador reactiva una cuenta desactivada (agregado en la task 7). | inactiva / activa |
+| Seguridad | `CuentaModificada` | `AspNetUsers` | El Administrador cambia el correo o el colaborador vinculado de una cuenta. | correo o colaborador anterior / nuevo |
 | Seguridad | `RolCambiado` | `AspNetUsers` | El Administrador cambia el rol de una cuenta. | rol anterior / rol nuevo |
 | Catalogo | `CambioPrecio` | `tb_Precio` | Se modifica un precio (HU-007, HU-015), desde la pantalla o directo en la BD. | precio anterior / precio nuevo |
 | *(futuro)* | `OrdenAnulada` | `tb_Pedido` | HU-010 (Sprint 4). | Misma estructura, sin cambios en la tabla. |

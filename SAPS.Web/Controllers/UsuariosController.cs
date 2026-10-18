@@ -222,12 +222,16 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
 
         if (!ModelState.IsValid) return View(modelo);
 
+        // HU-004 criterio 3: el cambio de correo o de colaborador también es una modificación de la cuenta.
+        var correoAnterior = usuario.UserName ?? "";
         try
         {
             if (!string.Equals(usuario.UserName, modelo.Correo, StringComparison.Ordinal))
             {
                 var resultadoNombre = await userManager.SetUserNameAsync(usuario, modelo.Correo);
                 if (resultadoNombre.Succeeded) resultadoNombre = await userManager.SetEmailAsync(usuario, modelo.Correo);
+                await RegistrarEnBitacoraAsync(TiposEventoBitacora.CuentaModificada, resultadoNombre.Succeeded, usuario.Id,
+                    correoAnterior, modelo.Correo, $"Cuenta {modelo.Correo}: correo {correoAnterior} -> {modelo.Correo}");
                 if (!resultadoNombre.Succeeded) return ErrorDeEdicion(modelo, resultadoNombre);
             }
 
@@ -273,6 +277,14 @@ public class UsuariosController(ApplicationDbContext db, UserManager<IdentityUse
                     vinculo.FechaVinculacion = DateTime.UtcNow;
                 }
                 await db.SaveChangesAsync();
+
+                var codigos = await db.Colaboradores.AsNoTracking()
+                    .Where(c => c.IdColaborador == nuevoColaborador || c.IdColaborador == idColaboradorActual)
+                    .ToDictionaryAsync(c => c.IdColaborador, c => c.Codigo);
+                var codigoAnterior = idColaboradorActual is int ida && codigos.TryGetValue(ida, out var ca) ? ca : "Sin colaborador";
+                var codigoNuevo = codigos.GetValueOrDefault(nuevoColaborador, nuevoColaborador.ToString());
+                await RegistrarEnBitacoraAsync(TiposEventoBitacora.CuentaModificada, true, usuario.Id, codigoAnterior, codigoNuevo,
+                    $"Cuenta {modelo.Correo}: colaborador {codigoAnterior} -> {codigoNuevo}");
             }
         }
         catch (DbUpdateException)

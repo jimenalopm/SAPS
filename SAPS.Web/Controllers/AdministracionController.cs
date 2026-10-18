@@ -174,7 +174,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             var activos = await db.Productos.CountAsync(p => p.IdCategoria == id && p.Activo);
             if (activos > 0)
             {
-                TempData["Error"] = $"No se puede desactivar la categoría «{categoria.NombreCategoria}»: tiene {activos} producto(s) activo(s). Desactive primero esos productos.";
+                TempData["Error"] = MensajesCatalogo.NoDesactivarCategoria(categoria.NombreCategoria, activos);
                 return RedirectToAction(nameof(Catalogo), new { tab = "categorias" });
             }
         }
@@ -285,7 +285,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             var bebidas = await db.Bebidas.CountAsync(b => b.IdTamano == id && b.Activo);
             if (productos + bebidas > 0)
             {
-                TempData["Error"] = $"No se puede desactivar el tamaño «{tamano.NombreTamano}»: lo usan {productos} producto(s) y {bebidas} bebida(s) activos. Desactívelos o cámbieles el tamaño primero.";
+                TempData["Error"] = MensajesCatalogo.NoDesactivarTamano(tamano.NombreTamano, productos, bebidas);
                 return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
             }
         }
@@ -644,7 +644,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             var activas = await db.Bebidas.CountAsync(b => b.TipoBebida == tipo.NombreTipo && b.Activo);
             if (activas > 0)
             {
-                TempData["Error"] = $"No se puede desactivar el tipo «{tipo.NombreTipo}»: lo usan {activas} bebida(s) activa(s). Desactívelas o cámbieles el tipo primero.";
+                TempData["Error"] = MensajesCatalogo.NoDesactivarTipoBebida(tipo.NombreTipo, activas);
                 return RedirectToAction(nameof(Catalogo), new { tab = "tipos" });
             }
         }

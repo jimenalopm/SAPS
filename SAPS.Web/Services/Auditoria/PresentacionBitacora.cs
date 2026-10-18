@@ -23,6 +23,7 @@ public static partial class PresentacionBitacora
         [TiposEventoBitacora.CuentaCreada] = "Cuenta creada",
         [TiposEventoBitacora.CuentaDesactivada] = "Cuenta desactivada",
         [TiposEventoBitacora.CuentaReactivada] = "Cuenta reactivada",
+        [TiposEventoBitacora.CuentaModificada] = "Cuenta modificada",
         [TiposEventoBitacora.RolCambiado] = "Cambio de rol",
         [TiposEventoBitacora.CambioPrecio] = "Cambio de precio",
     };
@@ -38,6 +39,7 @@ public static partial class PresentacionBitacora
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaCreada),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaDesactivada),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaReactivada),
+        (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaModificada),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.RolCambiado),
         (ModulosBitacora.Catalogo, TiposEventoBitacora.CambioPrecio),
     ];
@@ -69,6 +71,17 @@ public static partial class PresentacionBitacora
 
     public static string EtiquetaModulo(string? modulo) =>
         string.IsNullOrEmpty(modulo) ? "" : Modulos.GetValueOrDefault(modulo, modulo);
+
+    /// <summary>Texto que se muestra en lugar de lo digitado en un inicio de sesión con un usuario que no existe.</summary>
+    public const string UsuarioNoReconocido = "(usuario no reconocido)";
+
+    /// <summary>
+    /// En un inicio de sesión fallido sin cuenta (idUsuario vacío), lo digitado pudo ser la contraseña escrita en el
+    /// campo equivocado. Los registros anteriores al cambio del login lo tienen guardado y no se pueden borrar,
+    /// así que la pantalla nunca lo muestra.
+    /// </summary>
+    public static string? UsuarioVisible(string tipoEvento, bool esExitoso, string? idUsuario, string? nombreUsuario) =>
+        tipoEvento == TiposEventoBitacora.InicioSesion && !esExitoso && idUsuario is null ? UsuarioNoReconocido : nombreUsuario;
 
     public static string EtiquetaRecurso(string? recurso) =>
         string.IsNullOrEmpty(recurso) ? "" : Recursos.GetValueOrDefault(recurso, recurso);
