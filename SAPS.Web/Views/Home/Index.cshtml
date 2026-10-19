@@ -9,6 +9,7 @@
     var veRrhh = User.IsInRole("Administrador") || User.IsInRole("RecursosHumanos");
 
     string Comida(string tipo) => tipo == "Merienda" ? "Café" : tipo;   // mismo criterio que la pantalla de pedidos
+    string CantidadTexto(int n) => n == 1 ? "1 registro" : $"{n.ToString("N0", cultura)} registros";
     string Colones(long monto) => "₡" + monto.ToString("N0", cultura);
 
     // Hora relativa ("hace 3 horas"); pasadas 7 días se muestra la fecha completa. El detalle exacto va en el title.
@@ -40,55 +41,195 @@
     </div>
 </div>
 
+@* Cada tarjeta abre, en esta misma pantalla, un panel con el detalle resumido. Se cierra con la X, con Esc
+   o tocando de nuevo la tarjeta. Lo maneja wwwroot/js/inicio.js. *@
+@{
+    var tarjetas = new[]
+    {
+        (Panel: "panel-productos", Icono: "productos", Color: "", Etiqueta: "Productos", Valor: Model.ProductosActivos,
+            Detalle: Model.ProductosActivos == Model.ProductosTotal ? "activos" : $"activos de {Model.ProductosTotal.ToString("N0", cultura)}"),
+        (Panel: "panel-bebidas", Icono: "bebidas", Color: "azul", Etiqueta: "Bebidas", Valor: Model.BebidasActivas,
+            Detalle: Model.BebidasActivas == Model.BebidasTotal ? "activas" : $"activas de {Model.BebidasTotal.ToString("N0", cultura)}"),
+        (Panel: "panel-categorias", Icono: "categorias", Color: "", Etiqueta: "Categorías", Valor: Model.CategoriasActivas,
+            Detalle: Model.CategoriasActivas == Model.CategoriasTotal ? "activas" : $"activas de {Model.CategoriasTotal.ToString("N0", cultura)}"),
+        (Panel: "panel-tamanos", Icono: "tamanos", Color: "azul", Etiqueta: "Tamaños", Valor: Model.TamanosActivos,
+            Detalle: Model.TamanosActivos == Model.TamanosTotal ? "activos" : $"activos de {Model.TamanosTotal.ToString("N0", cultura)}"),
+        (Panel: "panel-precios", Icono: "catalogo", Color: "", Etiqueta: "Precios vigentes", Valor: Model.PreciosActivos,
+            Detalle: "precios activos"),
+        (Panel: "panel-pedidos", Icono: "pedidos", Color: "azul", Etiqueta: "Pedidos", Valor: Model.PedidosTotal,
+            Detalle: Model.PedidosHoy.Count == 0 ? "registrados · ninguno hoy" : $"registrados · {Model.PedidosHoy.Count.ToString("N0", cultura)} hoy"),
+    };
+}
 <section aria-label="Indicadores" class="dashboard-grid">
-    <div class="stat-card">
-        <span class="stat-icono"><partial name="_Iconos" model="@("productos icono-lg")" /></span>
-        <div>
-            <p class="stat-etiqueta">Productos</p>
-            <p class="stat-valor">@Model.ProductosActivos.ToString("N0", cultura)</p>
-            <p class="stat-detalle">@(Model.ProductosActivos == Model.ProductosTotal ? "activos" : $"activos de {Model.ProductosTotal.ToString("N0", cultura)}")</p>
-        </div>
+    @foreach (var t in tarjetas)
+    {
+        <button type="button" class="stat-card stat-card-boton" data-panel="@t.Panel" aria-controls="@t.Panel" aria-expanded="false"
+                title="Ver el detalle de @t.Etiqueta.ToLowerInvariant()">
+            <span class="stat-icono @t.Color"><partial name="_Iconos" model="@(t.Icono + " icono-lg")" /></span>
+            <span class="stat-texto">
+                <span class="stat-etiqueta">@t.Etiqueta</span>
+                <span class="stat-valor">@t.Valor.ToString("N0", cultura)</span>
+                <span class="stat-detalle">@t.Detalle</span>
+            </span>
+            <span class="stat-abrir" aria-hidden="true"><partial name="_Iconos" model="@("flecha icono-sm")" /></span>
+        </button>
+    }
+</section>
+
+@* ---------- Paneles ---------- *@
+<section class="card-recyplast panel-resumen" id="panel-productos" hidden tabindex="-1" aria-labelledby="t-panel-productos">
+    <div class="panel-resumen-encabezado">
+        <h2 class="card-recyplast-titulo mb-0" id="t-panel-productos">Productos activos <span class="panel-resumen-cantidad">@CantidadTexto(Model.ListaProductos.Count)</span></h2>
+        <button type="button" class="btn-cerrar-panel" data-cerrar-panel aria-label="Cerrar el panel de productos" title="Cerrar"><partial name="_Iconos" model="@("cerrar icono-sm")" /></button>
     </div>
-    <div class="stat-card">
-        <span class="stat-icono azul"><partial name="_Iconos" model="@("bebidas icono-lg")" /></span>
-        <div>
-            <p class="stat-etiqueta">Bebidas</p>
-            <p class="stat-valor">@Model.BebidasActivas.ToString("N0", cultura)</p>
-            <p class="stat-detalle">@(Model.BebidasActivas == Model.BebidasTotal ? "activas" : $"activas de {Model.BebidasTotal.ToString("N0", cultura)}")</p>
-        </div>
+    @if (!Model.ListaProductos.Any()) { <p class="texto-suave mb-0">No hay productos activos.</p> }
+    else
+    {
+        <ul class="lista-resumen">
+            @foreach (var p in Model.ListaProductos)
+            {
+                <li>
+                    <span class="lista-resumen-nombre">@p.Nombre @if (p.EsEspecial) { <span class="badge-recyplast azul ms-1">Especial</span> }</span>
+                    <span class="lista-resumen-detalle">@p.Categoria</span>
+                    <span class="lista-resumen-valor">
+                        @if (!p.Precios.Any()) { <span class="texto-suave">Sin precio</span> }
+                        else { @(string.Join(" · ", p.Precios.Select(x => (x.Tamano is null ? "" : x.Tamano + " ") + Colones(x.Monto)))) }
+                    </span>
+                </li>
+            }
+        </ul>
+    }
+    @if (veCatalogo)
+    {
+        <div class="panel-resumen-pie"><a class="btn btn-sm btn-recyplast-outline" asp-controller="Administracion" asp-action="Catalogo" asp-route-tab="productos">Ver en el catálogo</a></div>
+    }
+</section>
+
+<section class="card-recyplast panel-resumen" id="panel-bebidas" hidden tabindex="-1" aria-labelledby="t-panel-bebidas">
+    <div class="panel-resumen-encabezado">
+        <h2 class="card-recyplast-titulo mb-0" id="t-panel-bebidas">Bebidas activas <span class="panel-resumen-cantidad">@CantidadTexto(Model.ListaBebidas.Count)</span></h2>
+        <button type="button" class="btn-cerrar-panel" data-cerrar-panel aria-label="Cerrar el panel de bebidas" title="Cerrar"><partial name="_Iconos" model="@("cerrar icono-sm")" /></button>
     </div>
-    <div class="stat-card">
-        <span class="stat-icono"><partial name="_Iconos" model="@("categorias icono-lg")" /></span>
-        <div>
-            <p class="stat-etiqueta">Categorías</p>
-            <p class="stat-valor">@Model.CategoriasActivas.ToString("N0", cultura)</p>
-            <p class="stat-detalle">@(Model.CategoriasActivas == Model.CategoriasTotal ? "activas" : $"activas de {Model.CategoriasTotal.ToString("N0", cultura)}")</p>
-        </div>
+    @if (!Model.ListaBebidas.Any()) { <p class="texto-suave mb-0">No hay bebidas activas.</p> }
+    else
+    {
+        <ul class="lista-resumen">
+            @foreach (var b in Model.ListaBebidas)
+            {
+                <li>
+                    <span class="lista-resumen-nombre">@b.Nombre</span>
+                    <span class="lista-resumen-detalle">@b.Tipo@(b.Tamano is null ? "" : " · " + b.Tamano)</span>
+                    <span class="lista-resumen-valor">@Colones(b.Precio)</span>
+                </li>
+            }
+        </ul>
+    }
+    @if (veCatalogo)
+    {
+        <div class="panel-resumen-pie"><a class="btn btn-sm btn-recyplast-outline" asp-controller="Administracion" asp-action="Catalogo" asp-route-tab="bebidas">Ver en el catálogo</a></div>
+    }
+</section>
+
+<section class="card-recyplast panel-resumen" id="panel-categorias" hidden tabindex="-1" aria-labelledby="t-panel-categorias">
+    <div class="panel-resumen-encabezado">
+        <h2 class="card-recyplast-titulo mb-0" id="t-panel-categorias">Categorías activas <span class="panel-resumen-cantidad">@CantidadTexto(Model.ListaCategorias.Count)</span></h2>
+        <button type="button" class="btn-cerrar-panel" data-cerrar-panel aria-label="Cerrar el panel de categorías" title="Cerrar"><partial name="_Iconos" model="@("cerrar icono-sm")" /></button>
     </div>
-    <div class="stat-card">
-        <span class="stat-icono azul"><partial name="_Iconos" model="@("tamanos icono-lg")" /></span>
-        <div>
-            <p class="stat-etiqueta">Tamaños</p>
-            <p class="stat-valor">@Model.TamanosActivos.ToString("N0", cultura)</p>
-            <p class="stat-detalle">@(Model.TamanosActivos == Model.TamanosTotal ? "activos" : $"activos de {Model.TamanosTotal.ToString("N0", cultura)}")</p>
-        </div>
+    @if (!Model.ListaCategorias.Any()) { <p class="texto-suave mb-0">No hay categorías activas.</p> }
+    else
+    {
+        <ul class="lista-resumen">
+            @foreach (var c in Model.ListaCategorias)
+            {
+                <li>
+                    <span class="lista-resumen-nombre">@c.Nombre</span>
+                    <span class="lista-resumen-valor">@(c.Productos == 1 ? "1 producto activo" : $"{c.Productos} productos activos")</span>
+                </li>
+            }
+        </ul>
+    }
+    @if (veCatalogo)
+    {
+        <div class="panel-resumen-pie"><a class="btn btn-sm btn-recyplast-outline" asp-controller="Administracion" asp-action="Catalogo" asp-route-tab="categorias">Ver en el catálogo</a></div>
+    }
+</section>
+
+<section class="card-recyplast panel-resumen" id="panel-tamanos" hidden tabindex="-1" aria-labelledby="t-panel-tamanos">
+    <div class="panel-resumen-encabezado">
+        <h2 class="card-recyplast-titulo mb-0" id="t-panel-tamanos">Tamaños activos <span class="panel-resumen-cantidad">@CantidadTexto(Model.ListaTamanos.Count)</span></h2>
+        <button type="button" class="btn-cerrar-panel" data-cerrar-panel aria-label="Cerrar el panel de tamaños" title="Cerrar"><partial name="_Iconos" model="@("cerrar icono-sm")" /></button>
     </div>
-    <div class="stat-card">
-        <span class="stat-icono"><partial name="_Iconos" model="@("catalogo icono-lg")" /></span>
-        <div>
-            <p class="stat-etiqueta">Precios vigentes</p>
-            <p class="stat-valor">@Model.PreciosActivos.ToString("N0", cultura)</p>
-            <p class="stat-detalle">precios activos</p>
-        </div>
+    @if (!Model.ListaTamanos.Any()) { <p class="texto-suave mb-0">No hay tamaños activos.</p> }
+    else
+    {
+        <ul class="lista-resumen">
+            @foreach (var t in Model.ListaTamanos)
+            {
+                <li>
+                    <span class="lista-resumen-nombre">@t.Nombre</span>
+                    <span class="lista-resumen-detalle">@(t.EsParaBebida ? "Para bebidas" : "Para comidas")</span>
+                    <span class="lista-resumen-valor">@(t.Usos == 0 ? "Sin uso" : t.Usos == 1 ? "1 artículo lo usa" : $"{t.Usos} artículos lo usan")</span>
+                </li>
+            }
+        </ul>
+    }
+    @if (veCatalogo)
+    {
+        <div class="panel-resumen-pie"><a class="btn btn-sm btn-recyplast-outline" asp-controller="Administracion" asp-action="Catalogo" asp-route-tab="tamanos">Ver en el catálogo</a></div>
+    }
+</section>
+
+<section class="card-recyplast panel-resumen" id="panel-precios" hidden tabindex="-1" aria-labelledby="t-panel-precios">
+    <div class="panel-resumen-encabezado">
+        <h2 class="card-recyplast-titulo mb-0" id="t-panel-precios">Precios vigentes de comidas <span class="panel-resumen-cantidad">@CantidadTexto(Model.ListaPrecios.Count)</span></h2>
+        <button type="button" class="btn-cerrar-panel" data-cerrar-panel aria-label="Cerrar el panel de precios" title="Cerrar"><partial name="_Iconos" model="@("cerrar icono-sm")" /></button>
     </div>
-    <div class="stat-card">
-        <span class="stat-icono azul"><partial name="_Iconos" model="@("pedidos icono-lg")" /></span>
-        <div>
-            <p class="stat-etiqueta">Pedidos</p>
-            <p class="stat-valor">@Model.PedidosTotal.ToString("N0", cultura)</p>
-            <p class="stat-detalle">registrados</p>
-        </div>
+    @if (!Model.ListaPrecios.Any()) { <p class="texto-suave mb-0">No hay precios vigentes.</p> }
+    else
+    {
+        <ul class="lista-resumen">
+            @foreach (var pr in Model.ListaPrecios)
+            {
+                <li>
+                    <span class="lista-resumen-nombre">@pr.Producto</span>
+                    <span class="lista-resumen-detalle">@(pr.Tamano ?? "Precio único")</span>
+                    <span class="lista-resumen-valor">@Colones(pr.Monto)</span>
+                </li>
+            }
+        </ul>
+        <p class="texto-suave small mt-2 mb-0">Los precios de las bebidas están en el panel de Bebidas.</p>
+    }
+    @if (veCatalogo)
+    {
+        <div class="panel-resumen-pie"><a class="btn btn-sm btn-recyplast-outline" asp-controller="Administracion" asp-action="Catalogo" asp-route-tab="productos">Ver en el catálogo</a></div>
+    }
+</section>
+
+<section class="card-recyplast panel-resumen" id="panel-pedidos" hidden tabindex="-1" aria-labelledby="t-panel-pedidos">
+    <div class="panel-resumen-encabezado">
+        <h2 class="card-recyplast-titulo mb-0" id="t-panel-pedidos">Pedidos de hoy <span class="panel-resumen-cantidad">@CantidadTexto(Model.PedidosHoy.Count)</span></h2>
+        <button type="button" class="btn-cerrar-panel" data-cerrar-panel aria-label="Cerrar el panel de pedidos" title="Cerrar"><partial name="_Iconos" model="@("cerrar icono-sm")" /></button>
     </div>
+    @if (!Model.PedidosHoy.Any()) { <p class="texto-suave mb-0">Todavía no hay pedidos hoy.</p> }
+    else
+    {
+        <p class="panel-resumen-total">Total del día: <strong>@Colones(Model.TotalHoy)</strong></p>
+        <ul class="lista-resumen">
+            @foreach (var p in Model.PedidosHoy)
+            {
+                var hora = p.FechaRegistroUtc.AddHours(-6);
+                <li>
+                    <span class="lista-resumen-nombre">#@p.IdPedido · @p.NombreColaborador @if (p.EsPrueba) { <span class="badge-recyplast gris ms-1">Prueba</span> }</span>
+                    <span class="lista-resumen-detalle">@hora.ToString("h:mm tt", cultura) · @p.CodigoColaborador · @Comida(p.TipoComida)</span>
+                    <span class="lista-resumen-valor">@Colones(p.Total)</span>
+                </li>
+            }
+        </ul>
+    }
+    @if (vePedidos)
+    {
+        <div class="panel-resumen-pie"><a class="btn btn-sm btn-recyplast" asp-controller="Pedidos" asp-action="Index"><partial name="_Iconos" model="@("pedidos icono-sm")" /> Registrar pedido</a></div>
+    }
 </section>
 
 <div class="row g-3 mt-1">
@@ -148,3 +289,7 @@
         </section>
     }
 </div>
+
+@section Scripts {
+    <script src="~/js/inicio.js" asp-append-version="true"></script>
+}
