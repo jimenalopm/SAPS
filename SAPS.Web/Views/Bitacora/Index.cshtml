@@ -99,6 +99,14 @@
                        placeholder="Correo o usuario" autocomplete="off" maxlength="100" />
             </div>
         </div>
+        <div class="campo-ancho">
+            <label class="form-label" for="f-texto">Producto o cuenta afectada</label>
+            <div class="input-buscar">
+                <partial name="_Iconos" model="@("buscar icono-sm")" />
+                <input class="form-control" type="search" id="f-texto" name="texto" value="@filtros.Texto"
+                       placeholder="Ej. Casado o correo de la cuenta" autocomplete="off" maxlength="100" />
+            </div>
+        </div>
         <div class="filtros-acciones">
             <a class="btn btn-recyplast-outline" asp-action="Index">Limpiar</a>
             <button type="submit" class="btn btn-recyplast" data-texto-procesando="Filtrando...">
@@ -152,7 +160,7 @@
             <td data-label="Evento" class="celda-principal">
                 <div class="celda-valor">
                     <span class="evento-nombre">@f.TipoEventoTexto</span>
-                    <span class="evento-meta"><span class="marca-modulo @(f.Modulo == "Catalogo" ? "catalogo" : "seguridad")" aria-hidden="true"></span>@f.ModuloTexto · @f.Recurso</span>
+                    <span class="evento-meta"><span class="marca-modulo @(f.Modulo == "Catalogo" ? "catalogo" : "seguridad")" aria-hidden="true"></span>@f.ModuloTexto · @f.RecursoTexto</span>
                 </div>
             </td>
             <td data-label="Usuario">

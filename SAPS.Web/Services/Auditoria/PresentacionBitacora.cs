@@ -22,7 +22,7 @@ public static partial class PresentacionBitacora
         [TiposEventoBitacora.CierreSesion] = "Cierre de sesión",
         [TiposEventoBitacora.CuentaCreada] = "Cuenta creada",
         [TiposEventoBitacora.CuentaDesactivada] = "Cuenta desactivada",
-        ["CuentaReactivada"] = "Cuenta reactivada",   // la constante llega con la rama de Tiber (sprint2-hu004-log-cuentas)
+        [TiposEventoBitacora.CuentaReactivada] = "Cuenta reactivada",
         [TiposEventoBitacora.RolCambiado] = "Cambio de rol",
         [TiposEventoBitacora.CambioPrecio] = "Cambio de precio",
     };
@@ -37,7 +37,7 @@ public static partial class PresentacionBitacora
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CierreSesion),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaCreada),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaDesactivada),
-        (ModulosBitacora.Seguridad, "CuentaReactivada"),
+        (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaReactivada),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.RolCambiado),
         (ModulosBitacora.Catalogo, TiposEventoBitacora.CambioPrecio),
     ];
@@ -46,6 +46,15 @@ public static partial class PresentacionBitacora
     {
         [ModulosBitacora.Seguridad] = "Seguridad",
         [ModulosBitacora.Catalogo] = "Catálogo",
+    };
+
+    /// <summary>Tablas o entidades del log con un nombre que entienda el Administrador (el código queda en el detalle).</summary>
+    private static readonly Dictionary<string, string> Recursos = new(StringComparer.Ordinal)
+    {
+        [RecursosBitacora.Precio] = "Precio de producto",
+        [RecursosBitacora.Bebida] = "Precio de bebida",
+        [RecursosBitacora.Cuentas] = "Cuentas de usuario",
+        [RecursosBitacora.Sesion] = "Sesión",
     };
 
     private static readonly Dictionary<string, string> Roles = new(StringComparer.Ordinal)
@@ -60,6 +69,9 @@ public static partial class PresentacionBitacora
 
     public static string EtiquetaModulo(string? modulo) =>
         string.IsNullOrEmpty(modulo) ? "" : Modulos.GetValueOrDefault(modulo, modulo);
+
+    public static string EtiquetaRecurso(string? recurso) =>
+        string.IsNullOrEmpty(recurso) ? "" : Recursos.GetValueOrDefault(recurso, recurso);
 
     public static string? EtiquetaRol(string? rol) =>
         string.IsNullOrEmpty(rol) ? null : Roles.GetValueOrDefault(rol, rol);
@@ -151,6 +163,18 @@ public static partial class PresentacionBitacora
         var partes = texto.Split(" | Tamaño: ", 2, StringSplitOptions.TrimEntries);
         if (partes.Length == 1) return partes[0];
         return partes[1] is "Único" or "Sin tamaño" ? partes[0] : $"{partes[0]} · {partes[1]}";
+    }
+
+    /// <summary>
+    /// Solo el nombre del producto o la bebida, sin el tamaño ("Producto: Casado | Tamaño: Grande" → "Casado").
+    /// Sirve para buscar todos los cambios de precio de ese artículo, en cualquier tamaño.
+    /// </summary>
+    public static string? NombreArticuloDelPrecio(string? descripcion)
+    {
+        if (string.IsNullOrEmpty(descripcion) || !RegexPrefijoProducto().IsMatch(descripcion)) return null;
+        var texto = RegexPrefijoProducto().Replace(descripcion, "");
+        var nombre = texto.Split(" | Tamaño: ", 2, StringSplitOptions.TrimEntries)[0];
+        return nombre.Length == 0 ? null : nombre;
     }
 
     [GeneratedRegex(@"^Cuenta ([^\s:]+)")]

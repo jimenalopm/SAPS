@@ -31,9 +31,15 @@ public class BitacoraFiltros
     /// <summary>Parte del nombre de usuario o correo (también el usuario de BD en cambios directos).</summary>
     public string? Usuario { get; set; }
 
+    /// <summary>
+    /// Parte del producto, la bebida o la cuenta afectada (se busca en la descripción). Permite ver el historial
+    /// de precios de un producto (HU-015) o lo que le pasó a una cuenta (HU-004 criterio 3).
+    /// </summary>
+    public string? Texto { get; set; }
+
     public bool TieneFiltros =>
         TipoEvento is not null || Modulo is not null || Resultado is not null
-        || Desde is not null || Hasta is not null || Usuario is not null;
+        || Desde is not null || Hasta is not null || Usuario is not null || Texto is not null;
 
     /// <summary>Limpia lo que llega de la URL: textos vacíos a null, largo máximo, resultado válido y fechas en orden.</summary>
     public void Normalizar()
@@ -41,6 +47,7 @@ public class BitacoraFiltros
         TipoEvento = Limpiar(TipoEvento);
         Modulo = Limpiar(Modulo);
         Usuario = Limpiar(Usuario);
+        Texto = Limpiar(Texto);
         Resultado = Limpiar(Resultado)?.ToLowerInvariant();
         if (Resultado is not (ResultadoExitoso or ResultadoFallido)) Resultado = null;
 
@@ -87,6 +94,11 @@ public class BitacoraFiltros
             consulta = consulta.Where(b => b.NombreUsuario != null && b.NombreUsuario.Contains(texto));
         }
 
+        if (Texto is string buscado)
+        {
+            consulta = consulta.Where(b => b.Descripcion != null && b.Descripcion.Contains(buscado));
+        }
+
         return consulta;
     }
 
@@ -105,6 +117,7 @@ public class BitacoraFiltros
         Agregar("desde", Desde?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         Agregar("hasta", Hasta?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         Agregar("usuario", Usuario);
+        Agregar("texto", Texto);
         if (pagina is > 1) ruta["pagina"] = pagina.Value.ToString(CultureInfo.InvariantCulture);
         return ruta;
     }
@@ -119,6 +132,7 @@ public class BitacoraFiltros
         if (Desde is DateTime d) lista.Add(new("desde", "Desde", PresentacionBitacora.Fecha(d)));
         if (Hasta is DateTime h) lista.Add(new("hasta", "Hasta", PresentacionBitacora.Fecha(h)));
         if (Usuario is not null) lista.Add(new("usuario", "Usuario", Usuario));
+        if (Texto is not null) lista.Add(new("texto", "Producto o cuenta", Texto));
         return lista;
     }
 

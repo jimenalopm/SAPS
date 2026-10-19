@@ -737,7 +737,7 @@ body { margin-bottom: 0; }
 .filtros-grid .campo-ancho { grid-column: span 2; }
 .filtros-grid .form-label { font-size: .8rem; margin-bottom: .25rem; }
 .filtros-grid .input-buscar { max-width: none; }
-.filtros-acciones { display: flex; gap: .5rem; justify-content: flex-end; grid-column: span 4; }
+.filtros-acciones { display: flex; gap: .5rem; justify-content: flex-end; grid-column: span 2; }
 @media (max-width: 1199.98px) {
   .filtros-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .filtros-grid .campo-ancho { grid-column: span 1; }

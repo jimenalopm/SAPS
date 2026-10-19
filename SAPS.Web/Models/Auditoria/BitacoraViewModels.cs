@@ -39,6 +39,7 @@ public class BitacoraFilaViewModel
     public string Modulo { get; init; } = "";
     public string ModuloTexto { get; init; } = "";
     public string Recurso { get; init; } = "";
+    public string RecursoTexto { get; init; } = "";
     public bool EsExitoso { get; init; }
 
     public string? NombreUsuario { get; init; }
@@ -109,6 +110,7 @@ public class BitacoraFilaViewModel
             Modulo = b.Modulo,
             ModuloTexto = PresentacionBitacora.EtiquetaModulo(b.Modulo),
             Recurso = b.Recurso,
+            RecursoTexto = PresentacionBitacora.EtiquetaRecurso(b.Recurso),
             EsExitoso = b.EsExitoso,
             NombreUsuario = b.NombreUsuario,
             RolTexto = PresentacionBitacora.EtiquetaRol(b.Rol),
@@ -146,6 +148,9 @@ public class BitacoraDetalleViewModel
     public string? CuentaAfectada { get; init; }
     public string? Producto { get; init; }
 
+    /// <summary>Nombre del producto o bebida sin tamaño, para el enlace al historial de precios (HU-015).</summary>
+    public string? NombreArticulo { get; init; }
+
     // Comparación "valor anterior → valor nuevo". Se muestra si al menos uno existe.
     public string TituloCambio { get; init; } = "Valor";
     public string? ValorAnterior { get; init; }
@@ -174,7 +179,7 @@ public class BitacoraDetalleViewModel
             TiposEventoBitacora.CambioPrecio => "Precio",
             TiposEventoBitacora.RolCambiado => "Rol de la cuenta",
             TiposEventoBitacora.CuentaCreada => "Rol asignado",
-            TiposEventoBitacora.CuentaDesactivada or "CuentaReactivada" => "Estado de la cuenta",
+            TiposEventoBitacora.CuentaDesactivada or TiposEventoBitacora.CuentaReactivada => "Estado de la cuenta",
             _ => "Valor",
         };
 
@@ -191,6 +196,7 @@ public class BitacoraDetalleViewModel
             Descripcion = b.Descripcion,
             CuentaAfectada = PresentacionBitacora.CuentaAfectada(b.Descripcion),
             Producto = esPrecio ? PresentacionBitacora.ProductoDelPrecio(b.Descripcion) : null,
+            NombreArticulo = esPrecio ? PresentacionBitacora.NombreArticuloDelPrecio(b.Descripcion) : null,
             TituloCambio = titulo,
             ValorAnterior = Formatear(b.ValorAnterior),
             ValorNuevo = Formatear(b.ValorNuevo),
