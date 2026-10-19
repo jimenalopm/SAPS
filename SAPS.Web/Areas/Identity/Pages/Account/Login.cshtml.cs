@@ -208,10 +208,19 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
             {
                 IdRegistro = cuenta?.Id,
                 IdUsuario = cuenta?.Id,
-                NombreUsuario = cuenta?.UserName ?? Input.CodigoEmpleado,
+                NombreUsuario = cuenta?.UserName ?? NombreSeguro(Input.CodigoEmpleado),
                 Rol = rol,
                 Descripcion = descripcion,
             });
         }
+
+        private const string UsuarioNoReconocido = "(usuario no reconocido)";
+
+        // Si la cuenta no existe, lo digitado puede ser una contraseña y la bitácora no se puede borrar:
+        // solo se guarda si tiene forma de correo (no de código de empleado, que una contraseña igualaría).
+        private static string NombreSeguro(string digitado) =>
+            digitado is not null && System.Text.RegularExpressions.Regex.IsMatch(digitado.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+                ? digitado.Trim()
+                : UsuarioNoReconocido;
     }
 }

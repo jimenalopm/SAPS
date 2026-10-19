@@ -367,7 +367,7 @@ public class HU004_ServicioBitacoraTests
     }
 
     [Fact]
-    public async Task Login_CuentaInexistente_RegistraFallidoConLoDigitadoYSinIdDeUsuario()
+    public async Task Login_CuentaInexistente_RegistraFallidoComoUsuarioNoReconocidoYSinIdDeUsuario()
     {
         var (pagina, _, _, opciones) = await CrearLoginAsync("EMP702", "Prueba123");
         pagina.Input.CodigoEmpleado = "NOEXISTE";
@@ -378,7 +378,37 @@ public class HU004_ServicioBitacoraTests
         Assert.False(fila.EsExitoso);
         Assert.Null(fila.IdUsuario);
         Assert.Null(fila.Rol);
-        Assert.Equal("NOEXISTE", fila.NombreUsuario);
+        Assert.Equal("(usuario no reconocido)", fila.NombreUsuario);
+    }
+
+    [Theory]
+    [InlineData("ClaveSecreta987")]
+    [InlineData("Clave@987")]
+    public async Task Login_ContrasenaTipeadaComoUsuario_NoQuedaEnNingunaColumna(string digitada)
+    {
+        var (pagina, _, _, opciones) = await CrearLoginAsync("EMP706", "Prueba123");
+        pagina.Input.CodigoEmpleado = digitada;
+        pagina.Input.Password = digitada;
+
+        await pagina.OnPostAsync("/");
+
+        var fila = Assert.Single(Leer(opciones));
+        Assert.Equal("(usuario no reconocido)", fila.NombreUsuario);
+        var textos = typeof(Bitacora).GetProperties().Where(p => p.PropertyType == typeof(string))
+            .Select(p => (string?)p.GetValue(fila) ?? "");
+        Assert.All(textos, t => Assert.DoesNotContain(digitada, t));
+    }
+
+    [Fact]
+    public async Task Login_CorreoConTypoInexistente_SiSeGuardaComoSeEscribio()
+    {
+        var (pagina, _, _, opciones) = await CrearLoginAsync("EMP707", "Prueba123");
+        pagina.Input.CodigoEmpleado = "ana@recyplast.con";
+
+        await pagina.OnPostAsync("/");
+
+        var fila = Assert.Single(Leer(opciones));
+        Assert.Equal("ana@recyplast.con", fila.NombreUsuario);
     }
 
     [Fact]

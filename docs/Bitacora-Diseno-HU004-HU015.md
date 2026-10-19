@@ -32,7 +32,7 @@ la pantalla de bitácora y el trigger de precios (task 16).
 | `IdRegistro` | VARCHAR(50) | Sí | Identificador del registro involucrado (texto, porque puede ser un INT o el Id de una cuenta). | HU-004 c3, c4 · HU-015 c3 |
 | `EsExitoso` | BIT | No | 1 = operación exitosa, 0 = fallida. | HU-004 c1, c4 |
 | `idUsuario` | NVARCHAR(450) | Sí | Id de la cuenta que realizó la acción, si existe (mismo tipo que `AspNetUsers.Id`). Sin FK (D4). | HU-004 c1, c2, c3 |
-| `NombreUsuario` | VARCHAR(256) | Sí | Copia del nombre de usuario o código de colaborador al momento del evento. En un intento fallido, lo que se escribió en el login. | HU-004 c1, c2 · HU-015 c3 |
+| `NombreUsuario` | VARCHAR(256) | Sí | Copia del nombre de usuario o código de colaborador al momento del evento. En un intento fallido con cuenta inexistente, lo escrito en el login solo si tiene forma de correo; si no, `(usuario no reconocido)` (podría ser una contraseña). | HU-004 c1, c2 · HU-015 c3 |
 | `Rol` | VARCHAR(50) | Sí | Copia del rol de la cuenta en ese momento. | HU-004 c1 |
 | `UsuarioBd` | VARCHAR(128) | No | Usuario de SQL Server que insertó la fila. Default `SUSER_SNAME()`. En cambios directos en la BD es quien hizo el cambio. | HU-015 c2 |
 | `DireccionIp` | VARCHAR(45) | Sí | IP del cliente (45 caracteres alcanzan para IPv6). Nula si el cambio fue directo en la BD. | HU-004 c1 |
