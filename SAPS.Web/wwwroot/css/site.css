@@ -887,16 +887,20 @@ body { margin-bottom: 0; }
 
 .lista-resumen { list-style: none; margin: 0; padding: 0; max-height: 22rem; overflow-y: auto; }
 .lista-resumen li {
-  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: .25rem 1rem; align-items: baseline;
+  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(7.5rem, auto); gap: .25rem 1rem; align-items: center;
   padding: .55rem .25rem; border-bottom: 1px solid var(--rp-gris-borde);
 }
 .lista-resumen li:last-child { border-bottom: 0; }
-.lista-resumen-nombre { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
-.lista-resumen-detalle { font-size: .85rem; color: var(--rp-gris-texto-suave); min-width: 0; overflow-wrap: anywhere; }
-.lista-resumen-valor { font-weight: 600; text-align: right; white-space: nowrap; }
+/* Cada dato va siempre en su columna, aunque la fila no tenga detalle (p. ej. categorías): así todo queda alineado. */
+.lista-resumen-nombre { grid-column: 1; grid-row: 1; font-weight: 600; min-width: 0; overflow-wrap: anywhere;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.lista-resumen-nombre .badge-recyplast { margin-left: 0 !important; }
+.lista-resumen-detalle { grid-column: 2; grid-row: 1; font-size: .85rem; color: var(--rp-gris-texto-suave); min-width: 0; overflow-wrap: anywhere; }
+.lista-resumen-valor { grid-column: 3; grid-row: 1; font-weight: 600; text-align: right; }
 @media (max-width: 575.98px) {
   .lista-resumen li { grid-template-columns: minmax(0, 1fr) auto; }
+  .lista-resumen-nombre { grid-column: 1; grid-row: 1; }
+  .lista-resumen-valor { grid-column: 2; grid-row: 1; }
   .lista-resumen-detalle { grid-column: 1 / -1; grid-row: 2; }
-  .lista-resumen-valor { white-space: normal; }
 }
 @media (prefers-reduced-motion: reduce) { .stat-card-boton .stat-abrir { transition: none; } }
