@@ -41,6 +41,8 @@ la pantalla de bitácora y el trigger de precios (task 16).
 | `ValorNuevo` | VARCHAR(500) | Sí | Valor después del cambio. | HU-004 c2, c3 · HU-015 c3 |
 | `Descripcion` | VARCHAR(300) | Sí | Texto legible del evento. Para altas, bajas y cambios de rol incluye la cuenta afectada (p. ej. "Cuenta cocina01: rol Personal de cocina → Administrador"). | HU-004 c3 |
 
+> **Intentos fallidos de inicio de sesión:** `IdUsuario` queda vacío (nadie hizo la acción); la cuenta afectada va en `IdRegistro` y `NombreUsuario`. **Limitación conocida:** si quien intenta ya tiene una sesión abierta en ese navegador, `ServicioBitacora` rellena `IdUsuario` con esa sesión.
+
 ### Restricciones e índices (EBD07, EBD08)
 
 | Nombre | Tipo | Detalle |

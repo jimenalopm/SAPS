@@ -140,7 +140,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                     if (colaboradorActivo == false)
                     {
                         await _signInManager.SignOutAsync();
-                        await RegistrarInicioSesionAsync(false, "Colaborador inactivo", user);
+                        await RegistrarInicioSesionAsync(false, "Colaborador inactivo", user, esActor: true);
                         ModelState.AddModelError(string.Empty, MensajeColaboradorInactivo);
                         return Page();
                     }
@@ -154,7 +154,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                         await _signInManager.SignInAsync(user, isPersistent: false);
                     }
 
-                    await RegistrarInicioSesionAsync(true, "Inicio de sesión exitoso", user);
+                    await RegistrarInicioSesionAsync(true, "Inicio de sesión exitoso", user, esActor: true);
                     _logger.LogInformation("User logged in.");
                     return LocalRedirect(returnUrl);
                 }
@@ -197,9 +197,11 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
             return Page();
         }
 
+        // IdUsuario es "quién hizo la acción": en un intento fallido nadie la hizo, y la cuenta afectada
+        // queda en IdRegistro y NombreUsuario. Solo es actor quien entró (o pasó la contraseña: colaborador inactivo).
         // HU-004 criterio 1: inicio de sesión exitoso o fallido. El usuario va explícito porque en este
         // punto el HttpContext aún no tiene la sesión. El servicio nunca lanza: el login no se rompe.
-        private async Task RegistrarInicioSesionAsync(bool exitoso, string descripcion, IdentityUser cuenta)
+        private async Task RegistrarInicioSesionAsync(bool exitoso, string descripcion, IdentityUser cuenta, bool esActor = false)
         {
             if (_bitacora is null) return;
             var rol = cuenta is null ? null : (await _signInManager.UserManager.GetRolesAsync(cuenta)).FirstOrDefault();
@@ -207,7 +209,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                 ModulosBitacora.Seguridad, TiposEventoBitacora.InicioSesion, RecursosBitacora.Sesion, exitoso)
             {
                 IdRegistro = cuenta?.Id,
-                IdUsuario = cuenta?.Id,
+                IdUsuario = esActor ? cuenta?.Id : null,
                 NombreUsuario = cuenta?.UserName ?? NombreSeguro(Input.CodigoEmpleado),
                 Rol = rol,
                 Descripcion = descripcion,

@@ -357,7 +357,8 @@ public class HU004_ServicioBitacoraTests
         var fila = Assert.Single(Leer(opciones));
         Assert.False(fila.EsExitoso);
         Assert.Equal("InicioSesion", fila.TipoEvento);
-        Assert.Equal(usuario.Id, fila.IdUsuario);   // la cuenta existe: se guarda su id
+        Assert.Null(fila.IdUsuario);   // nadie hizo la acción: la cuenta afectada va en IdRegistro
+        Assert.Equal(usuario.Id, fila.IdRegistro);
         Assert.Equal("EMP701", fila.NombreUsuario);
         // Ninguna columna contiene la contraseña digitada ni la real.
         var textos = typeof(Bitacora).GetProperties().Where(p => p.PropertyType == typeof(string))
@@ -423,7 +424,9 @@ public class HU004_ServicioBitacoraTests
         Assert.IsType<RedirectToPageResult>(resultado);
         var fila = Assert.Single(Leer(opciones));
         Assert.False(fila.EsExitoso);
-        Assert.Equal(usuario.Id, fila.IdUsuario);
+        Assert.Null(fila.IdUsuario);
+        Assert.Equal(usuario.Id, fila.IdRegistro);
+        Assert.Equal("EMP703", fila.NombreUsuario);
         Assert.Contains("bloqueada", fila.Descripcion);
     }
 
@@ -438,6 +441,9 @@ public class HU004_ServicioBitacoraTests
 
         var fila = Assert.Single(Leer(opciones));
         Assert.False(fila.EsExitoso);
+        Assert.Null(fila.IdUsuario);
+        Assert.Equal(usuario.Id, fila.IdRegistro);
+        Assert.Equal("EMP704", fila.NombreUsuario);
         Assert.Contains("desactivada", fila.Descripcion);
     }
 

@@ -125,7 +125,7 @@
                 @(f.NombreUsuario ?? "—")
                 @if (esSesionFallida)
                 {
-                    <span class="detalle-sub">Texto escrito en el inicio de sesión@(Model.IdUsuario is null ? " (no existe una cuenta con ese usuario)" : "")</span>
+                    <span class="detalle-sub">Texto escrito en el inicio de sesión@(Model.IdRegistro is null ? " (no existe una cuenta con ese usuario)" : "")</span>
                 }
             </dd>
 
