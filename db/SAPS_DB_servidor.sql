@@ -1099,6 +1099,42 @@ BEGIN
     VALUES (N'20261014120000_TiposBebidaYFrescos', N'10.0.11');
 END;
 
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261019120000_ContextoAuditoriaSinNulos'
+)
+BEGIN
+    -- HU-015: quitar el relleno 0x00 de CONTEXT_INFO también con intercalaciones de Windows (Modern_Spanish_CI_AS).
+    EXEC(N'
+    ALTER FUNCTION [soda].[fn_UsuarioContexto]()
+    RETURNS TABLE
+    AS
+    RETURN
+    (
+        SELECT
+            CASE WHEN y.p1 > 0 THEN SUBSTRING(y.c, 1, y.p1 - 1) END AS idUsuario,
+            CASE WHEN y.p1 > 0
+                 THEN SUBSTRING(y.c, y.p1 + 1, CASE WHEN y.p2 > 0 THEN y.p2 - y.p1 - 1 ELSE 128 END)
+                 ELSE SUSER_SNAME() END AS NombreUsuario,
+            CASE WHEN y.p2 > 0 THEN SUBSTRING(y.c, y.p2 + 1, 128) END AS Rol
+        FROM (
+            SELECT x.c,
+                   CHARINDEX(''|'', x.c) AS p1,
+                   CHARINDEX(''|'', x.c, CHARINDEX(''|'', x.c) + 1) AS p2
+            FROM (SELECT REPLACE(CAST(CONTEXT_INFO() AS varchar(128)) COLLATE Latin1_General_BIN, CHAR(0), '''') AS c) x
+        ) y
+    );');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261019120000_ContextoAuditoriaSinNulos'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261019120000_ContextoAuditoriaSinNulos', N'10.0.11');
+END;
+
 COMMIT;
 GO
 
