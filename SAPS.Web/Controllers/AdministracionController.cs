@@ -9,8 +9,13 @@ using SAPS.Web.Services.Auditoria;
 namespace SAPS.Web.Controllers;
 
 [Authorize(Roles = "Administrador,RecursosHumanos")]
-public class AdministracionController(ApplicationDbContext db, IContextoAuditoria? contextoAuditoria = null) : Controller
+public class AdministracionController(ApplicationDbContext db, IContextoAuditoria? contextoAuditoria = null,
+    ILogger<AdministracionController>? logger = null) : Controller
 {
+    /// <summary>[Usabilidad HU-015, H9] Mensaje en lenguaje natural cuando el guardado falla en la base de datos.</summary>
+    public const string MensajeErrorGuardado =
+        "No se pudo guardar el cambio. Intente de nuevo; si el problema continúa, comuníquese con el administrador del sistema.";
+
     // HU-015: los triggers de precios registran el cambio; aquí solo se les dice quién lo hizo.
     private readonly IContextoAuditoria auditoria = contextoAuditoria ?? new ContextoAuditoria();
 
@@ -370,6 +375,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         if (!ModelState.IsValid) return View(modelo);
 
         var seleccionados = PreciosSeleccionados(modelo);
+        var anteriores = producto.Precios.Where(p => p.Activo).Select(p => (p.IdTamano, Monto: p.MontoPrecio)).ToList();
         var hoy = DateOnly.FromDateTime(DateTime.Today);
         var nuevos = seleccionados.Where(n => !producto.Precios.Any(p =>
             p.Activo && p.IdTamano == n.IdTamano && p.MontoPrecio == n.Monto)).ToList();
@@ -408,12 +414,23 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             }
             await db.SaveChangesAsync();
         }
+        catch (DbUpdateException ex)
+        {
+            // [Usabilidad HU-015, H9] En vez de la página técnica, el formulario explica qué pasó; la transacción se revierte.
+            logger?.LogError(ex, "No se pudo guardar el producto {IdProducto}", producto.IdProducto);
+            ModelState.AddModelError(string.Empty, MensajeErrorGuardado);
+            return View(modelo);
+        }
         finally
         {
             await auditoria.LimpiarAsync(db.Database);
         }
         await transaccion.CommitAsync();
-        TempData["Mensaje"] = "Producto actualizado correctamente.";
+        // Con precio único, las filas de tamaño llegan sin datos (IdTamano 0): solo cuentan los tamaños reales.
+        var nombresTamano = modelo.PreciosPorTamano.Where(t => t.IdTamano > 0)
+            .GroupBy(t => t.IdTamano).ToDictionary(g => g.Key, g => g.First().NombreTamano);
+        TempData["Mensaje"] = MensajeProductoActualizado(producto.NombreProducto,
+            DescribirCambioPrecios(anteriores, seleccionados, id => id is int t && nombresTamano.TryGetValue(t, out var n) ? n : null));
         return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
     }
 
@@ -725,6 +742,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         await ValidarOrdenPrecioBebida(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
+        var precioAnterior = bebida.Precio;
         bebida.NombreBebida = modelo.NombreBebida;
         bebida.TipoBebida = modelo.TipoBebida;
         bebida.IdTamano = modelo.IdTamano;
@@ -738,14 +756,52 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         {
             await db.SaveChangesAsync();
         }
+        catch (DbUpdateException ex)
+        {
+            logger?.LogError(ex, "No se pudo guardar la bebida {IdBebida}", bebida.IdBebida);
+            ModelState.AddModelError(string.Empty, MensajeErrorGuardado);
+            return View(modelo);
+        }
         finally
         {
             await auditoria.LimpiarAsync(db.Database);
         }
         await transaccion.CommitAsync();
-        TempData["Mensaje"] = "Bebida actualizada correctamente.";
+        TempData["Mensaje"] = precioAnterior == bebida.Precio
+            ? "Bebida actualizada correctamente."
+            : $"Bebida «{bebida.NombreBebida}» actualizada correctamente. Precio: {Monto(precioAnterior)} → {Monto(bebida.Precio)}. "
+              + "El cambio quedó registrado en el historial de precios.";
         return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
     }
+
+    // ---------- [Usabilidad HU-015, H1/H9] Mensaje de éxito que dice qué precio cambió ----------
+
+    private static string Monto(int monto) => PresentacionBitacora.Colones(monto.ToString(System.Globalization.CultureInfo.InvariantCulture))!;
+
+    /// <summary>
+    /// Describe los cambios de precio de un producto: "₡1 500 → ₡1 800" (precio único) o
+    /// "Grande: ₡2 000 → ₡2 200; Pequeño: nuevo ₡1 200; Mediano: se quitó". Null si ningún precio cambió.
+    /// </summary>
+    public static string? DescribirCambioPrecios(IReadOnlyList<(int? IdTamano, int Monto)> anteriores,
+        IReadOnlyList<(int? IdTamano, int Monto)> nuevos, Func<int?, string?> nombreTamano)
+    {
+        string Etiqueta(int? idTamano) => nombreTamano(idTamano) is string n ? n + ": " : "";
+        var partes = new List<string>();
+        foreach (var n in nuevos)
+        {
+            var antes = anteriores.Where(a => a.IdTamano == n.IdTamano).Select(a => (int?)a.Monto).FirstOrDefault();
+            if (antes is null) partes.Add($"{Etiqueta(n.IdTamano)}nuevo {Monto(n.Monto)}");
+            else if (antes != n.Monto) partes.Add($"{Etiqueta(n.IdTamano)}{Monto(antes.Value)} → {Monto(n.Monto)}");
+        }
+        foreach (var a in anteriores.Where(a => !nuevos.Any(n => n.IdTamano == a.IdTamano)))
+            partes.Add($"{Etiqueta(a.IdTamano)}se quitó {Monto(a.Monto)}");
+        return partes.Count == 0 ? null : string.Join("; ", partes);
+    }
+
+    public static string MensajeProductoActualizado(string nombre, string? cambioPrecios) =>
+        cambioPrecios is null
+            ? "Producto actualizado correctamente."
+            : $"Producto «{nombre}» actualizado correctamente. Precio: {cambioPrecios}. El cambio quedó registrado en el historial de precios.";
 
     // HU-007: no se repite un producto (mismo nombre) dentro de la misma categoría, esté activo o no.
     private async Task ValidarNombreProductoUnico(ProductoFormViewModel modelo)

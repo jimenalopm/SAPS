@@ -786,6 +786,10 @@ body { margin-bottom: 0; }
 .ayuda-bitacora h2 { font-size: 1rem; font-weight: 600; margin: 0 0 .5rem; }
 .ayuda-bitacora ol { margin: 0; padding-left: 1.2rem; }
 .ayuda-bitacora li + li { margin-top: .3rem; }
+/* [Usabilidad HU-015] Ayuda junto al precio y saltos de línea en la ventana de confirmación */
+.ayuda-precio { display: flex; gap: .4rem; align-items: flex-start; margin: 0 0 .75rem; }
+.ayuda-precio .icono { flex: none; margin-top: .15rem; }
+#modalConfirmarMensaje { white-space: pre-line; }
 
 /* ---------- 13. Modo claro / oscuro ----------
    tema.js pone data-tema="claro|oscuro" (y data-bs-theme para Bootstrap) en <html>.
