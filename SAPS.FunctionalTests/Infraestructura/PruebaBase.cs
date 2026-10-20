@@ -84,7 +84,8 @@ public abstract class PruebaBase : IDisposable
     /// <summary>Usa el botón "Cerrar sesión" del encabezado, como lo haría la usuaria.</summary>
     protected void CerrarSesion()
     {
-        Driver.FindElement(By.CssSelector(".btn-cerrar-sesion")).ClicSeguro();
+        // «Cambiar contraseña» también usa la clase btn-cerrar-sesion: se toma el botón del formulario de salida.
+        Driver.FindElement(By.CssSelector("form.app-cerrar-sesion button[type='submit']")).ClicSeguro();
         Espera.Until(d => d.Url.Contains("/Account/Login", StringComparison.OrdinalIgnoreCase)
                           || d.Url.Contains("/Account/Logout", StringComparison.OrdinalIgnoreCase));
     }
@@ -99,7 +100,7 @@ public abstract class PruebaBase : IDisposable
     /// <summary>Menú que debe ver cada rol según el layout de la app (mismas reglas que los [Authorize]).</summary>
     protected static string[] MenuEsperado(Rol rol) => rol switch
     {
-        Rol.Administrador => ["Inicio", "Catálogo", "Registrar pedido", "Recursos Humanos"],
+        Rol.Administrador => ["Inicio", "Catálogo", "Registrar pedido", "Recursos Humanos", "Usuarios", "Bitácora"],
         Rol.RecursosHumanos => ["Inicio", "Catálogo", "Recursos Humanos"],
         Rol.Soda => ["Inicio", "Registrar pedido"],
         _ => []
