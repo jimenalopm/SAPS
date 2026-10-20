@@ -862,3 +862,57 @@ body { margin-bottom: 0; }
 :root[data-tema="oscuro"] .aviso-total.aviso-bloqueo { background: #3B1D20; border-color: #D9534F; color: #F5B5BB; }
 :root[data-tema="oscuro"] .total-advertencia { color: #E8C547; }
 :root[data-tema="oscuro"] .total-bloqueo { color: #F28B95; }
+
+/* ---------- 14. Búsqueda con lupa dentro de la barra (catálogo) ---------- */
+.input-buscar.con-lupa .form-control { padding-left: .8rem; padding-right: 2.75rem; }
+.btn-lupa {
+  position: absolute; right: .3rem; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center; width: 2.1rem; height: 2.1rem;
+  border: 0; border-radius: var(--rp-radio-sm); background: none; color: var(--rp-gris-texto-suave); cursor: pointer;
+}
+.btn-lupa:hover, .btn-lupa:focus-visible { background: var(--rp-gris-fondo); color: var(--rp-azul-oscuro); }
+.btn-lupa:focus-visible { outline: 2px solid var(--rp-azul-oscuro); outline-offset: 1px; }
+.input-buscar .btn-lupa .icono { position: static; transform: none; color: currentColor; }
+
+/* ---------- 15. Inicio: tarjetas que abren un panel con el detalle ---------- */
+.stat-card-boton { width: 100%; text-align: left; font: inherit; cursor: pointer; position: relative; }
+.stat-card-boton .stat-texto { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.stat-card-boton .stat-etiqueta, .stat-card-boton .stat-valor, .stat-card-boton .stat-detalle { display: block; }
+.stat-card-boton .stat-abrir { color: var(--rp-gris-texto-suave); transition: transform .15s ease; }
+.stat-card-boton:hover { border-color: var(--rp-verde); box-shadow: var(--rp-sombra-md); }
+.stat-card-boton:focus-visible { outline: 2px solid var(--rp-azul-oscuro); outline-offset: 2px; }
+.stat-card-boton.abierta { border-color: var(--rp-verde); box-shadow: 0 0 0 3px var(--rp-verde-suave); }
+.stat-card-boton.abierta .stat-abrir { transform: rotate(90deg); color: var(--rp-verde-oscuro); }
+
+.panel-resumen { margin-top: 1rem; }
+.panel-resumen:focus { outline: none; }
+.panel-resumen-encabezado { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
+.panel-resumen-cantidad { font-size: .8rem; font-weight: 500; color: var(--rp-gris-texto-suave); margin-left: .35rem; }
+.btn-cerrar-panel {
+  display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; flex: 0 0 auto;
+  border: 1px solid var(--rp-gris-borde); border-radius: var(--rp-radio-sm); background: var(--rp-blanco); color: var(--rp-gris); cursor: pointer;
+}
+.btn-cerrar-panel:hover, .btn-cerrar-panel:focus-visible { background: var(--rp-gris-fondo); border-color: var(--rp-gris); }
+.btn-cerrar-panel:focus-visible { outline: 2px solid var(--rp-azul-oscuro); outline-offset: 2px; }
+.panel-resumen-total { margin: 0 0 .5rem; }
+.panel-resumen-pie { margin-top: .85rem; display: flex; justify-content: flex-end; }
+
+.lista-resumen { list-style: none; margin: 0; padding: 0; max-height: 22rem; overflow-y: auto; }
+.lista-resumen li {
+  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(7.5rem, auto); gap: .25rem 1rem; align-items: center;
+  padding: .55rem .25rem; border-bottom: 1px solid var(--rp-gris-borde);
+}
+.lista-resumen li:last-child { border-bottom: 0; }
+/* Cada dato va siempre en su columna, aunque la fila no tenga detalle (p. ej. categorías): así todo queda alineado. */
+.lista-resumen-nombre { grid-column: 1; grid-row: 1; font-weight: 600; min-width: 0; overflow-wrap: anywhere;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.lista-resumen-nombre .badge-recyplast { margin-left: 0 !important; }
+.lista-resumen-detalle { grid-column: 2; grid-row: 1; font-size: .85rem; color: var(--rp-gris-texto-suave); min-width: 0; overflow-wrap: anywhere; }
+.lista-resumen-valor { grid-column: 3; grid-row: 1; font-weight: 600; text-align: right; }
+@media (max-width: 575.98px) {
+  .lista-resumen li { grid-template-columns: minmax(0, 1fr) auto; }
+  .lista-resumen-nombre { grid-column: 1; grid-row: 1; }
+  .lista-resumen-valor { grid-column: 2; grid-row: 1; }
+  .lista-resumen-detalle { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (prefers-reduced-motion: reduce) { .stat-card-boton .stat-abrir { transition: none; } }
