@@ -5,12 +5,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SAPS RecyPlast</title>
+    <script src="~/js/tema.js" asp-append-version="true"></script>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="auth-body">
     <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+    <button type="button" class="btn btn-recyplast-outline btn-tema btn-tema-flotante" data-cambiar-tema
+            aria-label="Cambiar a modo oscuro" title="Cambiar a modo oscuro">
+        <span class="tema-icono-luna"><partial name="_Iconos" model="@("luna icono-sm")" /></span>
+        <span class="tema-icono-sol"><partial name="_Iconos" model="@("sol icono-sm")" /></span>
+    </button>
     @RenderBody()
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

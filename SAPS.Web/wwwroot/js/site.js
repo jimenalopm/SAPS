@@ -130,3 +130,29 @@
         if (campo instanceof HTMLInputElement && campo.getAttribute('inputmode') === 'numeric' && campo.hasAttribute('max') && ['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
     });
 })();
+
+/* Modo claro / oscuro: botones con data-cambiar-tema. tema.js ya aplicó el tema guardado al cargar. */
+(function () {
+    const raiz = document.documentElement;
+    function actualizarBotones() {
+        const oscuro = raiz.getAttribute('data-tema') === 'oscuro';
+        const texto = oscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+        document.querySelectorAll('[data-cambiar-tema]').forEach(function (boton) {
+            boton.setAttribute('aria-label', texto);
+            boton.title = texto;
+            boton.setAttribute('aria-pressed', oscuro ? 'true' : 'false');
+            const etiqueta = boton.querySelector('.tema-texto');
+            if (etiqueta) etiqueta.textContent = oscuro ? 'Modo claro' : 'Modo oscuro';
+        });
+    }
+    document.addEventListener('click', function (e) {
+        const boton = e.target.closest('[data-cambiar-tema]');
+        if (!boton) return;
+        const nuevo = raiz.getAttribute('data-tema') === 'oscuro' ? 'claro' : 'oscuro';
+        raiz.setAttribute('data-tema', nuevo);
+        raiz.setAttribute('data-bs-theme', nuevo === 'oscuro' ? 'dark' : 'light');
+        try { localStorage.setItem('saps-tema', nuevo); } catch (err) { /* sin almacenamiento: dura hasta recargar */ }
+        actualizarBotones();
+    });
+    actualizarBotones();
+})();

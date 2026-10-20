@@ -15,6 +15,23 @@ public class UsuarioListadoViewModel
     public string Estado { get; set; } = "";
 }
 
+/// <summary>
+/// Formato del correo de las cuentas. [EmailAddress] acepta casi cualquier texto con una arroba
+/// (p. ej. "ejemplo@recyplast.commmmmmmmmm"); este patrón exige un correo con forma real:
+/// usuario sin puntos al inicio, al final ni seguidos; dominio con partes de letras, números o guiones
+/// (sin guion al inicio o al final); y una terminación de 2 a 6 letras (.cr, .com, .net, .online...).
+/// La misma expresión se valida en el navegador y en el servidor.
+/// </summary>
+public static class ReglasCorreo
+{
+    public const int LongitudMaxima = 100;
+
+    public const string Patron =
+        @"^[A-Za-z0-9_%+-]+(\.[A-Za-z0-9_%+-]+)*@([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,6}$";
+
+    public const string Mensaje = "Ingrese un correo válido, por ejemplo nombre@recyplast.cr.";
+}
+
 // ---------- Alta ----------
 public class CrearUsuarioViewModel
 {
@@ -29,7 +46,8 @@ public class CrearUsuarioViewModel
     };
 
     [Required(ErrorMessage = "El correo es obligatorio.")]
-    [EmailAddress(ErrorMessage = "Ingrese un correo válido.")]
+    [StringLength(ReglasCorreo.LongitudMaxima, ErrorMessage = "El correo admite hasta 100 caracteres.")]
+    [RegularExpression(ReglasCorreo.Patron, ErrorMessage = ReglasCorreo.Mensaje)]
     [Display(Name = "Correo de empleado")]
     public string Correo { get; set; } = "";
 
@@ -56,7 +74,8 @@ public class EditarUsuarioViewModel
     public string Id { get; set; } = "";
 
     [Required(ErrorMessage = "El correo es obligatorio.")]
-    [EmailAddress(ErrorMessage = "Ingrese un correo válido.")]
+    [StringLength(ReglasCorreo.LongitudMaxima, ErrorMessage = "El correo admite hasta 100 caracteres.")]
+    [RegularExpression(ReglasCorreo.Patron, ErrorMessage = ReglasCorreo.Mensaje)]
     [Display(Name = "Correo de empleado")]
     public string Correo { get; set; } = "";
 

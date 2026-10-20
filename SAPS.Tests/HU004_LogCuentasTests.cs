@@ -139,6 +139,69 @@ public class HU004_LogCuentasTests
         Assert.True(await um.IsInRoleAsync(admin, "Administrador"));
     }
 
+    // ---------- Cambio de correo o colaborador ----------
+
+    [Fact]
+    public async Task Editar_CambioDeCorreo_RegistraCuentaModificadaConCorreoAnteriorYNuevo()
+    {
+        var (db, um) = await CrearEntornoAsync();
+        var admin = await CrearCuentaAsync(um, "admin@recyplast.cr", "Administrador");
+        var cuenta = await CrearCuentaAsync(um, "soda@recyplast.cr", "Soda");
+        var bitacora = new BitacoraFalsa();
+
+        await CrearControlador(db, um, bitacora, admin.Id).Editar(new EditarUsuarioViewModel
+        {
+            Id = cuenta.Id, Correo = "soda.nueva@recyplast.cr", Rol = "Soda",
+        });
+
+        var evento = Assert.Single(bitacora.Eventos);
+        Assert.Equal(TiposEventoBitacora.CuentaModificada, evento.TipoEvento);
+        Assert.True(evento.EsExitoso);
+        Assert.Equal(cuenta.Id, evento.IdRegistro);
+        Assert.Equal("soda@recyplast.cr", evento.ValorAnterior);
+        Assert.Equal("soda.nueva@recyplast.cr", evento.ValorNuevo);
+    }
+
+    [Fact]
+    public async Task Editar_CambioDeColaborador_RegistraCuentaModificadaConLosCodigos()
+    {
+        var (db, um) = await CrearEntornoAsync();
+        var admin = await CrearCuentaAsync(um, "admin@recyplast.cr", "Administrador");
+        var cuenta = await CrearCuentaAsync(um, "soda@recyplast.cr", "Soda");
+        var anterior = await CrearColaboradorAsync(db, "C200");
+        var nuevo = await CrearColaboradorAsync(db, "C201");
+        db.VinculosUsuarioColaborador.Add(new VinculoUsuarioColaborador { IdUsuario = cuenta.Id, IdColaborador = anterior, FechaVinculacion = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+        var bitacora = new BitacoraFalsa();
+
+        await CrearControlador(db, um, bitacora, admin.Id).Editar(new EditarUsuarioViewModel
+        {
+            Id = cuenta.Id, Correo = "soda@recyplast.cr", Rol = "Soda", IdColaborador = nuevo,
+        });
+
+        var evento = Assert.Single(bitacora.Eventos);
+        Assert.Equal(TiposEventoBitacora.CuentaModificada, evento.TipoEvento);
+        Assert.Equal("C200", evento.ValorAnterior);
+        Assert.Equal("C201", evento.ValorNuevo);
+        Assert.Contains("soda@recyplast.cr", evento.Descripcion);
+    }
+
+    [Fact]
+    public async Task Editar_SinCambios_NoRegistraNada()
+    {
+        var (db, um) = await CrearEntornoAsync();
+        var admin = await CrearCuentaAsync(um, "admin@recyplast.cr", "Administrador");
+        var cuenta = await CrearCuentaAsync(um, "soda@recyplast.cr", "Soda");
+        var bitacora = new BitacoraFalsa();
+
+        await CrearControlador(db, um, bitacora, admin.Id).Editar(new EditarUsuarioViewModel
+        {
+            Id = cuenta.Id, Correo = "soda@recyplast.cr", Rol = "Soda",
+        });
+
+        Assert.Empty(bitacora.Eventos);
+    }
+
     // ---------- Baja y reactivación ----------
 
     [Fact]

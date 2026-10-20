@@ -17,6 +17,7 @@ public static class TiposEventoBitacora
     public const string CuentaCreada = "CuentaCreada";
     public const string CuentaDesactivada = "CuentaDesactivada";
     public const string CuentaReactivada = "CuentaReactivada";
+    public const string CuentaModificada = "CuentaModificada";
     public const string RolCambiado = "RolCambiado";
     public const string CambioPrecio = "CambioPrecio";
 }

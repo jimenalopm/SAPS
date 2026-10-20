@@ -27,6 +27,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     @* [Otras] Título de pestaña en español y con el nombre del sistema, no el del proyecto técnico. *@
     <title>@ViewData["Title"] - SAPS RecyPlast</title>
+    @* Modo claro / oscuro: se aplica antes de dibujar la página para evitar un destello. *@
+    <script src="~/js/tema.js" asp-append-version="true"></script>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -124,6 +126,12 @@
                             <p class="app-usuario-rol">@rolMostrado</p>
                         </div>
                         <span class="app-usuario-avatar" title="@nombreUsuario" aria-hidden="true">@iniciales</span>
+                        <button type="button" class="btn btn-recyplast-outline btn-cerrar-sesion btn-tema" data-cambiar-tema
+                            aria-label="Cambiar a modo oscuro" title="Cambiar a modo oscuro">
+                        <span class="tema-icono-luna"><partial name="_Iconos" model="@("luna icono-sm")" /></span>
+                        <span class="tema-icono-sol"><partial name="_Iconos" model="@("sol icono-sm")" /></span>
+                        <span class="btn-cerrar-sesion-texto tema-texto">Modo oscuro</span>
+                    </button>
                         @* [HU-001] Cambio de contraseña (opcional, criterio 6): junto al botón de cerrar sesión. *@
                         <a class="btn btn-recyplast-outline btn-cerrar-sesion" asp-area="Identity" asp-page="/Account/CambiarContrasena"
                            aria-label="Cambiar contraseña" title="Cambiar contraseña">
@@ -140,6 +148,12 @@
                 else
                 {
                     <div class="app-usuario">
+                        <button type="button" class="btn btn-recyplast-outline btn-cerrar-sesion btn-tema" data-cambiar-tema
+                            aria-label="Cambiar a modo oscuro" title="Cambiar a modo oscuro">
+                        <span class="tema-icono-luna"><partial name="_Iconos" model="@("luna icono-sm")" /></span>
+                        <span class="tema-icono-sol"><partial name="_Iconos" model="@("sol icono-sm")" /></span>
+                        <span class="btn-cerrar-sesion-texto tema-texto">Modo oscuro</span>
+                    </button>
                         <a class="btn btn-recyplast" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a>
                     </div>
                 }

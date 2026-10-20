@@ -112,7 +112,7 @@ public class BitacoraFilaViewModel
             Recurso = b.Recurso,
             RecursoTexto = PresentacionBitacora.EtiquetaRecurso(b.Recurso),
             EsExitoso = b.EsExitoso,
-            NombreUsuario = b.NombreUsuario,
+            NombreUsuario = PresentacionBitacora.UsuarioVisible(b.TipoEvento, b.EsExitoso, b.IdUsuario, b.NombreUsuario),
             RolTexto = PresentacionBitacora.EtiquetaRol(b.Rol),
             EsCambioDirectoBd = esDirectoBd,
             MotivoFallo = motivo,
@@ -180,6 +180,7 @@ public class BitacoraDetalleViewModel
             TiposEventoBitacora.RolCambiado => "Rol de la cuenta",
             TiposEventoBitacora.CuentaCreada => "Rol asignado",
             TiposEventoBitacora.CuentaDesactivada or TiposEventoBitacora.CuentaReactivada => "Estado de la cuenta",
+            TiposEventoBitacora.CuentaModificada => "Dato de la cuenta",
             _ => "Valor",
         };
 
