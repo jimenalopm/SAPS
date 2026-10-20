@@ -127,6 +127,19 @@ public static partial class PresentacionBitacora
         return $"{texto} ({signo}{porcentaje.ToString("N1", Cultura)} %)";
     }
 
+    /// <summary>IP del propio servidor (::1, 127.0.0.1): la persona entró desde el mismo equipo donde corre SAPS.</summary>
+    public static bool EsIpLocal(string? ip) =>
+        ip is "::1" or "127.0.0.1" or "::ffff:127.0.0.1";
+
+    /// <summary>
+    /// Inspección de usabilidad HU-004 (H2): la IP sola («::1») no le dice nada al Administrador.
+    /// Se describe de dónde vino la conexión; la IP exacta queda en «Datos técnicos» del detalle.
+    /// </summary>
+    public static string? OrigenConexion(string? ip) =>
+        string.IsNullOrWhiteSpace(ip) ? null
+        : EsIpLocal(ip) ? "Desde el mismo equipo del servidor"
+        : $"Desde otro equipo (IP {ip})";
+
     /// <summary>"Mozilla/5.0 (Windows NT 10.0; ...) Chrome/141..." → "Chrome en Windows". El texto completo queda en el detalle.</summary>
     public static string? ResumirDispositivo(string? userAgent)
     {

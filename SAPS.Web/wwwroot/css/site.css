@@ -778,6 +778,18 @@ body { margin-bottom: 0; }
 .aviso-solo-lectura { display: flex; align-items: center; gap: .6rem; margin-top: 1rem; padding: .7rem 1rem; font-size: .85rem;
   border-radius: var(--rp-radio-sm); background: var(--rp-gris-fondo); border: 1px dashed var(--rp-gris-borde); color: var(--rp-gris-texto-suave); }
 .ua-crudo { display: block; margin-top: .25rem; color: var(--rp-gris-texto-suave); }
+/* [Usabilidad HU-004] Datos técnicos plegados en el detalle y ayuda de la bitácora */
+.datos-tecnicos > summary { cursor: pointer; font-weight: 600; }
+.datos-tecnicos > summary:focus-visible { outline: 2px solid var(--rp-azul); outline-offset: 2px; border-radius: var(--rp-radio-sm); }
+.ayuda-bitacora { margin-bottom: 1rem; padding: 1rem 1.25rem; border: 1px solid var(--rp-gris-borde); border-left: 4px solid var(--rp-azul);
+                  border-radius: var(--rp-radio); background: var(--rp-azul-suave); font-size: .9rem; }
+.ayuda-bitacora h2 { font-size: 1rem; font-weight: 600; margin: 0 0 .5rem; }
+.ayuda-bitacora ol { margin: 0; padding-left: 1.2rem; }
+.ayuda-bitacora li + li { margin-top: .3rem; }
+/* [Usabilidad HU-015] Ayuda junto al precio y saltos de línea en la ventana de confirmación */
+.ayuda-precio { display: flex; gap: .4rem; align-items: flex-start; margin: 0 0 .75rem; }
+.ayuda-precio .icono { flex: none; margin-top: .15rem; }
+#modalConfirmarMensaje { white-space: pre-line; }
 
 /* ---------- 13. Modo claro / oscuro ----------
    tema.js pone data-tema="claro|oscuro" (y data-bs-theme para Bootstrap) en <html>.

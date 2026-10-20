@@ -397,6 +397,58 @@ public class HU004_ConsultaBitacoraTests
         Assert.Equal(esperado, PresentacionBitacora.ProductoDelPrecio(descripcion));
     }
 
+    // ---------- Inspección de usabilidad (H2): sin datos técnicos a la vista ----------
+
+    [Theory]
+    [InlineData("::1", "Desde el mismo equipo del servidor")]
+    [InlineData("127.0.0.1", "Desde el mismo equipo del servidor")]
+    [InlineData("::ffff:127.0.0.1", "Desde el mismo equipo del servidor")]
+    [InlineData("10.1.2.3", "Desde otro equipo (IP 10.1.2.3)")]
+    [InlineData(null, null)]
+    [InlineData("  ", null)]
+    public void OrigenConexion_DescribeDeDondeVinoLaConexion(string? ip, string? esperado)
+    {
+        Assert.Equal(esperado, PresentacionBitacora.OrigenConexion(ip));
+    }
+
+    [Fact]
+    public void FilaDeInicioDeSesion_MuestraDispositivoYOrigenSinLaIpLocal()
+    {
+        var fila = BitacoraFilaViewModel.DesdeEntidad(new Bitacora
+        {
+            FechaHoraUtc = MedianocheCr, Modulo = ModulosBitacora.Seguridad, TipoEvento = TiposEventoBitacora.InicioSesion, Recurso = RecursosBitacora.Sesion,
+            EsExitoso = true, NombreUsuario = "ADM001", UsuarioBd = "sa", DireccionIp = "::1",
+            Dispositivo = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0 Safari/537.36",
+        });
+
+        Assert.Equal("Chrome en Windows", fila.DetallePrincipal);
+        Assert.Equal("Desde el mismo equipo del servidor", fila.DetalleSecundario);
+        Assert.DoesNotContain("::1", fila.DetallePrincipal + fila.DetalleSecundario);
+    }
+
+    [Fact]
+    public async Task Detalle_ConservaLosDatosTecnicosYAgregaElOrigenEnPalabras()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        db.Bitacoras.Add(new Bitacora
+        {
+            FechaHoraUtc = MedianocheCr, Modulo = ModulosBitacora.Seguridad, TipoEvento = TiposEventoBitacora.InicioSesion,
+            Recurso = RecursosBitacora.Sesion, EsExitoso = true, IdUsuario = "u-admin", NombreUsuario = "ADM001", UsuarioBd = "sa",
+            DireccionIp = "10.1.2.3", Dispositivo = "Mozilla/5.0 (Windows NT 10.0) Chrome/141.0",
+        });
+        await db.SaveChangesAsync();
+
+        var vista = Assert.IsType<ViewResult>(await Controlador(db).Detalle(db.Bitacoras.Single().IdBitacora, new BitacoraFiltros()));
+        var modelo = Assert.IsType<BitacoraDetalleViewModel>(vista.Model);
+
+        Assert.Equal("Desde otro equipo (IP 10.1.2.3)", modelo.Origen);
+        Assert.Equal("Chrome en Windows", modelo.DispositivoResumen);
+        // Los datos técnicos siguen disponibles para la sección plegable «Datos técnicos».
+        Assert.Equal("10.1.2.3", modelo.DireccionIp);
+        Assert.Equal("u-admin", modelo.IdUsuario);
+        Assert.Equal("sa", modelo.UsuarioBd);
+    }
+
     // ---------- Apoyo ----------
 
     private static BitacoraController Controlador(ApplicationDbContext db) =>

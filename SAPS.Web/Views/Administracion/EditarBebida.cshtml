@@ -16,7 +16,7 @@
     </div>
 </div>
 
-<form asp-action="EditarBebida" method="post" data-bloquear-envio class="form-card">
+<form asp-action="EditarBebida" method="post" data-bloquear-envio data-confirmar-precio class="form-card">
     <input type="hidden" asp-for="IdBebida" />
     <div asp-validation-summary="ModelOnly" class="alerta-error-recyplast" role="alert"></div>
 
@@ -25,7 +25,7 @@
 
         <div class="mb-3">
             <label asp-for="NombreBebida" class="form-label">Nombre de la bebida <span class="campo-obligatorio" aria-hidden="true">*</span></label>
-            <input asp-for="NombreBebida" class="form-control" autofocus />
+            <input asp-for="NombreBebida" class="form-control" autofocus data-nombre-articulo />
             <span asp-validation-for="NombreBebida" class="text-danger small"></span>
         </div>
 
@@ -56,11 +56,17 @@
 
     <section aria-labelledby="titulo-precio">
         <h2 class="form-card-titulo" id="titulo-precio">Precio</h2>
+        @* [Usabilidad HU-015, H9/H10] Explica qué pasa al cambiar el precio. *@
+        <p class="form-text ayuda-precio">
+            <partial name="_Iconos" model="@("ayuda icono-sm")" />
+            Si cambia el precio, se le pedirá confirmar. El nuevo precio aplica a los pedidos siguientes (los ya registrados
+            conservan su precio) y el cambio queda en el historial de precios con su usuario, fecha y hora.
+        </p>
         <div class="mb-1">
             <label asp-for="Precio" class="form-label">Precio <span class="campo-obligatorio" aria-hidden="true">*</span></label>
             <div class="input-group campo-monto">
                 <span class="input-group-text" aria-hidden="true">₡</span>
-                <input asp-for="Precio" class="form-control" min="1" max="10000" step="1" inputmode="numeric" />
+                <input asp-for="Precio" class="form-control" min="1" max="10000" step="1" inputmode="numeric" data-precio="Precio" />
             </div>
             <span asp-validation-for="Precio" class="text-danger small"></span>
         </div>
