@@ -43,7 +43,7 @@
         <span class="stat-icono"><partial name="_Iconos" model="@("productos icono-lg")" /></span>
         <div>
             <p class="stat-etiqueta">Productos</p>
-            <p class="stat-valor">@Model.Productos.Count.ToString("N0", cultura)</p>
+            <p class="stat-valor" id="contador-productos">@Model.Productos.Count.ToString("N0", cultura)</p>
             <p class="stat-detalle">mostrados</p>
         </div>
     </a>
@@ -51,7 +51,7 @@
         <span class="stat-icono azul"><partial name="_Iconos" model="@("categorias icono-lg")" /></span>
         <div>
             <p class="stat-etiqueta">Categorías</p>
-            <p class="stat-valor">@Model.Categorias.Count.ToString("N0", cultura)</p>
+            <p class="stat-valor" id="contador-categorias">@Model.Categorias.Count.ToString("N0", cultura)</p>
             <p class="stat-detalle">mostradas</p>
         </div>
     </a>
@@ -59,7 +59,7 @@
         <span class="stat-icono"><partial name="_Iconos" model="@("tamanos icono-lg")" /></span>
         <div>
             <p class="stat-etiqueta">Tamaños</p>
-            <p class="stat-valor">@Model.Tamanos.Count.ToString("N0", cultura)</p>
+            <p class="stat-valor" id="contador-tamanos">@Model.Tamanos.Count.ToString("N0", cultura)</p>
             <p class="stat-detalle">mostrados</p>
         </div>
     </a>
@@ -67,7 +67,7 @@
         <span class="stat-icono azul"><partial name="_Iconos" model="@("bebidas icono-lg")" /></span>
         <div>
             <p class="stat-etiqueta">Bebidas</p>
-            <p class="stat-valor">@Model.Bebidas.Count.ToString("N0", cultura)</p>
+            <p class="stat-valor" id="contador-bebidas">@Model.Bebidas.Count.ToString("N0", cultura)</p>
             <p class="stat-detalle">mostradas</p>
         </div>
     </a>
@@ -75,7 +75,7 @@
         <span class="stat-icono"><partial name="_Iconos" model="@("bebidas icono-lg")" /></span>
         <div>
             <p class="stat-etiqueta">Tipos de bebida</p>
-            <p class="stat-valor">@Model.Tipos.Count.ToString("N0", cultura)</p>
+            <p class="stat-valor" id="contador-tipos">@Model.Tipos.Count.ToString("N0", cultura)</p>
             <p class="stat-detalle">mostrados</p>
         </div>
     </a>
@@ -86,17 +86,17 @@
     @* ================= CATEGORÍAS ================= *@
     <div class="tab-pane @Activa("categorias")">
         <div class="catalogo-barra">
-            <form method="get" class="catalogo-filtros" data-bloquear-envio>
+            <form method="get" class="catalogo-filtros">
                 <input type="hidden" name="tab" value="categorias" />
-                <div class="input-buscar">
-                    <partial name="_Iconos" model="@("buscar icono-sm")" />
-                    <input type="search" name="catQ" value="@Model.CategoriaBuscar" class="form-control" placeholder="Buscar categoría..." aria-label="Buscar categoría" />
+                <div class="input-buscar con-lupa">
+                    <input type="search" name="catQ" value="@Model.CategoriaBuscar" class="form-control" placeholder="Buscar categoría..." aria-label="Buscar categoría"
+                           autocomplete="off" data-busqueda-en-vivo data-busqueda-servidor="@Model.CategoriaBuscar" data-contador="#contador-categorias" />
+                    <button type="submit" class="btn-lupa" aria-label="Buscar categoría" title="Buscar"><partial name="_Iconos" model="@("buscar icono-sm")" /></button>
                 </div>
                 <div class="form-check">
                     <input type="checkbox" name="catInc" value="true" data-filtrar-estado class="form-check-input" id="catInc" checked="@Model.CategoriaIncluirInactivos" />
                     <label class="form-check-label" for="catInc">Mostrar inactivas</label>
                 </div>
-                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
             <a asp-action="CrearCategoria" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nueva categoría</a>
         </div>
@@ -134,17 +134,17 @@
     @* ================= TAMAÑOS ================= *@
     <div class="tab-pane @Activa("tamanos")">
         <div class="catalogo-barra">
-            <form method="get" class="catalogo-filtros" data-bloquear-envio>
+            <form method="get" class="catalogo-filtros">
                 <input type="hidden" name="tab" value="tamanos" />
-                <div class="input-buscar">
-                    <partial name="_Iconos" model="@("buscar icono-sm")" />
-                    <input type="search" name="tamQ" value="@Model.TamanoBuscar" class="form-control" placeholder="Buscar tamaño..." aria-label="Buscar tamaño" />
+                <div class="input-buscar con-lupa">
+                    <input type="search" name="tamQ" value="@Model.TamanoBuscar" class="form-control" placeholder="Buscar tamaño..." aria-label="Buscar tamaño"
+                           autocomplete="off" data-busqueda-en-vivo data-busqueda-servidor="@Model.TamanoBuscar" data-contador="#contador-tamanos" />
+                    <button type="submit" class="btn-lupa" aria-label="Buscar tamaño" title="Buscar"><partial name="_Iconos" model="@("buscar icono-sm")" /></button>
                 </div>
                 <div class="form-check">
                     <input type="checkbox" name="tamInc" value="true" data-filtrar-estado class="form-check-input" id="tamInc" checked="@Model.TamanoIncluirInactivos" />
                     <label class="form-check-label" for="tamInc">Mostrar inactivos</label>
                 </div>
-                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
             <a asp-action="CrearTamano" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nuevo tamaño</a>
         </div>
@@ -182,17 +182,17 @@
     @* ================= TIPOS DE BEBIDA ================= *@
     <div class="tab-pane @Activa("tipos")">
         <div class="catalogo-barra">
-            <form method="get" class="catalogo-filtros" data-bloquear-envio>
+            <form method="get" class="catalogo-filtros">
                 <input type="hidden" name="tab" value="tipos" />
-                <div class="input-buscar">
-                    <partial name="_Iconos" model="@("buscar icono-sm")" />
-                    <input type="search" name="tipoQ" value="@Model.TipoBuscar" class="form-control" placeholder="Buscar tipo de bebida..." aria-label="Buscar tipo de bebida" />
+                <div class="input-buscar con-lupa">
+                    <input type="search" name="tipoQ" value="@Model.TipoBuscar" class="form-control" placeholder="Buscar tipo de bebida..." aria-label="Buscar tipo de bebida"
+                           autocomplete="off" data-busqueda-en-vivo data-busqueda-servidor="@Model.TipoBuscar" data-contador="#contador-tipos" />
+                    <button type="submit" class="btn-lupa" aria-label="Buscar tipo de bebida" title="Buscar"><partial name="_Iconos" model="@("buscar icono-sm")" /></button>
                 </div>
                 <div class="form-check">
                     <input type="checkbox" name="tipoInc" value="true" data-filtrar-estado class="form-check-input" id="tipoInc" checked="@Model.TipoIncluirInactivos" />
                     <label class="form-check-label" for="tipoInc">Mostrar inactivos</label>
                 </div>
-                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
             <a asp-action="CrearTipoBebida" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nuevo tipo</a>
         </div>
@@ -229,14 +229,15 @@
     @* ================= PRODUCTOS ================= *@
     <div class="tab-pane @Activa("productos")">
         <div class="catalogo-barra">
-            <form method="get" class="catalogo-filtros" data-bloquear-envio>
+            <form method="get" class="catalogo-filtros">
                 <input type="hidden" name="tab" value="productos" />
-                <div class="input-buscar">
-                    <partial name="_Iconos" model="@("buscar icono-sm")" />
-                    <input type="search" name="prodQ" value="@Model.ProductoBuscar" class="form-control" placeholder="Buscar producto..." aria-label="Buscar producto" />
+                <div class="input-buscar con-lupa">
+                    <input type="search" name="prodQ" value="@Model.ProductoBuscar" class="form-control" placeholder="Buscar producto..." aria-label="Buscar producto"
+                           autocomplete="off" data-busqueda-en-vivo data-busqueda-servidor="@Model.ProductoBuscar" data-contador="#contador-productos" />
+                    <button type="submit" class="btn-lupa" aria-label="Buscar producto" title="Buscar"><partial name="_Iconos" model="@("buscar icono-sm")" /></button>
                 </div>
                 <div>
-                    <select name="prodCat" class="form-select" aria-label="Filtrar por categoría">
+                    <select name="prodCat" class="form-select" data-filtrar-estado aria-label="Filtrar por categoría">
                         <option value="">Todas las categorías</option>
                         @foreach (var categoriaFiltro in Model.CategoriasFiltro)
                         {
@@ -248,7 +249,6 @@
                     <input type="checkbox" name="prodInc" value="true" data-filtrar-estado class="form-check-input" id="prodInc" checked="@Model.ProductoIncluirInactivos" />
                     <label class="form-check-label" for="prodInc">Mostrar inactivos</label>
                 </div>
-                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
             <a asp-action="CrearProducto" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nuevo producto</a>
         </div>
@@ -302,14 +302,15 @@
     @* ================= BEBIDAS ================= *@
     <div class="tab-pane @Activa("bebidas")">
         <div class="catalogo-barra">
-            <form method="get" class="catalogo-filtros" data-bloquear-envio>
+            <form method="get" class="catalogo-filtros">
                 <input type="hidden" name="tab" value="bebidas" />
-                <div class="input-buscar">
-                    <partial name="_Iconos" model="@("buscar icono-sm")" />
-                    <input type="search" name="bebQ" value="@Model.BebidaBuscar" class="form-control" placeholder="Buscar bebida..." aria-label="Buscar bebida" />
+                <div class="input-buscar con-lupa">
+                    <input type="search" name="bebQ" value="@Model.BebidaBuscar" class="form-control" placeholder="Buscar bebida..." aria-label="Buscar bebida"
+                           autocomplete="off" data-busqueda-en-vivo data-busqueda-servidor="@Model.BebidaBuscar" data-contador="#contador-bebidas" />
+                    <button type="submit" class="btn-lupa" aria-label="Buscar bebida" title="Buscar"><partial name="_Iconos" model="@("buscar icono-sm")" /></button>
                 </div>
                 <div>
-                    <select name="bebTipo" class="form-select" aria-label="Filtrar por tipo de bebida">
+                    <select name="bebTipo" class="form-select" data-filtrar-estado aria-label="Filtrar por tipo de bebida">
                         <option value="">Todos los tipos</option>
                         @foreach (var tipoFiltro in Model.TiposFiltro)
                         {
@@ -321,7 +322,6 @@
                     <input type="checkbox" name="bebInc" value="true" data-filtrar-estado class="form-check-input" id="bebInc" checked="@Model.BebidaIncluirInactivos" />
                     <label class="form-check-label" for="bebInc">Mostrar inactivas</label>
                 </div>
-                <button type="submit" class="btn btn-recyplast-outline" data-texto-procesando="Buscando...">Buscar</button>
             </form>
             <a asp-action="CrearBebida" class="btn btn-recyplast"><partial name="_Iconos" model="@("agregar icono-sm")" /> Nueva bebida</a>
         </div>
@@ -362,8 +362,9 @@
 
 @section Scripts {
     <script>
-        document.querySelectorAll('[data-filtrar-estado]').forEach(check => {
-            check.addEventListener('change', () => check.form.requestSubmit());
+        document.querySelectorAll('[data-filtrar-estado]').forEach(campo => {
+            campo.addEventListener('change', () => campo.form.requestSubmit());
         });
     </script>
+    <script src="~/js/busqueda-catalogo.js" asp-append-version="true"></script>
 }
