@@ -1,0 +1,26 @@
+# ==========================================================
+# backup_semanal_base_L0.rman
+# DOMINGO - Respaldo base Incremental Nivel 0 (full)
+# Es la base que necesitan los incrementales de martes, jueves y sabado.
+# ==========================================================
+RUN {
+  ALLOCATE CHANNEL ch1 DEVICE TYPE DISK;
+
+  # Respaldo base Nivel 0 de toda la base de datos + archivelogs
+  BACKUP INCREMENTAL LEVEL 0
+    DATABASE
+    FORMAT 'C:\oracle_scripts\backups\L0_%d_%T_%s_%p'
+    TAG 'SEMANAL_BASE_L0'
+    PLUS ARCHIVELOG
+    FORMAT 'C:\oracle_scripts\backups\arch_%d_%T_%s_%p'
+    TAG 'SEMANAL_ARCH'
+    DELETE INPUT;
+
+  RELEASE CHANNEL ch1;
+}
+
+# Mantenimiento: validar y borrar lo que sale de la ventana de 28 dias
+CROSSCHECK BACKUP;
+CROSSCHECK ARCHIVELOG ALL;
+DELETE NOPROMPT EXPIRED BACKUP;
+DELETE NOPROMPT OBSOLETE;

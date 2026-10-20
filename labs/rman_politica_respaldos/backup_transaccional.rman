@@ -1,0 +1,20 @@
+# ==========================================================
+# backup_transaccional.rman
+# TODOS LOS DIAS - Respaldo transaccional (archivelogs)
+# ==========================================================
+RUN {
+  ALLOCATE CHANNEL ch1 DEVICE TYPE DISK;
+
+  # Archivar el redo log actual para incluir las ultimas transacciones
+  SQL 'ALTER SYSTEM ARCHIVE LOG CURRENT';
+
+  # Respaldar los archivelogs generados y eliminarlos del disco
+  BACKUP ARCHIVELOG ALL
+    FORMAT 'C:\oracle_scripts\backups\arch_%d_%T_%s_%p'
+    TAG 'TRANSACCIONAL_DIARIO'
+    DELETE INPUT;
+
+  RELEASE CHANNEL ch1;
+}
+
+CROSSCHECK ARCHIVELOG ALL;

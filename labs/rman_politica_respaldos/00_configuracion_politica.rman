@@ -1,0 +1,24 @@
+# ==========================================================
+# 00_configuracion_politica.rman
+# Configuracion global de la politica de respaldos (se ejecuta UNA vez)
+# Retencion: 4 semanas = ventana de recuperacion de 28 dias
+# ==========================================================
+
+# Retencion de 4 semanas
+CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 28 DAYS;
+
+# Evita respaldar de nuevo archivelogs/archivos ya respaldados
+CONFIGURE BACKUP OPTIMIZATION ON;
+
+# Dispositivo por defecto: disco
+CONFIGURE DEFAULT DEVICE TYPE TO DISK;
+
+# Respaldo automatico del controlfile y SPFILE despues de cada BACKUP
+CONFIGURE CONTROLFILE AUTOBACKUP ON;
+CONFIGURE CONTROLFILE AUTOBACKUP FORMAT FOR DEVICE TYPE DISK TO 'C:\oracle_scripts\backups\cf_%F';
+
+# Los archivelogs solo se pueden borrar si ya tienen al menos 1 respaldo en disco
+CONFIGURE ARCHIVELOG DELETION POLICY TO BACKED UP 1 TIMES TO DEVICE TYPE DISK;
+
+# Mostrar la configuracion final
+SHOW ALL;

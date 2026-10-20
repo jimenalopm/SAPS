@@ -1,0 +1,24 @@
+# ==========================================================
+# backup_incremental_L1.rman
+# MARTES, JUEVES y SABADO - Respaldo Incremental Nivel 1
+# Copia solo los bloques que cambiaron desde el ultimo respaldo
+# de nivel 0 o 1 (incremental diferencial).
+# ==========================================================
+RUN {
+  ALLOCATE CHANNEL ch1 DEVICE TYPE DISK;
+
+  BACKUP INCREMENTAL LEVEL 1
+    DATABASE
+    FORMAT 'C:\oracle_scripts\backups\L1_%d_%T_%s_%p'
+    TAG 'INCREMENTAL_L1'
+    PLUS ARCHIVELOG
+    FORMAT 'C:\oracle_scripts\backups\arch_%d_%T_%s_%p'
+    TAG 'INCREMENTAL_ARCH'
+    DELETE INPUT;
+
+  RELEASE CHANNEL ch1;
+}
+
+# Mantenimiento segun la politica de retencion de 28 dias
+CROSSCHECK BACKUP;
+DELETE NOPROMPT OBSOLETE;
