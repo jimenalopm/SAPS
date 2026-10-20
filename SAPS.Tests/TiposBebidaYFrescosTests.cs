@@ -79,7 +79,8 @@ public sealed class TiposBebidaYFrescosTests : IDisposable
 
         // Si HasData y el snapshot no dicen lo mismo, EF querría insertar/actualizar/borrar tipos en la próxima migración.
         Assert.DoesNotContain(diferencias, o => o is InsertDataOperation or UpdateDataOperation or DeleteDataOperation);
-        Assert.Equal("20261014120000_TiposBebidaYFrescos", db.Database.GetMigrations().Last());
+        // Puede haber migraciones posteriores (p. ej. ContextoAuditoriaSinNulos); basta con que esta exista.
+        Assert.Contains("20261014120000_TiposBebidaYFrescos", db.Database.GetMigrations());
     }
 
     [Fact]

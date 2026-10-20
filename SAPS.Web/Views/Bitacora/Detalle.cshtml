@@ -64,19 +64,16 @@
         <h2 class="card-recyplast-titulo" id="t-evento">Evento</h2>
         <dl class="lista-campos">
             <dt>Fecha y hora</dt>
-            <dd>@Model.FechaHoraTexto<span class="detalle-sub texto-mono">@Model.FechaHoraUtc.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) UTC</span></dd>
+            <dd>@Model.FechaHoraTexto</dd>
 
             <dt>Tipo de evento</dt>
-            <dd>@f.TipoEventoTexto <span class="detalle-sub texto-mono">@f.TipoEvento</span></dd>
+            <dd>@f.TipoEventoTexto</dd>
 
             <dt>Módulo</dt>
             <dd>@f.ModuloTexto</dd>
 
-            <dt>Recurso</dt>
-            <dd>@f.RecursoTexto <span class="detalle-sub texto-mono">@f.Recurso</span></dd>
-
-            <dt>Registro involucrado</dt>
-            <dd class="texto-mono">@(Model.IdRegistro ?? "—")</dd>
+            <dt>Qué se afectó</dt>
+            <dd>@f.RecursoTexto</dd>
 
             @if (Model.CuentaAfectada is not null)
             {
@@ -132,27 +129,11 @@
             <dt>Rol</dt>
             <dd>@(f.RolTexto ?? "—")</dd>
 
-            <dt>Id de la cuenta</dt>
-            <dd class="texto-mono">@(Model.IdUsuario ?? "—")</dd>
-
-            <dt>Usuario de base de datos</dt>
-            <dd class="texto-mono">@Model.UsuarioBd</dd>
-
-            <dt>Dirección IP</dt>
-            <dd class="texto-mono">@(Model.DireccionIp ?? "—")</dd>
-
             <dt>Dispositivo</dt>
-            <dd>
-                @if (Model.Dispositivo is null)
-                {
-                    <text>—</text>
-                }
-                else
-                {
-                    @Model.DispositivoResumen
-                    <small class="ua-crudo texto-mono">@Model.Dispositivo</small>
-                }
-            </dd>
+            <dd>@(Model.DispositivoResumen ?? "—")</dd>
+
+            <dt>Origen</dt>
+            <dd>@(Model.Origen ?? "—")</dd>
         </dl>
         @if (Model.EsCambioPrecio && Model.DireccionIp is null)
         {
@@ -163,6 +144,36 @@
         }
     </section>
 </div>
+
+@* Inspección de usabilidad HU-004 (H2/H8): los códigos internos quedan plegados para soporte técnico. *@
+<details class="card-recyplast datos-tecnicos mt-3">
+    <summary>Datos técnicos <span class="texto-suave">(para soporte del sistema)</span></summary>
+    <dl class="lista-campos mt-3">
+        <dt>Hora en UTC</dt>
+        <dd class="texto-mono">@Model.FechaHoraUtc.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)</dd>
+
+        <dt>Código del evento</dt>
+        <dd class="texto-mono">@f.TipoEvento</dd>
+
+        <dt>Tabla o recurso</dt>
+        <dd class="texto-mono">@f.Recurso</dd>
+
+        <dt>Registro involucrado</dt>
+        <dd class="texto-mono">@(Model.IdRegistro ?? "—")</dd>
+
+        <dt>Id de la cuenta</dt>
+        <dd class="texto-mono">@(Model.IdUsuario ?? "—")</dd>
+
+        <dt>Usuario de base de datos</dt>
+        <dd class="texto-mono">@Model.UsuarioBd</dd>
+
+        <dt>Dirección IP</dt>
+        <dd class="texto-mono">@(Model.DireccionIp ?? "—")</dd>
+
+        <dt>Agente de usuario</dt>
+        <dd><small class="ua-crudo texto-mono">@(Model.Dispositivo ?? "—")</small></dd>
+    </dl>
+</details>
 
 <p class="aviso-solo-lectura">
     <partial name="_Iconos" model="@("candado icono-sm")" />
