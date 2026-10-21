@@ -361,7 +361,7 @@
 </div>
 
 @section Scripts {
-    <script>
+    <script nonce="@Context.Items[SAPS.Web.Middleware.EncabezadosSeguridadMiddleware.ClaveNonce]">
         document.querySelectorAll('[data-filtrar-estado]').forEach(campo => {
             campo.addEventListener('change', () => campo.form.requestSubmit());
         });

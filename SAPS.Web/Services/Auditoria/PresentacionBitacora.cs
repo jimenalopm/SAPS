@@ -25,7 +25,14 @@ public static partial class PresentacionBitacora
         [TiposEventoBitacora.CuentaReactivada] = "Cuenta reactivada",
         [TiposEventoBitacora.CuentaModificada] = "Cuenta modificada",
         [TiposEventoBitacora.RolCambiado] = "Cambio de rol",
+        [TiposEventoBitacora.ContrasenaCambiada] = "Cambio de contraseña",
         [TiposEventoBitacora.CambioPrecio] = "Cambio de precio",
+        [TiposEventoBitacora.CatalogoCreado] = "Elemento de catálogo creado",
+        [TiposEventoBitacora.CatalogoModificado] = "Elemento de catálogo modificado",
+        [TiposEventoBitacora.CatalogoActivado] = "Elemento de catálogo activado",
+        [TiposEventoBitacora.CatalogoDesactivado] = "Elemento de catálogo desactivado",
+        [TiposEventoBitacora.PedidoRegistrado] = "Pedido registrado",
+        [TiposEventoBitacora.PedidoRechazado] = "Pedido rechazado",
     };
 
     /// <summary>
@@ -41,13 +48,21 @@ public static partial class PresentacionBitacora
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaReactivada),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaModificada),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.RolCambiado),
+        (ModulosBitacora.Seguridad, TiposEventoBitacora.ContrasenaCambiada),
         (ModulosBitacora.Catalogo, TiposEventoBitacora.CambioPrecio),
+        (ModulosBitacora.Catalogo, TiposEventoBitacora.CatalogoCreado),
+        (ModulosBitacora.Catalogo, TiposEventoBitacora.CatalogoModificado),
+        (ModulosBitacora.Catalogo, TiposEventoBitacora.CatalogoActivado),
+        (ModulosBitacora.Catalogo, TiposEventoBitacora.CatalogoDesactivado),
+        (ModulosBitacora.Pedidos, TiposEventoBitacora.PedidoRegistrado),
+        (ModulosBitacora.Pedidos, TiposEventoBitacora.PedidoRechazado),
     ];
 
     private static readonly Dictionary<string, string> Modulos = new(StringComparer.Ordinal)
     {
         [ModulosBitacora.Seguridad] = "Seguridad",
         [ModulosBitacora.Catalogo] = "Catálogo",
+        [ModulosBitacora.Pedidos] = "Pedidos",
     };
 
     /// <summary>Tablas o entidades del log con un nombre que entienda el Administrador (el código queda en el detalle).</summary>
@@ -57,6 +72,11 @@ public static partial class PresentacionBitacora
         [RecursosBitacora.Bebida] = "Precio de bebida",
         [RecursosBitacora.Cuentas] = "Cuentas de usuario",
         [RecursosBitacora.Sesion] = "Sesión",
+        [RecursosBitacora.Producto] = "Producto",
+        [RecursosBitacora.Categoria] = "Categoría",
+        [RecursosBitacora.Tamano] = "Tamaño",
+        [RecursosBitacora.TipoBebida] = "Tipo de bebida",
+        [RecursosBitacora.Pedido] = "Pedido",
     };
 
     private static readonly Dictionary<string, string> Roles = new(StringComparer.Ordinal)

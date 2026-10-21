@@ -18,6 +18,7 @@
 
 <form asp-action="EditarBebida" method="post" data-bloquear-envio data-confirmar-precio class="form-card">
     <input type="hidden" asp-for="IdBebida" />
+    <input type="hidden" asp-for="RowVersion" />
     <div asp-validation-summary="ModelOnly" class="alerta-error-recyplast" role="alert"></div>
 
     <section aria-labelledby="titulo-info">

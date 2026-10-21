@@ -1099,12 +1099,16 @@ BEGIN
     VALUES (N'20261014120000_TiposBebidaYFrescos', N'10.0.11');
 END;
 
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20261019120000_ContextoAuditoriaSinNulos'
 )
 BEGIN
-    -- HU-015: quitar el relleno 0x00 de CONTEXT_INFO también con intercalaciones de Windows (Modern_Spanish_CI_AS).
+
     EXEC(N'
     ALTER FUNCTION [soda].[fn_UsuarioContexto]()
     RETURNS TABLE
@@ -1133,6 +1137,35 @@ IF NOT EXISTS (
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
     VALUES (N'20261019120000_ContextoAuditoriaSinNulos', N'10.0.11');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261021171343_AgregarRowVersionCatalogo'
+)
+BEGIN
+    ALTER TABLE [soda].[tb_Producto] ADD [RowVersion] rowversion NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261021171343_AgregarRowVersionCatalogo'
+)
+BEGIN
+    ALTER TABLE [soda].[tb_Bebida] ADD [RowVersion] rowversion NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261021171343_AgregarRowVersionCatalogo'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261021171343_AgregarRowVersionCatalogo', N'10.0.11');
 END;
 
 COMMIT;

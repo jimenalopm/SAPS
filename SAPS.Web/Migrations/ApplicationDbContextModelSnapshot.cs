@@ -364,6 +364,11 @@ namespace SAPS.Web.Migrations
                         .HasColumnType("int")
                         .HasColumnName("Precio");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<string>("TipoBebida")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -533,6 +538,11 @@ namespace SAPS.Web.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
                         .HasColumnName("TieneTamano");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.HasKey("IdProducto")
                         .HasName("PK_Producto");

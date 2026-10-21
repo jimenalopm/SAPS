@@ -4,6 +4,7 @@ using SAPS.Web.Data;
 using SAPS.Web.Middleware;
 using SAPS.Web.Services.Auditoria;
 using SAPS.Web.Services.Pedidos;
+using SAPS.Web.Services.Seguridad;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +29,19 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.ExpireTimeSpan = TimeSpan.FromDays(365);
     options.SlidingExpiration = true;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    // En Development se admite http://localhost:5120; fuera de él la cookie nunca viaja sin HTTPS.
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
 });
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+});
+// Límite de peticiones: inicio de sesión por IP y pedidos por usuario (ver LimitesPeticiones).
+builder.Services.AddRateLimiter(LimitesPeticiones.Configurar);
 
 builder.Services.AddScoped<DbInitializer>();
 builder.Services.AddSingleton(TimeProvider.System);
@@ -43,6 +56,8 @@ builder.Services.AddSingleton(new EntornoPrueba(sembrarPrueba));
 builder.Services.AddScoped<IColaboradores, ColaboradoresTabla>();
 builder.Services.AddControllersWithViews(options =>
 {
+    // Todo POST/PUT/DELETE de los controladores exige token antiforgery, aunque a una acción nueva se le olvide el atributo.
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
     // [H9] Mensajes de conversión de datos en español (antes salían en inglés, por ejemplo
     // "The value '1500.5' is not valid for Precio."). ValueMustBeANumber también se usa
     // como mensaje de validación en el navegador (data-val-number).
@@ -59,6 +74,21 @@ builder.Services.AddControllersWithViews(options =>
     m.SetValueMustBeANumberAccessor(campo => $"El campo {campo} debe ser un número entero.");
     m.SetValueMustNotBeNullAccessor(campo => $"El campo {campo} es obligatorio.");
 });
+
+// Si SAPS corre detrás de un proxy inverso, sus IP se declaran en Seguridad:ProxiesConfiables (appsettings). Así el esquema
+// HTTPS y la IP real de cada persona llegan bien (cookie Secure, límite de peticiones y bitácora). Sin lista, no se confía en ninguno.
+var proxiesConfiables = builder.Configuration.GetSection("Seguridad:ProxiesConfiables").Get<string[]>() ?? [];
+if (proxiesConfiables.Length > 0)
+{
+    builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+            | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+        foreach (var ip in proxiesConfiables) options.KnownProxies.Add(System.Net.IPAddress.Parse(ip));
+    });
+}
 
 var app = builder.Build();
 
@@ -127,9 +157,12 @@ else
     app.UseHsts();
 }
 
+if (proxiesConfiables.Length > 0) app.UseForwardedHeaders();
+app.UseMiddleware<EncabezadosSeguridadMiddleware>();
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

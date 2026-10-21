@@ -26,7 +26,7 @@ la pantalla de bitácora y el trigger de precios (task 16).
 |---|---|---|---|---|
 | `idBitacora` | INT IDENTITY | No | Llave primaria (EBD03). | — |
 | `FechaHoraUtc` | DATETIME2 | No | Fecha y hora del evento, en UTC. Default `SYSUTCDATETIME()`. | HU-004 c1, c2, c3 · HU-015 c3 |
-| `Modulo` | VARCHAR(30) | No | Módulo afectado: `Seguridad` o `Catalogo` (a la fecha). | HU-004 c4 |
+| `Modulo` | VARCHAR(30) | No | Módulo afectado: `Seguridad`, `Catalogo` o `Pedidos` (a la fecha). | HU-004 c4 |
 | `TipoEvento` | VARCHAR(50) | No | Código del evento (ver sección 3). Es el campo por el que filtra la pantalla. | HU-004 c8 · HU-015 c6 |
 | `Recurso` | VARCHAR(100) | No | Entidad o tabla involucrada (p. ej. `tb_Precio`, `AspNetUsers`, `Sesion`). | HU-004 c4 |
 | `IdRegistro` | VARCHAR(50) | Sí | Identificador del registro involucrado (texto, porque puede ser un INT o el Id de una cuenta). | HU-004 c3, c4 · HU-015 c3 |
@@ -67,7 +67,15 @@ Las propiedades C# se nombran en PascalCase (EP05) y la entidad se llamará `Bit
 | Seguridad | `CuentaModificada` | `AspNetUsers` | El Administrador cambia el correo o el colaborador vinculado de una cuenta. | correo o colaborador anterior / nuevo |
 | Seguridad | `RolCambiado` | `AspNetUsers` | El Administrador cambia el rol de una cuenta. | rol anterior / rol nuevo |
 | Catalogo | `CambioPrecio` | `tb_Precio` | Se modifica un precio (HU-007, HU-015), desde la pantalla o directo en la BD. | precio anterior / precio nuevo |
+| Seguridad | `ContrasenaCambiada` | `AspNetUsers` | Una persona cambia su contraseña: voluntario, obligatorio por primer ingreso u obligatorio por vencimiento. También queda como fallido el intento con la contraseña actual incorrecta. *(agregado en el endurecimiento posterior al Sprint 2)* | — (nunca se guardan contraseñas) |
+| Catalogo | `CatalogoCreado` | `tb_Producto`, `tb_Bebida`, `tb_Categoria`, `tb_Tamano`, `tb_TipoBebida` | Se da de alta un elemento del catálogo. *(endurecimiento)* | — / nombre |
+| Catalogo | `CatalogoModificado` | los mismos | Se cambia el nombre, la categoría, el tipo o el tamaño de un elemento, o se quita el precio de un tamaño de un producto. Si solo cambia el precio no se duplica: lo registra el trigger como `CambioPrecio`. *(endurecimiento)* | nombre anterior / nombre nuevo |
+| Catalogo | `CatalogoActivado` / `CatalogoDesactivado` | los mismos | Se activa o desactiva un elemento. *(endurecimiento)* | Inactivo / Activo (o al revés) |
+| Pedidos | `PedidoRegistrado` | `tb_Pedido` | Se registra un pedido nuevo (HU-008). Un reintento con el mismo token no genera otro evento. *(endurecimiento)* | — / total en colones |
+| Pedidos | `PedidoRechazado` | `tb_Pedido` | Un intento de registrar un pedido se rechaza (precio cambiado, colaborador inactivo, falla de la base). `EsExitoso` = 0 y el motivo va en `Descripcion`. *(endurecimiento)* | — |
 | *(futuro)* | `OrdenAnulada` | `tb_Pedido` | HU-010 (Sprint 4). | Misma estructura, sin cambios en la tabla. |
+
+Las columnas de texto de la bitácora son `VARCHAR` (no Unicode), por eso las descripciones guardadas usan solo caracteres ASCII/Latin-1: `->` en lugar de `→` y "colones" en lugar de `₡`.
 
 En `IdRegistro` va el id de la cuenta afectada (`AspNetUsers`), el id del precio (`tb_Precio`) o el id de la sesión, según el evento. Para saber qué producto cambió de precio, `Descripcion` incluye el nombre del producto y el tamaño.
 
@@ -80,8 +88,8 @@ En `IdRegistro` va el id de la cuenta afectada (`AspNetUsers`), el id del precio
 | HU-004 c3 (cuentas) | `Recurso` + `IdRegistro` + `Descripcion` (cuenta afectada), `idUsuario`/`NombreUsuario` (quien hizo el cambio), `FechaHoraUtc`. |
 | HU-004 c4 (módulo y recurso) | `Modulo`, `Recurso`, `IdRegistro`, `EsExitoso`; todos obligatorios salvo `IdRegistro`. |
 | HU-004 c5 (solo Administrador) | Pantalla y rol: tasks 11 y 13 (Nataly). No depende de la tabla. |
-| HU-004 c6 y c7 (solo lectura, sin omitir) | Task 3 (ver sección 5). El servicio de logs (task 5) es el único camino de escritura de la aplicación. |
-| HU-004 c8 (eventos futuros) | D1, D3 y D7: un evento nuevo es una fila nueva con un `TipoEvento` nuevo. |
+| HU-004 c6 y c7 (solo lectura, sin omitir) | Task 3 (ver sección 7). El servicio de logs (task 5) es el único camino de escritura de la aplicación. Ver también las precisiones de la sección 9. |
+| HU-004 c8 (eventos futuros) | D1, D3 y D7: un evento nuevo es una fila nueva con un `TipoEvento` nuevo. Comprobado en el endurecimiento posterior al Sprint 2: se agregaron 8 tipos de evento y un módulo nuevo sin cambiar la tabla. |
 | HU-015 c2 y c3 (trigger) | `UsuarioBd` (default `SUSER_SNAME()`), `FechaHoraUtc`, `ValorAnterior`, `ValorNuevo`. |
 | HU-015 c5 (solo lectura) | Task 3. |
 | HU-015 c6 (filtro y detalle) | `IX_Bitacora_TipoEvento_FechaHoraUtc`, `TipoEvento = 'CambioPrecio'`, `ValorAnterior`/`ValorNuevo`. |
@@ -163,6 +171,7 @@ Migración `CrearTriggersAuditoriaPrecio`. Decisiones tomadas para esta task:
 | La pantalla cierra la fila anterior (solo cambia `EstaActivo` y `FechaVigenciaHasta`). | No | El `UPDATE` no cambia `Monto`. |
 | `UPDATE` directo del `Monto` en la BD. | Sí | Compara `deleted` contra `inserted`. |
 | Alta de un producto o de un tamaño nuevo (sin fila anterior). | No | Es un alta, no un cambio. |
+| Se quita un tamaño de un producto, o se pasa de precio único a precios por tamaño (o al revés). | No lo registra el trigger | El `UPDATE` solo cierra el precio y no cambia `Monto`. Lo registra la aplicación como `CatalogoModificado` (módulo Catálogo, recurso `tb_Producto`) con "se quitó el precio de Grande: 1000 (colones)". Agregado en el endurecimiento posterior al Sprint 2. |
 | El monto nuevo es igual al anterior. | No | No hay cambio. |
 
 Cada fila del log lleva `Modulo = Catalogo`, `TipoEvento = CambioPrecio`, `Recurso = tb_Precio` o `tb_Bebida`, `IdRegistro` con el id del precio o de la bebida, y en `Descripcion` el nombre del producto o bebida y el tamaño.
@@ -188,3 +197,39 @@ Sin ese paso el trigger igual registra el cambio, pero `NombreUsuario` queda con
 - `CONTEXT_INFO` no es una prueba de identidad: quien tenga una conexión a la BD puede escribirlo. Sirve para trazabilidad dentro de la aplicación; el usuario real de la BD siempre queda en `UsuarioBd`.
 - La aplicación no guarda `DireccionIp` ni `Dispositivo` en los cambios de precio: el trigger no los conoce.
 
+
+## 9. Ampliación posterior al Sprint 2 (endurecimiento de seguridad)
+
+Rama `endurecimiento-seguridad-sprint2`. Qué cambió en la bitácora y cómo se lee cada criterio después de esos cambios.
+
+### Eventos nuevos
+
+Ver la sección 3: `ContrasenaCambiada`, `CatalogoCreado`, `CatalogoModificado`, `CatalogoActivado`, `CatalogoDesactivado`, `PedidoRegistrado` y `PedidoRechazado`, y el módulo nuevo `Pedidos`. La tabla no cambió. Solo se agregaron constantes en `EventosBitacora.cs` y etiquetas en `PresentacionBitacora.cs`; los filtros de la pantalla los muestran sin más cambios.
+
+### Cómo se escribe cada tipo de evento
+
+| Origen | Cómo se registra | ¿Puede omitirlo quien hace la acción? |
+|---|---|---|
+| Cambios de precio | Triggers de la base de datos (D8). | No: ocurre aunque el cambio sea directo en la BD. |
+| Sesión, cuentas, catálogo, pedidos y contraseña | `IServicioBitacora`, desde el código de la aplicación, después de guardar el cambio. | No hay opción en la pantalla para desactivarlo. Pero si el servicio de bitácora falla (p. ej. la base no responde), la operación continúa sin esa fila y el fallo queda en el log técnico: se decidió que un fallo del log no rompa el inicio de sesión ni un pedido. |
+
+### Precisiones a los criterios
+
+- **Criterio 4:** el módulo afectado es `Seguridad`, `Catalogo` o `Pedidos`.
+- **Criterio 6:** la protección es de dos capas (trigger y permisos, sección 7) y depende de que la aplicación use una cuenta de SQL Server sin privilegios de administración. Mientras la aplicación se conecte como `sa`, el criterio se cumple desde la aplicación pero no se puede garantizar frente a quien tenga las credenciales de `sa`, que puede desactivar el trigger o ejecutar `TRUNCATE TABLE`. El pendiente es crear el usuario `saps_app` (ver "Pendientes de despliegue").
+- **Criterio 7:** ver el cuadro anterior.
+- **"Identificador de dispositivo" (RNF-002):** hoy es el navegador y el sistema operativo resumidos del User-Agent (p. ej. "Chrome en Windows"), no un identificador único del equipo.
+- **Inicio de sesión fallido con un usuario inexistente:** no se guarda lo que se escribió en el campo de usuario, porque pudo ser una contraseña escrita en el campo equivocado. La pantalla muestra "(usuario no reconocido)".
+
+### Cambios de seguridad relacionados que afectan lo que se audita
+
+- El login no delata si una cuenta está desactivada o bloqueada a quien no conoce la contraseña (mensaje genérico). La bitácora, que solo ve el Administrador, sí guarda el motivo real.
+- El inicio de sesión se limita a 10 envíos por minuto por IP; un envío rechazado por ese límite responde 429 y no genera evento.
+- Los productos y bebidas tienen una versión de fila (`RowVersion`): si dos personas editan a la vez, la segunda edición se rechaza y no genera ningún evento de cambio.
+
+### Pendientes de despliegue
+
+1. Aplicar `db/SAPS_DB_servidor.sql` en el servidor de RecyPlast (incluye la columna `RowVersion` y es idempotente).
+2. Crear un usuario de SQL Server `saps_app` con permisos de lectura, escritura y ejecución, sin `db_owner` ni `sysadmin`, y usarlo en la cadena de conexión. Con eso el criterio 6 queda cubierto también frente a quien administre la aplicación.
+3. Confirmar HTTPS (la cookie de sesión es `Secure` fuera de Development) y fijar `AllowedHosts` con el nombre real del servidor.
+4. Anulación de órdenes con su motivo (RNF-002): se incorpora con HU-010.
