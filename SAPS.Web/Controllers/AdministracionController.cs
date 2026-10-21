@@ -10,16 +10,57 @@ namespace SAPS.Web.Controllers;
 
 [Authorize(Roles = "Administrador,RecursosHumanos")]
 public class AdministracionController(ApplicationDbContext db, IContextoAuditoria? contextoAuditoria = null,
-    ILogger<AdministracionController>? logger = null) : Controller
+    ILogger<AdministracionController>? logger = null, IServicioBitacora? bitacora = null) : Controller
 {
     /// <summary>[Usabilidad HU-015, H9] Mensaje en lenguaje natural cuando el guardado falla en la base de datos.</summary>
     public const string MensajeErrorGuardado =
         "No se pudo guardar el cambio. Intente de nuevo; si el problema continúa, comuníquese con el administrador del sistema.";
 
+    /// <summary>Otra persona guardó el mismo producto o bebida mientras este formulario estaba abierto.</summary>
+    public const string MensajeConflicto =
+        "Otra persona modificó «{0}» mientras usted lo editaba, así que no se guardó su cambio. Revise los datos actuales y vuelva a aplicarlo.";
+
     // HU-015: los triggers de precios registran el cambio; aquí solo se les dice quién lo hizo.
     private readonly IContextoAuditoria auditoria = contextoAuditoria ?? new ContextoAuditoria();
 
     public IActionResult Index() => View();
+
+    // Un guardado que la base rechaza (p. ej. un nombre duplicado que otra persona creó al mismo tiempo) se explica en el
+    // formulario en vez de terminar en la página de error.
+    private async Task<bool> GuardarAsync()
+    {
+        try
+        {
+            await db.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateException ex)
+        {
+            logger?.LogError(ex, "No se pudo guardar un cambio del catálogo");
+            ModelState.AddModelError(string.Empty, MensajeErrorGuardado);
+            return false;
+        }
+    }
+
+    // HU-004: altas, cambios y activaciones del catálogo quedan en la bitácora (columnas varchar: texto sin "→" ni "₡"), después de guardar. Los cambios de
+    // precio ya los registran los triggers (HU-015). El servicio nunca lanza, así que un fallo del log no deshace el cambio.
+    private Task RegistrarCatalogoAsync(string tipoEvento, string recurso, int id, string descripcion,
+        string? anterior = null, string? nuevo = null) =>
+        bitacora is null ? Task.CompletedTask : bitacora.RegistrarAsync(new EventoBitacora(
+            ModulosBitacora.Catalogo, tipoEvento, recurso, true)
+        {
+            IdRegistro = id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ValorAnterior = anterior,
+            ValorNuevo = nuevo,
+            Descripcion = descripcion,
+        });
+
+    private Task RegistrarEstadoAsync(string recurso, int id, string etiqueta, string nombre, bool ahoraActivo) =>
+        RegistrarCatalogoAsync(
+            ahoraActivo ? TiposEventoBitacora.CatalogoActivado : TiposEventoBitacora.CatalogoDesactivado,
+            recurso, id,
+            $"{etiqueta} {nombre}: {(ahoraActivo ? "Inactivo -> Activo" : "Activo -> Inactivo")}",
+            ahoraActivo ? "Inactivo" : "Activo", ahoraActivo ? "Activo" : "Inactivo");
 
     // ==================================================================
     //  Pantalla principal del catálogo (con pestañas)
@@ -123,7 +164,9 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         foreach (var idTamano in modelo.TamanosPermitidos)
             nueva.TamanosPermitidos.Add(new CategoriaTamano { IdTamano = idTamano });
         db.Categorias.Add(nueva);
-        await db.SaveChangesAsync();
+        if (!await GuardarAsync()) return View(modelo);
+        await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoCreado, RecursosBitacora.Categoria, nueva.IdCategoria,
+            $"Categoría {nueva.NombreCategoria} creada", null, nueva.NombreCategoria);
         TempData["Mensaje"] = $"Categoría \"{modelo.NombreCategoria}\" creada correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "categorias" });
     }
@@ -158,12 +201,15 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         var categoria = await db.Categorias.Include(c => c.TamanosPermitidos).FirstOrDefaultAsync(c => c.IdCategoria == modelo.IdCategoria);
         if (categoria == null) return NotFound();
 
+        var nombreAnteriorCategoria = categoria.NombreCategoria;
         categoria.NombreCategoria = modelo.NombreCategoria;
         foreach (var enlace in categoria.TamanosPermitidos.Where(e => !modelo.TamanosPermitidos.Contains(e.IdTamano)).ToList())
             db.CategoriasTamanos.Remove(enlace);
         foreach (var idTamano in modelo.TamanosPermitidos.Where(id => categoria.TamanosPermitidos.All(e => e.IdTamano != id)))
             categoria.TamanosPermitidos.Add(new CategoriaTamano { IdTamano = idTamano });
-        await db.SaveChangesAsync();
+        if (!await GuardarAsync()) return View(modelo);
+        await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoModificado, RecursosBitacora.Categoria, categoria.IdCategoria,
+            $"Categoría {categoria.NombreCategoria} modificada (nombre y tamaños permitidos)", nombreAnteriorCategoria, categoria.NombreCategoria);
         TempData["Mensaje"] = "Categoría actualizada correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "categorias" });
     }
@@ -185,6 +231,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         }
         categoria.Activo = !categoria.Activo;
         await db.SaveChangesAsync();
+        await RegistrarEstadoAsync(RecursosBitacora.Categoria, categoria.IdCategoria, "Categoría", categoria.NombreCategoria, categoria.Activo);
         TempData["Mensaje"] = categoria.Activo ? $"Categoría «{categoria.NombreCategoria}» activada." : $"Categoría «{categoria.NombreCategoria}» desactivada.";
         return RedirectToAction(nameof(Catalogo), new { tab = "categorias" });
     }
@@ -238,8 +285,11 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         }
         if (!ModelState.IsValid) return View(modelo);
 
-        db.Tamanos.Add(new Tamano { NombreTamano = modelo.NombreTamano, EsParaBebida = modelo.EsParaBebida });
-        await db.SaveChangesAsync();
+        var nuevoTamano = new Tamano { NombreTamano = modelo.NombreTamano, EsParaBebida = modelo.EsParaBebida };
+        db.Tamanos.Add(nuevoTamano);
+        if (!await GuardarAsync()) return View(modelo);
+        await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoCreado, RecursosBitacora.Tamano, nuevoTamano.IdTamano,
+            $"Tamaño {nuevoTamano.NombreTamano} creado", null, nuevoTamano.NombreTamano);
         TempData["Mensaje"] = $"Tamaño \"{modelo.NombreTamano}\" creado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
     }
@@ -271,9 +321,12 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         var tamano = await db.Tamanos.FindAsync(modelo.IdTamano);
         if (tamano == null) return NotFound();
 
+        var nombreAnteriorTamano = tamano.NombreTamano;
         tamano.NombreTamano = modelo.NombreTamano;
         tamano.EsParaBebida = modelo.EsParaBebida;
-        await db.SaveChangesAsync();
+        if (!await GuardarAsync()) return View(modelo);
+        await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoModificado, RecursosBitacora.Tamano, tamano.IdTamano,
+            $"Tamaño {tamano.NombreTamano} modificado", nombreAnteriorTamano, tamano.NombreTamano);
         TempData["Mensaje"] = "Tamaño actualizado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
     }
@@ -296,6 +349,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         }
         tamano.Activo = !tamano.Activo;
         await db.SaveChangesAsync();
+        await RegistrarEstadoAsync(RecursosBitacora.Tamano, tamano.IdTamano, "Tamaño", tamano.NombreTamano, tamano.Activo);
         TempData["Mensaje"] = tamano.Activo ? $"Tamaño «{tamano.NombreTamano}» activado." : $"Tamaño «{tamano.NombreTamano}» desactivado.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tamanos" });
     }
@@ -333,7 +387,9 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         }
         // EF guarda el producto y sus precios juntos, en una sola transacción.
         db.Productos.Add(producto);
-        await db.SaveChangesAsync();
+        if (!await GuardarAsync()) return View(modelo);
+        await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoCreado, RecursosBitacora.Producto, producto.IdProducto,
+            $"Producto {producto.NombreProducto} creado", null, producto.NombreProducto);
         TempData["Mensaje"] = $"Producto \"{producto.NombreProducto}\" creado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
     }
@@ -353,6 +409,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             EsEspecial = producto.EsEspecial,
             RequiereTamano = producto.RequiereTamano,
             PrecioUnico = producto.Precios.FirstOrDefault(p => p.IdTamano == null)?.MontoPrecio,
+            RowVersion = producto.RowVersion,
         };
         // También carga tamaños si actualmente usa precio único.
         await RecargarListasProducto(modelo, producto, cargarPreciosActuales: true);
@@ -376,7 +433,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
 
         var seleccionados = PreciosSeleccionados(modelo);
         var anteriores = producto.Precios.Where(p => p.Activo).Select(p => (p.IdTamano, Monto: p.MontoPrecio)).ToList();
-        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var hoy = Services.FechaCostaRica.Hoy();
         var nuevos = seleccionados.Where(n => !producto.Precios.Any(p =>
             p.Activo && p.IdTamano == n.IdTamano && p.MontoPrecio == n.Monto)).ToList();
 
@@ -389,10 +446,17 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
                 precio.FechaVigenciaHasta = hoy;
             }
         }
+        var nombreAnteriorProducto = producto.NombreProducto;
+        // Concurrencia: se compara contra la versión que la persona vio al abrir el formulario.
+        if (modelo.RowVersion is not null) db.Entry(producto).Property(p => p.RowVersion).OriginalValue = modelo.RowVersion;
+        var cambioDatosProducto = producto.NombreProducto != modelo.NombreProducto || producto.IdCategoria != modelo.IdCategoria
+            || producto.EsEspecial != modelo.EsEspecial || producto.RequiereTamano != modelo.RequiereTamano;
         producto.NombreProducto = modelo.NombreProducto;
         producto.IdCategoria = modelo.IdCategoria;
         producto.EsEspecial = modelo.EsEspecial;
         producto.RequiereTamano = modelo.RequiereTamano;
+        // Un cambio solo de precios no toca la fila del producto: se fuerza el UPDATE para que su versión avance.
+        db.Entry(producto).Property(p => p.NombreProducto).IsModified = true;
 
         // Primero libera el índice de precio activo por producto/tamaño.
         // Si falla cualquiera de los dos guardados, se revierte toda la edición.
@@ -414,6 +478,11 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             }
             await db.SaveChangesAsync();
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = string.Format(MensajeConflicto, nombreAnteriorProducto);
+            return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
+        }
         catch (DbUpdateException ex)
         {
             // [Usabilidad HU-015, H9] En vez de la página técnica, el formulario explica qué pasó; la transacción se revierte.
@@ -426,6 +495,10 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             await auditoria.LimpiarAsync(db.Database);
         }
         await transaccion.CommitAsync();
+        // Si solo cambió el precio, el trigger de HU-015 ya lo registró; aquí va lo demás (nombre, categoría, tipo).
+        if (cambioDatosProducto)
+            await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoModificado, RecursosBitacora.Producto, producto.IdProducto,
+                $"Producto {producto.NombreProducto} modificado", nombreAnteriorProducto, producto.NombreProducto);
         // Con precio único, las filas de tamaño llegan sin datos (IdTamano 0): solo cuentan los tamaños reales.
         var nombresTamano = modelo.PreciosPorTamano.Where(t => t.IdTamano > 0)
             .GroupBy(t => t.IdTamano).ToDictionary(g => g.Key, g => g.First().NombreTamano);
@@ -461,6 +534,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         // Nota: no se tocan los precios. Se desactiva solo el producto; sus precios
         // quedan tal cual estaban (según se acordó para este sprint).
         await db.SaveChangesAsync();
+        await RegistrarEstadoAsync(RecursosBitacora.Producto, producto.IdProducto, "Producto", producto.NombreProducto, producto.Activo);
         TempData["Mensaje"] = producto.Activo ? $"Producto «{producto.NombreProducto}» activado." : $"Producto «{producto.NombreProducto}» desactivado.";
         return RedirectToAction(nameof(Catalogo), new { tab = "productos" });
     }
@@ -613,8 +687,11 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             ModelState.AddModelError(nameof(modelo.NombreTipo), "Ya existe un tipo de bebida con ese nombre.");
         if (!ModelState.IsValid) return View(modelo);
 
-        db.TiposBebida.Add(new TipoBebida { NombreTipo = modelo.NombreTipo });
-        await db.SaveChangesAsync();
+        var nuevoTipo = new TipoBebida { NombreTipo = modelo.NombreTipo };
+        db.TiposBebida.Add(nuevoTipo);
+        if (!await GuardarAsync()) return View(modelo);
+        await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoCreado, RecursosBitacora.TipoBebida, nuevoTipo.IdTipoBebida,
+            $"Tipo de bebida {nuevoTipo.NombreTipo} creado", null, nuevoTipo.NombreTipo);
         TempData["Mensaje"] = $"Tipo de bebida \"{modelo.NombreTipo}\" creado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tipos" });
     }
@@ -639,13 +716,17 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         if (tipo == null) return NotFound();
 
         // Las bebidas guardan el nombre del tipo: si cambia el nombre, las bebidas lo siguen.
+        var nombreAnteriorTipo = tipo.NombreTipo;
         if (tipo.NombreTipo != modelo.NombreTipo)
         {
             var bebidas = await db.Bebidas.Where(b => b.TipoBebida == tipo.NombreTipo).ToListAsync();
             foreach (var bebida in bebidas) bebida.TipoBebida = modelo.NombreTipo;
             tipo.NombreTipo = modelo.NombreTipo;
         }
-        await db.SaveChangesAsync();
+        if (!await GuardarAsync()) return View(modelo);
+        if (nombreAnteriorTipo != tipo.NombreTipo)
+            await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoModificado, RecursosBitacora.TipoBebida, tipo.IdTipoBebida,
+                $"Tipo de bebida renombrado: {nombreAnteriorTipo} -> {tipo.NombreTipo}", nombreAnteriorTipo, tipo.NombreTipo);
         TempData["Mensaje"] = "Tipo de bebida actualizado correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tipos" });
     }
@@ -667,6 +748,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         }
         tipo.Activo = !tipo.Activo;
         await db.SaveChangesAsync();
+        await RegistrarEstadoAsync(RecursosBitacora.TipoBebida, tipo.IdTipoBebida, "Tipo de bebida", tipo.NombreTipo, tipo.Activo);
         TempData["Mensaje"] = tipo.Activo ? $"Tipo de bebida «{tipo.NombreTipo}» activado." : $"Tipo de bebida «{tipo.NombreTipo}» desactivado.";
         return RedirectToAction(nameof(Catalogo), new { tab = "tipos" });
     }
@@ -696,14 +778,17 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         await ValidarOrdenPrecioBebida(modelo);
         if (!ModelState.IsValid) return View(modelo);
 
-        db.Bebidas.Add(new Bebida
+        var nuevaBebida = new Bebida
         {
             NombreBebida = modelo.NombreBebida,
             TipoBebida = modelo.TipoBebida,
             IdTamano = modelo.IdTamano,
             Precio = modelo.Precio,
-        });
-        await db.SaveChangesAsync();
+        };
+        db.Bebidas.Add(nuevaBebida);
+        if (!await GuardarAsync()) return View(modelo);
+        await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoCreado, RecursosBitacora.Bebida, nuevaBebida.IdBebida,
+            $"Bebida {nuevaBebida.NombreBebida} creada", null, nuevaBebida.NombreBebida);
         TempData["Mensaje"] = $"Bebida \"{modelo.NombreBebida}\" creada correctamente.";
         return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
     }
@@ -719,6 +804,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             TipoBebida = bebida.TipoBebida,
             IdTamano = bebida.IdTamano,
             Precio = bebida.Precio,
+            RowVersion = bebida.RowVersion,
             TamanosDisponibles = await db.Tamanos.Where(t => (t.Activo && t.EsParaBebida) || t.IdTamano == bebida.IdTamano)
                 .OrderBy(t => t.NombreTamano).ToListAsync(),
             TiposDisponibles = await db.TiposBebida.Where(t => t.Activo || t.NombreTipo == bebida.TipoBebida)
@@ -743,6 +829,10 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         if (!ModelState.IsValid) return View(modelo);
 
         var precioAnterior = bebida.Precio;
+        var nombreAnteriorBebida = bebida.NombreBebida;
+        if (modelo.RowVersion is not null) db.Entry(bebida).Property(b => b.RowVersion).OriginalValue = modelo.RowVersion;
+        var cambioDatosBebida = bebida.NombreBebida != modelo.NombreBebida || bebida.TipoBebida != modelo.TipoBebida
+            || bebida.IdTamano != modelo.IdTamano;
         bebida.NombreBebida = modelo.NombreBebida;
         bebida.TipoBebida = modelo.TipoBebida;
         bebida.IdTamano = modelo.IdTamano;
@@ -756,6 +846,11 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         {
             await db.SaveChangesAsync();
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = string.Format(MensajeConflicto, nombreAnteriorBebida);
+            return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
+        }
         catch (DbUpdateException ex)
         {
             logger?.LogError(ex, "No se pudo guardar la bebida {IdBebida}", bebida.IdBebida);
@@ -767,6 +862,10 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
             await auditoria.LimpiarAsync(db.Database);
         }
         await transaccion.CommitAsync();
+        // Si solo cambió el precio, el trigger de HU-015 ya lo registró.
+        if (cambioDatosBebida)
+            await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoModificado, RecursosBitacora.Bebida, bebida.IdBebida,
+                $"Bebida {bebida.NombreBebida} modificada", nombreAnteriorBebida, bebida.NombreBebida);
         TempData["Mensaje"] = precioAnterior == bebida.Precio
             ? "Bebida actualizada correctamente."
             : $"Bebida «{bebida.NombreBebida}» actualizada correctamente. Precio: {Monto(precioAnterior)} → {Monto(bebida.Precio)}. "
@@ -890,6 +989,7 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         }
         bebida.Activo = !bebida.Activo;
         await db.SaveChangesAsync();
+        await RegistrarEstadoAsync(RecursosBitacora.Bebida, bebida.IdBebida, "Bebida", bebida.NombreBebida, bebida.Activo);
         TempData["Mensaje"] = bebida.Activo ? $"Bebida «{bebida.NombreBebida}» activada." : $"Bebida «{bebida.NombreBebida}» desactivada.";
         return RedirectToAction(nameof(Catalogo), new { tab = "bebidas" });
     }

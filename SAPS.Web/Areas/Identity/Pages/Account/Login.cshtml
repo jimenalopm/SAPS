@@ -65,7 +65,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
+    <script nonce="@HttpContext.Items[SAPS.Web.Middleware.EncabezadosSeguridadMiddleware.ClaveNonce]">
         (function () {
             const boton = document.getElementById('ver-contrasena');
             const campo = document.getElementById('Input_Password');

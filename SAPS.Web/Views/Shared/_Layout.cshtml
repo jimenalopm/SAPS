@@ -29,7 +29,7 @@
     <title>@ViewData["Title"] - SAPS RecyPlast</title>
     @* Modo claro / oscuro: se aplica antes de dibujar la página para evitar un destello. *@
     <script src="~/js/tema.js" asp-append-version="true"></script>
-    <script type="importmap"></script>
+    <script type="importmap" nonce="@Context.Items[SAPS.Web.Middleware.EncabezadosSeguridadMiddleware.ClaveNonce]"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SAPS.Web.styles.css" asp-append-version="true" />

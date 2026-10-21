@@ -223,18 +223,41 @@ public class HU001_AutenticacionTests
         Assert.Contains(errores, e => e.ErrorMessage == "El correo de empleado o la contraseña son incorrectos. Revise los datos e inténtelo de nuevo. Si olvidó su contraseña, comuníquese con el administrador.");
     }
 
+    private static IdentityUser PrepararCuentaBloqueada(Mock<SignInManager<IdentityUser>> signIn, string contrasenaEscrita)
+    {
+        var cuenta = new IdentityUser { UserName = Codigo };
+        signIn.Setup(s => s.PasswordSignInAsync(Codigo, contrasenaEscrita, false, true)).ReturnsAsync(SignInResult.LockedOut);
+        var userManager = Mock.Get(signIn.Object.UserManager);
+        userManager.Setup(u => u.FindByNameAsync(Codigo)).ReturnsAsync(cuenta);
+        userManager.Setup(u => u.CheckPasswordAsync(cuenta, ContrasenaValida)).ReturnsAsync(true);
+        userManager.Setup(u => u.GetLockoutEndDateAsync(cuenta)).ReturnsAsync(DateTimeOffset.UtcNow.AddMinutes(10));
+        return cuenta;
+    }
+
     [Fact]
-    public async Task LoginPage_CuentaBloqueada_RedirigeAPaginaDeBloqueo()
+    public async Task LoginPage_CuentaBloqueadaYContrasenaCorrecta_RedirigeAPaginaDeBloqueo()
     {
         var signIn = CrearSignInManagerMock();
-        signIn.Setup(s => s.PasswordSignInAsync(Codigo, ContrasenaValida, false, true))
-              .ReturnsAsync(SignInResult.LockedOut);
+        PrepararCuentaBloqueada(signIn, ContrasenaValida);
         var page = CrearLoginModel(signIn);
 
         var resultado = await page.OnPostAsync("/");
 
         var redirect = Assert.IsType<RedirectToPageResult>(resultado);
         Assert.Equal("./Lockout", redirect.PageName);
+    }
+
+    [Fact]
+    public async Task LoginPage_CuentaBloqueadaYContrasenaIncorrecta_MuestraElMensajeGenericoSinDelatarLaCuenta()
+    {
+        var signIn = CrearSignInManagerMock();
+        PrepararCuentaBloqueada(signIn, "Incorrecta1");
+        var page = CrearLoginModel(signIn, password: "Incorrecta1");
+
+        var resultado = await page.OnPostAsync("/");
+
+        Assert.IsType<PageResult>(resultado);
+        Assert.Contains(page.ModelState[string.Empty]!.Errors, e => e.ErrorMessage == LoginModel.MensajeCredencialesIncorrectas);
     }
 
     [Fact]

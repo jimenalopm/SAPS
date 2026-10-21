@@ -66,6 +66,9 @@ public class ProductoFormViewModel
 {
     public int IdProducto { get; set; }
 
+    /// <summary>Versión del producto cuando se abrió el formulario (control de concurrencia).</summary>
+    public byte[]? RowVersion { get; set; }
+
     [Required(ErrorMessage = "El nombre del producto es obligatorio.")]
     [StringLength(60, ErrorMessage = "Máximo 60 caracteres.")]
     [NombreCatalogo]
@@ -91,6 +94,9 @@ public class ProductoFormViewModel
 public class BebidaFormViewModel
 {
     public int IdBebida { get; set; }
+
+    /// <summary>Versión de la bebida cuando se abrió el formulario (control de concurrencia).</summary>
+    public byte[]? RowVersion { get; set; }
 
     [Required(ErrorMessage = "El nombre de la bebida es obligatorio.")]
     [StringLength(60, ErrorMessage = "Máximo 60 caracteres.")]

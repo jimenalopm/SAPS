@@ -141,7 +141,8 @@ public class HU015_BitacoraCambioPrecioTests
     [InlineData("tb_Bebida", "Precio de bebida")]
     [InlineData("AspNetUsers", "Cuentas de usuario")]
     [InlineData("Sesion", "Sesión")]
-    [InlineData("tb_Pedido", "tb_Pedido")]
+    [InlineData("tb_Pedido", "Pedido")]
+    [InlineData("tb_Otro", "tb_Otro")]
     public void EtiquetaRecurso_MuestraUnNombreLegibleYDejaIgualLosDesconocidos(string recurso, string esperado)
     {
         Assert.Equal(esperado, PresentacionBitacora.EtiquetaRecurso(recurso));

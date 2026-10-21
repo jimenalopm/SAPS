@@ -3,10 +3,12 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using SAPS.Web.Data;
 using SAPS.Web.Models.Pedidos;
+using SAPS.Web.Services.Auditoria;
 
 namespace SAPS.Web.Services.Pedidos;
 
-public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores colaboradores, TimeProvider reloj)
+public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores colaboradores, TimeProvider reloj,
+    IServicioBitacora? bitacora = null)
 {
     public async Task<Colaborador> BuscarColaboradorAsync(string? codigo, CancellationToken ct = default)
     {
@@ -100,7 +102,24 @@ public sealed class ServicioPedidos(ApplicationDbContext db, IColaboradores cola
             db.ChangeTracker.Clear();
             return await ExistenteAsync(solicitud.TokenRegistro, usuarioId, ct) ?? throw new PedidoInvalidoException("No se pudo registrar el pedido. Intente nuevamente.");
         }
+        // Solo el pedido nuevo deja huella: un reintento con el mismo token devuelve el existente sin duplicar el registro.
+        await RegistrarEnBitacoraAsync(pedido, ct);
         return new(pedido.IdPedido, pedido.Total);
+    }
+
+    // HU-004: la bitácora nunca lanza, así que un fallo del log no deshace un pedido ya guardado.
+    // La columna Descripcion es varchar: el símbolo ₡ se guardaría como "¢", por eso el monto va en número y "colones".
+    private async Task RegistrarEnBitacoraAsync(Pedido pedido, CancellationToken ct)
+    {
+        if (bitacora is null) return;
+        var articulos = pedido.Detalles.Sum(d => d.Cantidad);
+        await bitacora.RegistrarAsync(new EventoBitacora(ModulosBitacora.Pedidos, TiposEventoBitacora.PedidoRegistrado,
+            RecursosBitacora.Pedido, true)
+        {
+            IdRegistro = pedido.IdPedido.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ValorNuevo = pedido.Total.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Descripcion = $"Pedido {pedido.IdPedido} para {pedido.CodigoColaborador} ({pedido.TipoComida}): {articulos} unidades, total {pedido.Total.ToString(System.Globalization.CultureInfo.InvariantCulture)} colones",
+        }, ct);
     }
 
     private async Task<PedidoRegistrado?> ExistenteAsync(Guid token, string usuarioId, CancellationToken ct)
