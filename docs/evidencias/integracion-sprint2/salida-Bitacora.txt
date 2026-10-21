@@ -1,0 +1,36 @@
+Pruebas de integración Bitacora — ejecutadas el 20/10/2026 contra SQL Server local (Docker, base temporal que se crea y se elimina).
+Comando: dotnet run --project tests/SAPS.Bitacora.IntegrationTests -- SAPS.Web/appsettings.json
+
+Base temporal creada: SAPS_HU004_Pruebas_552a797c964d46c7a4fe5127ae4651d0 (compatibilidad 110 = SQL Server 2012)
+OK: El modelo coincide con las migraciones
+OK: La tabla soda.tb_Bitacora tiene las 16 columnas, tipos, largos y nulabilidad del diseño
+OK: idBitacora es IDENTITY
+OK: Sin llave foránea hacia las cuentas: el log no depende de AspNetUsers
+OK: Sin CHECK sobre Modulo ni TipoEvento: un evento nuevo no requiere alterar la tabla
+OK: Defaults de la base de datos: FechaHoraUtc y UsuarioBd
+OK: Existe el trigger INSTEAD OF tr_BitacoraSoloLectura y está habilitado
+OK: DENY UPDATE y DENY DELETE al rol public
+OK: El servicio escribe un inicio de sesión fallido
+OK: El servicio escribe un tipo de evento nuevo (OrdenAnulada)
+OK: Quedan 2 filas en la bitácora
+OK: El evento nuevo no cambió la estructura de la tabla (criterio 8)
+OK: El evento nuevo se guardó con sus valores anterior y nuevo
+OK: FechaHoraUtc la asigna la base de datos en UTC
+OK: UsuarioBd la asigna la base de datos (SUSER_SNAME())
+OK: UPDATE por T-SQL rechazado por el trigger (error 50001), incluso para sa
+OK: DELETE por T-SQL rechazado por el trigger (error 50001), incluso para sa
+OK: Tras los intentos, las filas siguen intactas
+OK: SaveChanges con una fila modificada rechazado (50001)
+OK: ExecuteUpdate rechazado (50001)
+OK: ExecuteDelete rechazado (50001)
+OK: SaveChanges con una fila eliminada rechazado (50001)
+OK: Tras los intentos por EF, el conteo no cambió
+OK: Cuenta normal de la BD: INSERT permitido
+OK: Cuenta normal de la BD: SELECT permitido
+OK: Cuenta normal de la BD: UPDATE denegado por permisos (229) aunque tenga GRANT; DENY a public prevalece
+OK: Cuenta normal de la BD: DELETE denegado por permisos (229) aunque tenga GRANT; DENY a public prevalece
+OK: Cuenta normal de la BD: TRUNCATE denegado (sin permiso ALTER sobre la tabla)
+OK: Solo la fila insertada por la cuenta normal; nada se modificó ni borró
+LÍMITE CONOCIDO: sa/dbo SÍ puede hacer TRUNCATE TABLE (no dispara triggers). Mitigación: la aplicación debe conectarse con una cuenta sin db_owner/sysadmin.
+RESULTADO: 29 verificaciones correctas.
+Base temporal de pruebas eliminada.

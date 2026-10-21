@@ -1,0 +1,65 @@
+Pruebas de integración Pedidos — ejecutadas el 20/10/2026 contra SQL Server local (Docker, base temporal que se crea y se elimina).
+Comando: dotnet run --project tests/SAPS.Pedidos.IntegrationTests -- SAPS.Web/appsettings.json
+
+OK: El modelo coincide con las migraciones
+OK: Buscar código normalizando espacios y mayúsculas
+OK: Colaborador sin foto devuelve FotoUrl nula
+OK: Código vacío rechazado
+OK: Código inexistente rechazado
+OK: Colaborador inactivo rechazado
+OK: Catálogo ofrece producto, bebida y variante de tamaño activos
+OK: Totales enteros sin impuesto calculados desde SQL Server
+OK: Comprador y operadora se guardan separados y se marca dato ficticio
+OK: Fecha y observación guardadas
+OK: Reintentar el mismo token no duplica la compra
+OK: Otra operadora no puede recuperar el pedido por su token
+OK: Carrito vacío no crea cabecera
+OK: Cantidad 0 rechazada
+OK: Cantidad -1 rechazada
+OK: Manipular el precio enviado no altera el cobro
+OK: Renglón repetido rechazado
+OK: El estado del colaborador se valida también al registrar
+OK: Tipo de comida inválido rechazado
+OK: Límite de longitud de observaciones validado
+OK: Token vacío rechazado
+OK: Artículo inexistente rechazado sin guardar parcialmente
+OK: Producto desactivado no se ofrece
+OK: Producto desactivado después de agregarlo se rechaza
+OK: Categoría inactiva impide nuevas ventas de sus productos
+OK: Tamaño inactivo excluye tanto fresco como bebida
+OK: Tamaño desactivado después de seleccionar bebida se rechaza
+OK: Precio futuro no se ofrece
+OK: Precio vencido no se ofrece
+OK: Precio de bebida cambiado exige revisar el nuevo monto
+OK: Cambio de catálogo conserva precio y total históricos
+OK: Fallo de detalle revierte cabecera y todos los renglones
+OK: Cantidad de más de 3 dígitos rechazada
+OK: Pedido de más de ₡40.000 rechazado
+OK: Pedido por encima de ₡25.000 pero dentro de ₡40.000 se registra
+OK: Los tipos de bebida son categorías válidas y las bebidas se agrupan por su tipo
+OK: Tipo de comida sin artículos en el catálogo rechazado
+OK: Se puede registrar de madrugada sin restricción horaria
+OK: Los tres tamaños activos con precio vigente se ofrecen simultáneamente
+OK: Se pueden registrar los tres tamaños en un mismo pedido con el tipo de comida tomado de la categoría
+OK: Solo se oculta el tamaño desactivado y se mantienen los otros dos
+OK: Sin sesión no se accede a pedidos
+OK: Inicio de sesión HTTP: SODA001
+OK: La vista se renderiza para operadora de soda
+OK: La operadora no puede modificar el catálogo
+OK: POST sin token antifalsificación rechazado
+OK: Cantidad decimal rechazada por HTTP
+OK: Cantidad no numérica rechazada por HTTP
+OK: Registro completo mediante HTTP autenticado
+OK: Reintento HTTP no duplica el pedido
+OK: Solicitudes simultáneas y reintento producen una sola compra
+OK: Inicio de sesión HTTP: RHPRUEBA
+OK: Recursos Humanos no puede registrar pedidos
+OK: Inicio de sesión HTTP: EMP001
+OK: Usuario sin rol no puede registrar pedidos
+OK: Inicio de sesión HTTP: ADM001
+OK: Administrador puede registrar pedidos
+OK: Inicio de sesión HTTP: SODA001
+OK: Cerrar sesión funciona por HTTP
+OK: Consultar y cerrar sesión sin registrar no guarda pedidos
+RESULTADO: 60 verificaciones correctas.
+Base temporal de pruebas eliminada.
