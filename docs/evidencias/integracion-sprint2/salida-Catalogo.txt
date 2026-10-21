@@ -1,0 +1,31 @@
+Pruebas de integración Catalogo — ejecutadas el 20/10/2026 contra SQL Server local (Docker, base temporal que se crea y se elimina).
+Comando: dotnet run --project tests/SAPS.Catalogo.IntegrationTests -- SAPS.Web/appsettings.json
+
+OK: Nuevo producto carga tamaños antes de seleccionar el modo
+OK: Crear producto con precio único
+OK: Edición de precio único carga tamaños y precio actual
+OK: Cambiar de precio único a tamaños
+OK: Solo quedan activos los precios por tamaño
+OK: Precio único anterior conserva historial cerrado
+OK: Volver de tamaños a precio único
+OK: Solo queda vigente el nuevo precio único
+OK: Actualizar precio único sin violar índice de unicidad
+OK: Guardar sin cambio de precio no duplica el historial
+OK: Rechazar tamaño seleccionado sin precio aunque otro sea válido
+OK: Validación fallida no modifica precios
+OK: Rechazar tamaño inexistente
+OK: Modificar precio por tamaño conserva una sola versión activa
+OK: No se desactiva un tamaño que usan productos o bebidas activos
+OK: Edición conserva tamaño inactivo asignado y lo identifica
+OK: Editar sin cambios no elimina precio de tamaño inactivo
+OK: Bebida muestra su tamaño inactivo actual
+OK: Editar bebida conserva su tamaño inactivo
+OK: Rechazar asignación nueva de un tamaño inactivo
+OK: No se desactiva una categoría con productos activos
+OK: Conservar categoría inactiva actualmente asignada
+OK: Reparar mezcla anterior de precios al guardar producto
+OK: Simular fallo al insertar el nuevo precio: el formulario muestra un mensaje claro
+OK: Fallo de guardado revierte el cierre del precio anterior
+OK: Política del catálogo incluye Administrador y Recursos Humanos
+RESULTADO: 26 verificaciones correctas.
+Base temporal de pruebas eliminada.
