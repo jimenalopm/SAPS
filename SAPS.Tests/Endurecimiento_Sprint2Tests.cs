@@ -302,6 +302,42 @@ public class Endurecimiento_Sprint2Tests
         Assert.Equal("Casado especial", evento.ValorNuevo);
     }
 
+    [Fact]
+    public async Task Catalogo_QuitarUnTamanoDeUnProductoQuedaEnLaBitacora()
+    {
+        await using var db = TestServices.CrearContextoInMemory();
+        var pequeno = new Tamano { NombreTamano = "Pequeño" };
+        var grande = new Tamano { NombreTamano = "Grande" };
+        var cat = new Categoria { NombreCategoria = "Almuerzo" };
+        cat.TamanosPermitidos.Add(new CategoriaTamano { Tamano = pequeno });
+        cat.TamanosPermitidos.Add(new CategoriaTamano { Tamano = grande });
+        var producto = new Producto { NombreProducto = "Fresco de cas", Categoria = cat, RequiereTamano = true };
+        producto.Precios.Add(new Precio { Tamano = pequeno, MontoPrecio = 600, FechaVigenciaDesde = new DateOnly(2026, 1, 1) });
+        producto.Precios.Add(new Precio { Tamano = grande, MontoPrecio = 1000, FechaVigenciaDesde = new DateOnly(2026, 1, 1) });
+        db.Productos.Add(producto);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        var bitacora = new BitacoraFalsa();
+
+        await Administracion(db, bitacora).EditarProducto(new ProductoFormViewModel
+        {
+            IdProducto = producto.IdProducto, NombreProducto = "Fresco de cas", IdCategoria = cat.IdCategoria, RequiereTamano = true,
+            PreciosPorTamano =
+            [
+                new PrecioPorTamanoInput { IdTamano = pequeno.IdTamano, Incluir = true, Monto = 600 },
+                new PrecioPorTamanoInput { IdTamano = grande.IdTamano, Incluir = false },
+            ],
+        });
+
+        var evento = Assert.Single(bitacora.Eventos);
+        Assert.Equal(TiposEventoBitacora.CatalogoModificado, evento.TipoEvento);
+        Assert.Equal(RecursosBitacora.Producto, evento.Recurso);
+        Assert.Equal("Grande: 1000", evento.ValorAnterior);
+        Assert.Equal("Sin precio", evento.ValorNuevo);
+        Assert.Contains("se quitó el precio de Grande: 1000", evento.Descripcion);
+        Assert.All(evento.Descripcion!, c => Assert.True(c < 256, "La descripción debe caber en varchar"));
+    }
+
     [Theory]
     [InlineData(TiposEventoBitacora.CatalogoCreado)]
     [InlineData(TiposEventoBitacora.CatalogoModificado)]

@@ -502,6 +502,15 @@ public class AdministracionController(ApplicationDbContext db, IContextoAuditori
         // Con precio único, las filas de tamaño llegan sin datos (IdTamano 0): solo cuentan los tamaños reales.
         var nombresTamano = modelo.PreciosPorTamano.Where(t => t.IdTamano > 0)
             .GroupBy(t => t.IdTamano).ToDictionary(g => g.Key, g => g.First().NombreTamano);
+        // Quitar un tamaño (o pasar de precio único a tamaños y al revés) cierra un precio sin cambiar ningún monto: el trigger
+        // de HU-015 no lo ve, así que se deja constancia aquí. Los montos van en número: la columna es varchar (sin "₡").
+        var quitados = anteriores.Where(a => !seleccionados.Any(n => n.IdTamano == a.IdTamano))
+            .Select(a => $"{(a.IdTamano is int t && nombresTamano.TryGetValue(t, out var nombre) ? nombre : "precio único")}: {a.Monto}")
+            .ToList();
+        if (quitados.Count > 0)
+            await RegistrarCatalogoAsync(TiposEventoBitacora.CatalogoModificado, RecursosBitacora.Producto, producto.IdProducto,
+                $"Producto {producto.NombreProducto}: se quitó el precio de {string.Join("; ", quitados)} (colones)",
+                string.Join("; ", quitados), "Sin precio");
         TempData["Mensaje"] = MensajeProductoActualizado(producto.NombreProducto,
             DescribirCambioPrecios(anteriores, seleccionados, id => id is int t && nombresTamano.TryGetValue(t, out var n) ? n : null));
         return RedirectToAction(nameof(Catalogo), new { tab = "productos" });

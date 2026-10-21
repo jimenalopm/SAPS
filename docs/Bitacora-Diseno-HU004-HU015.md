@@ -69,7 +69,7 @@ Las propiedades C# se nombran en PascalCase (EP05) y la entidad se llamará `Bit
 | Catalogo | `CambioPrecio` | `tb_Precio` | Se modifica un precio (HU-007, HU-015), desde la pantalla o directo en la BD. | precio anterior / precio nuevo |
 | Seguridad | `ContrasenaCambiada` | `AspNetUsers` | Una persona cambia su contraseña: voluntario, obligatorio por primer ingreso u obligatorio por vencimiento. También queda como fallido el intento con la contraseña actual incorrecta. *(agregado en el endurecimiento posterior al Sprint 2)* | — (nunca se guardan contraseñas) |
 | Catalogo | `CatalogoCreado` | `tb_Producto`, `tb_Bebida`, `tb_Categoria`, `tb_Tamano`, `tb_TipoBebida` | Se da de alta un elemento del catálogo. *(endurecimiento)* | — / nombre |
-| Catalogo | `CatalogoModificado` | los mismos | Se cambia el nombre, la categoría, el tipo o el tamaño de un elemento. Si solo cambia el precio no se duplica: lo registra el trigger como `CambioPrecio`. *(endurecimiento)* | nombre anterior / nombre nuevo |
+| Catalogo | `CatalogoModificado` | los mismos | Se cambia el nombre, la categoría, el tipo o el tamaño de un elemento, o se quita el precio de un tamaño de un producto. Si solo cambia el precio no se duplica: lo registra el trigger como `CambioPrecio`. *(endurecimiento)* | nombre anterior / nombre nuevo |
 | Catalogo | `CatalogoActivado` / `CatalogoDesactivado` | los mismos | Se activa o desactiva un elemento. *(endurecimiento)* | Inactivo / Activo (o al revés) |
 | Pedidos | `PedidoRegistrado` | `tb_Pedido` | Se registra un pedido nuevo (HU-008). Un reintento con el mismo token no genera otro evento. *(endurecimiento)* | — / total en colones |
 | Pedidos | `PedidoRechazado` | `tb_Pedido` | Un intento de registrar un pedido se rechaza (precio cambiado, colaborador inactivo, falla de la base). `EsExitoso` = 0 y el motivo va en `Descripcion`. *(endurecimiento)* | — |
@@ -171,6 +171,7 @@ Migración `CrearTriggersAuditoriaPrecio`. Decisiones tomadas para esta task:
 | La pantalla cierra la fila anterior (solo cambia `EstaActivo` y `FechaVigenciaHasta`). | No | El `UPDATE` no cambia `Monto`. |
 | `UPDATE` directo del `Monto` en la BD. | Sí | Compara `deleted` contra `inserted`. |
 | Alta de un producto o de un tamaño nuevo (sin fila anterior). | No | Es un alta, no un cambio. |
+| Se quita un tamaño de un producto, o se pasa de precio único a precios por tamaño (o al revés). | No lo registra el trigger | El `UPDATE` solo cierra el precio y no cambia `Monto`. Lo registra la aplicación como `CatalogoModificado` (módulo Catálogo, recurso `tb_Producto`) con "se quitó el precio de Grande: 1000 (colones)". Agregado en el endurecimiento posterior al Sprint 2. |
 | El monto nuevo es igual al anterior. | No | No hay cambio. |
 
 Cada fila del log lleva `Modulo = Catalogo`, `TipoEvento = CambioPrecio`, `Recurso = tb_Precio` o `tb_Bebida`, `IdRegistro` con el id del precio o de la bebida, y en `Descripcion` el nombre del producto o bebida y el tamaño.
