@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SAPS RecyPlast</title>
     <script src="~/js/tema.js" asp-append-version="true"></script>
-    <script type="importmap"></script>
+    <script type="importmap" nonce="@Context.Items[SAPS.Web.Middleware.EncabezadosSeguridadMiddleware.ClaveNonce]"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>

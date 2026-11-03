@@ -20,7 +20,7 @@ public class Precio
     /// <summary>Monto en colones, número entero (columna de BD: precio).</summary>
     public int MontoPrecio { get; set; }
 
-    public DateOnly FechaVigenciaDesde { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public DateOnly FechaVigenciaDesde { get; set; } = Services.FechaCostaRica.Hoy();
 
     public DateOnly? FechaVigenciaHasta { get; set; }
 

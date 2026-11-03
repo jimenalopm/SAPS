@@ -66,6 +66,9 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
         private const string MensajeColaboradorInactivo =
             "Su perfil de colaborador está inactivo. Comuníquese con Recursos Humanos o con el administrador.";
 
+        public const string MensajeCredencialesIncorrectas =
+            "El correo de empleado o la contraseña son incorrectos. Revise los datos e inténtelo de nuevo. Si olvidó su contraseña, comuníquese con el administrador.";
+
         public const string MensajeCuentaDesactivada =
             "Su cuenta fue desactivada por el administrador. Comuníquese con el administrador del sistema.";
 
@@ -164,11 +167,22 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                 }
                 if (result.IsLockedOut)
                 {
+                    // Identity revisa el bloqueo ANTES que la contraseña: sin este paso, cualquiera que pruebe una contraseña
+                    // al azar sabría qué cuentas existen y cuáles están desactivadas. Solo quien conoce la contraseña
+                    // correcta recibe el motivo; los demás ven el mismo mensaje que una contraseña incorrecta.
+                    var bloqueada = await _signInManager.UserManager.FindByNameAsync(Input.CodigoEmpleado);
+                    var contrasenaCorrecta = bloqueada is not null
+                        && await _signInManager.UserManager.CheckPasswordAsync(bloqueada, Input.Password);
+                    if (!contrasenaCorrecta)
+                    {
+                        await RegistrarInicioSesionAsync(false, "Credenciales incorrectas (cuenta bloqueada o desactivada)", bloqueada);
+                        ModelState.AddModelError(string.Empty, MensajeCredencialesIncorrectas);
+                        return Page();
+                    }
+
                     // Cuenta desactivada por el administrador (LockoutEnd = MaxValue) ≠ bloqueo temporal
                     // por 5 intentos fallidos: son motivos distintos y llevan mensajes distintos.
-                    var bloqueada = await _signInManager.UserManager.FindByNameAsync(Input.CodigoEmpleado);
-                    if (bloqueada is not null
-                        && await _signInManager.UserManager.GetLockoutEndDateAsync(bloqueada) == DateTimeOffset.MaxValue)
+                    if (await _signInManager.UserManager.GetLockoutEndDateAsync(bloqueada) == DateTimeOffset.MaxValue)
                     {
                         _logger.LogWarning("Login rejected: account deactivated by an administrator.");
                         await RegistrarInicioSesionAsync(false, "Cuenta desactivada por el administrador", bloqueada);
@@ -190,7 +204,7 @@ namespace SAPS.Web.Areas.Identity.Pages.Account
                     await RegistrarInicioSesionAsync(false, "Credenciales incorrectas", cuentaFallida);
 
                     // F-02 (H9): el mensaje nombra el campo real e indica qué hacer
-                    ModelState.AddModelError(string.Empty, "El correo de empleado o la contraseña son incorrectos. Revise los datos e inténtelo de nuevo. Si olvidó su contraseña, comuníquese con el administrador.");
+                    ModelState.AddModelError(string.Empty, MensajeCredencialesIncorrectas);
                     return Page();
                 }
             }

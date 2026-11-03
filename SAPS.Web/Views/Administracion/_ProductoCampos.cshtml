@@ -9,7 +9,7 @@
 
     <div class="mb-3">
         <label asp-for="NombreProducto" class="form-label">Nombre del producto <span class="campo-obligatorio" aria-hidden="true">*</span></label>
-        <input asp-for="NombreProducto" class="form-control" placeholder="Ej. Pinto con 2 acomp." autofocus />
+        <input asp-for="NombreProducto" class="form-control" placeholder="Ej. Pinto con 2 acomp." autofocus data-nombre-articulo />
         <span asp-validation-for="NombreProducto" class="text-danger small"></span>
     </div>
 
@@ -38,12 +38,21 @@
 
 <section class="seccion-precio" aria-labelledby="titulo-precio-producto">
     <h2 class="form-card-titulo" id="titulo-precio-producto">Precio</h2>
+    @* [Usabilidad HU-015, H9/H10] Solo al editar: explica qué pasa al cambiar el precio. *@
+    @if (Model.IdProducto > 0)
+    {
+        <p class="form-text ayuda-precio">
+            <partial name="_Iconos" model="@("ayuda icono-sm")" />
+            Si cambia el precio, se le pedirá confirmar. El nuevo precio aplica a los pedidos siguientes (los ya registrados
+            conservan su precio) y el cambio queda en el historial de precios con su usuario, fecha y hora.
+        </p>
+    }
 
     <div id="bloquePrecioUnico" class="mb-1">
         <label asp-for="PrecioUnico" class="form-label">Precio único <span class="campo-obligatorio" aria-hidden="true">*</span></label>
         <div class="input-group campo-monto">
             <span class="input-group-text" aria-hidden="true">₡</span>
-            <input asp-for="PrecioUnico" class="form-control" min="1" max="10000" step="1" inputmode="numeric" />
+            <input asp-for="PrecioUnico" class="form-control" min="1" max="10000" step="1" inputmode="numeric" data-precio="Precio único" />
         </div>
         <span asp-validation-for="PrecioUnico" class="text-danger small"></span>
     </div>
@@ -69,7 +78,7 @@
                 <div class="precio-tamano-campo">
                     <div class="input-group campo-monto">
                         <span class="input-group-text" aria-hidden="true">₡</span>
-                        <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" max="10000" step="1" inputmode="numeric" aria-label="Precio del tamaño @Model.PreciosPorTamano[i].NombreTamano" />
+                        <input asp-for="PreciosPorTamano[i].Monto" class="form-control" min="1" max="10000" step="1" inputmode="numeric" aria-label="Precio del tamaño @Model.PreciosPorTamano[i].NombreTamano" data-precio="@Model.PreciosPorTamano[i].NombreTamano" />
                     </div>
                     <span asp-validation-for="PreciosPorTamano[i].Monto" class="text-danger small d-block" role="alert"></span>
                 </div>

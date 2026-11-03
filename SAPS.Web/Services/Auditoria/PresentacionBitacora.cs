@@ -25,7 +25,14 @@ public static partial class PresentacionBitacora
         [TiposEventoBitacora.CuentaReactivada] = "Cuenta reactivada",
         [TiposEventoBitacora.CuentaModificada] = "Cuenta modificada",
         [TiposEventoBitacora.RolCambiado] = "Cambio de rol",
+        [TiposEventoBitacora.ContrasenaCambiada] = "Cambio de contraseña",
         [TiposEventoBitacora.CambioPrecio] = "Cambio de precio",
+        [TiposEventoBitacora.CatalogoCreado] = "Elemento de catálogo creado",
+        [TiposEventoBitacora.CatalogoModificado] = "Elemento de catálogo modificado",
+        [TiposEventoBitacora.CatalogoActivado] = "Elemento de catálogo activado",
+        [TiposEventoBitacora.CatalogoDesactivado] = "Elemento de catálogo desactivado",
+        [TiposEventoBitacora.PedidoRegistrado] = "Pedido registrado",
+        [TiposEventoBitacora.PedidoRechazado] = "Pedido rechazado",
     };
 
     /// <summary>
@@ -41,13 +48,21 @@ public static partial class PresentacionBitacora
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaReactivada),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.CuentaModificada),
         (ModulosBitacora.Seguridad, TiposEventoBitacora.RolCambiado),
+        (ModulosBitacora.Seguridad, TiposEventoBitacora.ContrasenaCambiada),
         (ModulosBitacora.Catalogo, TiposEventoBitacora.CambioPrecio),
+        (ModulosBitacora.Catalogo, TiposEventoBitacora.CatalogoCreado),
+        (ModulosBitacora.Catalogo, TiposEventoBitacora.CatalogoModificado),
+        (ModulosBitacora.Catalogo, TiposEventoBitacora.CatalogoActivado),
+        (ModulosBitacora.Catalogo, TiposEventoBitacora.CatalogoDesactivado),
+        (ModulosBitacora.Pedidos, TiposEventoBitacora.PedidoRegistrado),
+        (ModulosBitacora.Pedidos, TiposEventoBitacora.PedidoRechazado),
     ];
 
     private static readonly Dictionary<string, string> Modulos = new(StringComparer.Ordinal)
     {
         [ModulosBitacora.Seguridad] = "Seguridad",
         [ModulosBitacora.Catalogo] = "Catálogo",
+        [ModulosBitacora.Pedidos] = "Pedidos",
     };
 
     /// <summary>Tablas o entidades del log con un nombre que entienda el Administrador (el código queda en el detalle).</summary>
@@ -57,6 +72,11 @@ public static partial class PresentacionBitacora
         [RecursosBitacora.Bebida] = "Precio de bebida",
         [RecursosBitacora.Cuentas] = "Cuentas de usuario",
         [RecursosBitacora.Sesion] = "Sesión",
+        [RecursosBitacora.Producto] = "Producto",
+        [RecursosBitacora.Categoria] = "Categoría",
+        [RecursosBitacora.Tamano] = "Tamaño",
+        [RecursosBitacora.TipoBebida] = "Tipo de bebida",
+        [RecursosBitacora.Pedido] = "Pedido",
     };
 
     private static readonly Dictionary<string, string> Roles = new(StringComparer.Ordinal)
@@ -126,6 +146,19 @@ public static partial class PresentacionBitacora
         var porcentaje = Math.Abs(diferencia / a * 100);
         return $"{texto} ({signo}{porcentaje.ToString("N1", Cultura)} %)";
     }
+
+    /// <summary>IP del propio servidor (::1, 127.0.0.1): la persona entró desde el mismo equipo donde corre SAPS.</summary>
+    public static bool EsIpLocal(string? ip) =>
+        ip is "::1" or "127.0.0.1" or "::ffff:127.0.0.1";
+
+    /// <summary>
+    /// Inspección de usabilidad HU-004 (H2): la IP sola («::1») no le dice nada al Administrador.
+    /// Se describe de dónde vino la conexión; la IP exacta queda en «Datos técnicos» del detalle.
+    /// </summary>
+    public static string? OrigenConexion(string? ip) =>
+        string.IsNullOrWhiteSpace(ip) ? null
+        : EsIpLocal(ip) ? "Desde el mismo equipo del servidor"
+        : $"Desde otro equipo (IP {ip})";
 
     /// <summary>"Mozilla/5.0 (Windows NT 10.0; ...) Chrome/141..." → "Chrome en Windows". El texto completo queda en el detalle.</summary>
     public static string? ResumirDispositivo(string? userAgent)

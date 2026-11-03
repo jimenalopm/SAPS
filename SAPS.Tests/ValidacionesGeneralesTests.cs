@@ -90,6 +90,27 @@ public class ValidacionesGeneralesTests
     }
 
     [Fact]
+    public async Task Login_CuentaDesactivadaConContrasenaIncorrecta_DiceLoMismoQueUnaCuentaInexistente()
+    {
+        var (pagina, um, usuario) = await CrearLoginAsync();
+        await um.SetLockoutEnabledAsync(usuario, true);
+        await um.SetLockoutEndDateAsync(usuario, DateTimeOffset.MaxValue);
+        pagina.Input.Password = "Incorrecta1";
+        var (paginaInexistente, _, _) = await CrearLoginAsync("EMP200");
+        paginaInexistente.Input = new LoginModel.InputModel { CodigoEmpleado = "NOEXISTE", Password = "Incorrecta1" };
+
+        var desactivada = await pagina.OnPostAsync("/");
+        var inexistente = await paginaInexistente.OnPostAsync("/");
+
+        Assert.IsType<PageResult>(desactivada);
+        Assert.IsType<PageResult>(inexistente);
+        var mensajeDesactivada = Assert.Single(pagina.ModelState[string.Empty]!.Errors).ErrorMessage;
+        var mensajeInexistente = Assert.Single(paginaInexistente.ModelState[string.Empty]!.Errors).ErrorMessage;
+        Assert.Equal(LoginModel.MensajeCredencialesIncorrectas, mensajeDesactivada);
+        Assert.Equal(mensajeInexistente, mensajeDesactivada);
+    }
+
+    [Fact]
     public async Task Login_CuentaBloqueadaPorIntentosFallidos_SigueIrALaPaginaDeBloqueo()
     {
         var (pagina, um, usuario) = await CrearLoginAsync();

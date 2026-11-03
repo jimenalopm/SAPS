@@ -176,6 +176,27 @@ public sealed class CatalogoPagina(IWebDriver driver, WebDriverWait espera)
         campo.Clear();
         campo.SendKeys(nuevoPrecio);
         driver.FindElement(By.CssSelector("form.form-card button[type='submit']")).ClicSeguro();
+        AceptarConfirmacionDePrecioSiAparece();
+    }
+
+    /// <summary>
+    /// [Usabilidad HU-015] Si el precio cambió, la pantalla pide confirmar en la ventana «Confirmar acción».
+    /// Si el precio es el mismo no aparece y el formulario se envía directo.
+    /// </summary>
+    private void AceptarConfirmacionDePrecioSiAparece()
+    {
+        var limite = DateTime.UtcNow.AddSeconds(3);
+        while (DateTime.UtcNow < limite)
+        {
+            if (!driver.Url.Contains("/EditarProducto", StringComparison.OrdinalIgnoreCase)) return;   // ya se envió
+            var aceptar = driver.FindElements(By.Id("modalConfirmarAceptar")).FirstOrDefault(b => b.Displayed && b.Enabled);
+            if (aceptar is not null)
+            {
+                aceptar.ClicSeguro();
+                return;
+            }
+            Thread.Sleep(200);
+        }
     }
 
     /// <summary>

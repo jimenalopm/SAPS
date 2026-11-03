@@ -6,7 +6,8 @@
 --   1. Pedidos (y su detalle) del colaborador de prueba DEMO001.
 --   2. Precios y productos cuyo nombre empieza con ZZ-SELENIUM-
 --   3. Bebidas cuyo nombre empieza con ZZ-SELENIUM-
---   4. El colaborador DEMO001
+--   4. Las cuentas de prueba zz-selenium-%@recyplast.cr (HU-004)
+--   5. El colaborador DEMO001
 --
 -- SEGURIDAD: por defecto es un ENSAYO (@Confirmar = 0): muestra qué se borraría y hace ROLLBACK.
 -- Revise la salida y, si es correcta, cambie @Confirmar a 1 y vuelva a ejecutar.
@@ -27,6 +28,9 @@ BEGIN TRY
 
     SELECT 'Bebidas ZZ-SELENIUM-' AS Tipo, idBebida, Nombre, EstaActivo
     FROM soda.tb_Bebida WHERE Nombre LIKE 'ZZ-SELENIUM-%';
+
+    SELECT 'Cuentas zz-selenium' AS Tipo, Id, Email
+    FROM dbo.AspNetUsers WHERE Email LIKE 'zz-selenium-%@recyplast.cr';
 
     SELECT 'Colaborador DEMO001' AS Tipo, idColaborador, Codigo, NombreCompleto
     FROM rrhh.tb_Colaborador WHERE Codigo = 'DEMO001';
@@ -58,6 +62,9 @@ BEGIN TRY
 
     DELETE FROM soda.tb_Producto WHERE Nombre LIKE 'ZZ-SELENIUM-%';
     DELETE FROM soda.tb_Bebida   WHERE Nombre LIKE 'ZZ-SELENIUM-%';
+    -- Cuentas de prueba de HU-004 (vinculadas a DEMO001). Sus roles, vínculo y estado de contraseña se borran en cascada.
+    -- Sus eventos en soda.tb_Bitacora se conservan: la bitácora es de solo lectura.
+    DELETE FROM dbo.AspNetUsers WHERE Email LIKE 'zz-selenium-%@recyplast.cr';
     DELETE FROM rrhh.tb_Colaborador WHERE Codigo = 'DEMO001';
 
     IF @Confirmar = 1

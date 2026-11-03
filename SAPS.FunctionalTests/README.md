@@ -1,4 +1,4 @@
-# SAPS.FunctionalTests — Pruebas funcionales del Sprint 1 (Selenium WebDriver)
+# SAPS.FunctionalTests — Pruebas funcionales de los Sprints 1 y 2 (Selenium WebDriver)
 
 Pruebas de aceptación de **HU-001, HU-003, HU-007 y HU-008** que manejan Chrome como lo haría una persona usuaria.
 Están en un proyecto aparte para que `dotnet test SAPS.Tests` **no abra navegador**. (Ojo: `dotnet test` sobre la
@@ -61,3 +61,18 @@ dotnet test SAPS.FunctionalTests --filter "FullyQualifiedName~HU001" --logger "h
 ## Pruebas omitidas (visibles en el reporte con su motivo)
 Funcionalidad que no existe todavía en SAPS.Web: estado laboral en login, primer ingreso, contraseña vencida, bitácora (login, roles, precios),
 gestión de usuarios/roles. Bloqueo de cuenta: excluido a propósito (lo cubren las unitarias). Colaborador inactivo: se omite si falta `SAPS_COLAB_INACTIVO`.
+
+## Sprint 2 (19/10/2026): HU-004 y HU-015
+- `HU004_BitacoraTests.cs`: acceso a la bitácora (solo Administrador, solo lectura), inicio/cierre de sesión de la usuaria
+  de Soda, intento fallido sin guardar la contraseña, filtros, y alta / cambio de rol / baja / reactivación de una cuenta.
+- `HU015_HistorialPreciosTests.cs`: cambio de precio hecho por Admin y por RH queda en la bitácora con precio anterior,
+  nuevo, diferencia, usuario y rol; historial por producto; guardar sin cambiar el precio no agrega evento.
+- Datos que escriben: productos `ZZ-SELENIUM-...` (desactivados al terminar) y una cuenta `zz-selenium-<fecha>@recyplast.cr`
+  vinculada a `DEMO001` (queda desactivada). Antes de correr HU-004 ejecute `Sql\crear_colaborador_demo.sql`; si DEMO001 ya
+  tiene cuenta, la prueba de cuentas se omite. `Sql\limpieza_pruebas.sql` ahora también borra las cuentas `zz-selenium-%`.
+- Los eventos que generan las pruebas quedan en `soda.tb_Bitacora` (no se pueden borrar: es de solo lectura).
+- El menú del Administrador ahora incluye «Usuarios» y «Bitácora» (actualizado en `PruebaBase.MenuEsperado`).
+
+```powershell
+.\Ejecutar-PruebasFuncionales.ps1 -Hu HU004,HU015   # reportes: Reportes\ReporteFuncional_HU004.html y _HU015.html
+```

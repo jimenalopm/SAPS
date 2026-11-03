@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Corre las pruebas funcionales (Selenium) de las 4 HU del Sprint 1 una tras otra y genera un reporte HTML por HU.
+    Corre las pruebas funcionales (Selenium) del Sprint 1 (HU001, HU003, HU007, HU008) y del Sprint 2 (HU004, HU015) una tras otra y genera un reporte HTML por HU.
 
 .DESCRIPTION
     Equivale a ejecutar, para cada HU:
@@ -9,17 +9,18 @@
     La app debe estar corriendo (dotnet run en SAPS.Web) y las variables de entorno configuradas (ver README.md).
 
 .PARAMETER Hu
-    HU a correr. Por defecto las cuatro: HU001, HU003, HU007, HU008.
+    HU a correr. Por defecto todas: HU001, HU003, HU007, HU008, HU004, HU015.
+    Solo Sprint 2:  -Hu HU004,HU015
 
 .PARAMETER SinConfirmacion
-    No pide confirmación antes de correr (HU007 y HU008 escriben en la BD real).
+    No pide confirmación antes de correr (HU007, HU008, HU004 y HU015 escriben en la BD real).
 
 .EXAMPLE
     .\Ejecutar-PruebasFuncionales.ps1
     .\Ejecutar-PruebasFuncionales.ps1 -Hu HU001,HU003      # solo las HU que no escriben datos
 #>
 param(
-    [string[]]$Hu = @('HU001', 'HU003', 'HU007', 'HU008'),
+    [string[]]$Hu = @('HU001', 'HU003', 'HU007', 'HU008', 'HU004', 'HU015'),
     [switch]$SinConfirmacion
 )
 
@@ -43,9 +44,9 @@ $url = if ($env:SAPS_URL) { $env:SAPS_URL } else { 'http://localhost:5120 (valor
 Write-Host "URL de la app: $url"
 
 # 2) Advertir que HU007 y HU008 escriben en la BD real.
-if (-not $SinConfirmacion -and ($Hu -contains 'HU007' -or $Hu -contains 'HU008')) {
+if (-not $SinConfirmacion -and ($Hu | Where-Object { $_ -in 'HU007', 'HU008', 'HU004', 'HU015' })) {
     Write-Host ''
-    Write-Host 'ATENCIÓN: HU007 y HU008 ESCRIBEN en la base de datos REAL (productos ZZ-SELENIUM-* y pedidos de DEMO001).' -ForegroundColor Yellow
+    Write-Host 'ATENCIÓN: HU007, HU008, HU004 y HU015 ESCRIBEN en la base de datos REAL (productos ZZ-SELENIUM-*, pedidos de DEMO001 y cuentas zz-selenium-*).' -ForegroundColor Yellow
     Write-Host 'Corra esas HU una sola vez y luego ejecute Sql\limpieza_pruebas.sql.'
     if ((Read-Host 'Escriba SI para continuar') -ne 'SI') { Write-Host 'Cancelado.'; exit 0 }
 }

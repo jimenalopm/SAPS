@@ -63,6 +63,11 @@ try
     var categoriaId = categoria.IdCategoria;
     var pequenoId = pequeno.IdTamano;
     var grandeId = grande.IdTamano;
+    // HU-007 (desde el 07/10): un producto solo puede usar los tamaños asignados a su categoría.
+    db.CategoriasTamanos.AddRange(
+        new CategoriaTamano { IdCategoria = categoriaId, IdTamano = pequenoId },
+        new CategoriaTamano { IdCategoria = categoriaId, IdTamano = grandeId });
+    await db.SaveChangesAsync();
 
     var crear = (ProductoFormViewModel)((ViewResult)await Controlador("GET").CrearProducto()).Model!;
     Verificar(crear.PreciosPorTamano.Count == 2, "Nuevo producto carga tamaños antes de seleccionar el modo");
@@ -109,7 +114,12 @@ try
 
     var bebida = new Bebida { NombreBebida = "Bebida", TipoBebida = "Gaseosa", IdTamano = grandeId, Precio = 900 };
     db.Bebidas.Add(bebida); await db.SaveChangesAsync(); var bebidaId = bebida.IdBebida;
+    // HU-007 (desde el 07/10): un tamaño en uso no se puede desactivar desde el catálogo.
     await Controlador().CambiarEstadoTamano(grandeId);
+    db.ChangeTracker.Clear();
+    Verificar((await db.Tamanos.FindAsync(grandeId))!.Activo, "No se desactiva un tamaño que usan productos o bebidas activos");
+    // Para probar cómo se conserva un tamaño inactivo, se desactiva directo en la base (p. ej. datos anteriores a la regla).
+    await db.Tamanos.Where(t => t.IdTamano == grandeId).ExecuteUpdateAsync(t => t.SetProperty(x => x.Activo, false));
     modelo = await Editar(id);
     Verificar(modelo.PreciosPorTamano.Any(p => p.IdTamano == grandeId && !p.TamanoActivo && p.Incluir && p.Monto == 2500), "Edición conserva tamaño inactivo asignado y lo identifica");
     await Controlador().EditarProducto(modelo);
@@ -123,7 +133,11 @@ try
     var bebidaNueva = new BebidaFormViewModel { NombreBebida = "Otra", TipoBebida = "Gaseosa", IdTamano = grandeId, Precio = 1000 };
     Verificar(await Controlador().CrearBebida(bebidaNueva) is ViewResult, "Rechazar asignación nueva de un tamaño inactivo");
 
+    // HU-007 (desde el 07/10): una categoría con productos activos no se puede desactivar desde el catálogo.
     await Controlador().CambiarEstadoCategoria(categoriaId);
+    db.ChangeTracker.Clear();
+    Verificar((await db.Categorias.FindAsync(categoriaId))!.Activo, "No se desactiva una categoría con productos activos");
+    await db.Categorias.Where(c => c.IdCategoria == categoriaId).ExecuteUpdateAsync(c => c.SetProperty(x => x.Activo, false));
     modelo = await Editar(id);
     Verificar(modelo.CategoriasDisponibles.Any(c => c.IdCategoria == categoriaId && !c.Activo), "Conservar categoría inactiva actualmente asignada");
 
@@ -137,10 +151,12 @@ try
 
     await db.Database.ExecuteSqlRawAsync("ALTER TABLE soda.tb_Precio ADD CONSTRAINT CK_PruebaRollback CHECK (Monto <> 7777)");
     modelo = await Editar(id); modelo.PrecioUnico = 7777;
-    var falloEsperado = false;
-    try { await Controlador().EditarProducto(modelo); }
-    catch (DbUpdateException) { falloEsperado = true; }
-    Verificar(falloEsperado, "Simular fallo al insertar el nuevo precio");
+    // Usabilidad HU-015 (H9): si la base rechaza el guardado, el formulario muestra un mensaje claro (no la página técnica).
+    var controladorFallo = Controlador();
+    var resultadoFallo = await controladorFallo.EditarProducto(modelo);
+    Verificar(resultadoFallo is ViewResult
+              && controladorFallo.ModelState[string.Empty]!.Errors.Any(e => e.ErrorMessage == AdministracionController.MensajeErrorGuardado),
+        "Simular fallo al insertar el nuevo precio: el formulario muestra un mensaje claro");
     activos = await Activos(id);
     Verificar(activos.Count == 1 && activos[0].MontoPrecio == 1300 && activos[0].FechaVigenciaHasta == null,
         "Fallo de guardado revierte el cierre del precio anterior");

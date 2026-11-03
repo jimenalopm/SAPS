@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SAPS.Web.Data;
 using SAPS.Web.Models.Identity;
+using SAPS.Web.Services.Auditoria;
 
 namespace SAPS.Web.Areas.Identity.Pages.Account;
 
@@ -18,7 +19,8 @@ public class CambiarContrasenaModel(
     SignInManager<IdentityUser> signInManager,
     ApplicationDbContext context,
     TimeProvider reloj,
-    ILogger<CambiarContrasenaModel> logger) : PageModel
+    ILogger<CambiarContrasenaModel> logger,
+    IServicioBitacora? bitacora = null) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -57,6 +59,18 @@ public class CambiarContrasenaModel(
     {
     }
 
+    // HU-004: nunca incluye contraseñas. El servicio toma usuario, rol, IP y dispositivo de la sesión y no lanza.
+    private async Task RegistrarEnBitacoraAsync(IdentityUser user, bool exitoso, string detalle)
+    {
+        if (bitacora is null) return;
+        await bitacora.RegistrarAsync(new EventoBitacora(ModulosBitacora.Seguridad, TiposEventoBitacora.ContrasenaCambiada,
+            RecursosBitacora.Cuentas, exitoso)
+        {
+            IdRegistro = user.Id,
+            Descripcion = $"Cuenta {user.UserName}: {detalle}",
+        });
+    }
+
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid) return Page();
@@ -75,6 +89,9 @@ public class CambiarContrasenaModel(
         var resultado = await userManager.ChangePasswordAsync(user, Input.ContrasenaActual, Input.ContrasenaNueva);
         if (!resultado.Succeeded)
         {
+            // Una contraseña actual incorrecta en una sesión abierta puede ser alguien que usa la cuenta de otra persona.
+            if (resultado.Errors.Any(e => e.Code == nameof(IdentityErrorDescriber.PasswordMismatch)))
+                await RegistrarEnBitacoraAsync(user, false, "Intento fallido: la contraseña actual no coincide");
             // La actual incorrecta se muestra en su campo; las reglas de la nueva (mínimo, minúscula, número)
             // en el suyo. Los textos salen en español (IdentityErrorDescriberEs).
             foreach (var error in resultado.Errors)
@@ -101,6 +118,9 @@ public class CambiarContrasenaModel(
         await context.SaveChangesAsync();
 
         logger.LogInformation("User changed their password.");
+        await RegistrarEnBitacoraAsync(user, true, Obligatorio
+            ? (Motivo == "primerIngreso" ? "Cambio obligatorio en el primer ingreso" : "Cambio obligatorio por contraseña vencida")
+            : "Cambio voluntario");
 
         if (Obligatorio)
         {

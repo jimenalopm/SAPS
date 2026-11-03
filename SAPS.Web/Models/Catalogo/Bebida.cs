@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace SAPS.Web.Models.Catalogo;
 
 /// <summary>
@@ -21,4 +23,8 @@ public class Bebida
     public int Precio { get; set; }
 
     public bool Activo { get; set; } = true;
+
+    /// <summary>Control de concurrencia: si otra persona edita la bebida antes de guardar, el guardado se rechaza.</summary>
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 }

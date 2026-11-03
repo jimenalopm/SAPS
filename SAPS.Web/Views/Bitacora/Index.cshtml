@@ -42,10 +42,29 @@
         <h1 class="h1">Bitácora de actividad y accesos</h1>
         <p>Inicios y cierres de sesión, cambios en cuentas de usuario y cambios de precio del catálogo. Horas en hora de Costa Rica.</p>
     </div>
-    <span class="badge-solo-lectura" title="Los registros no se pueden modificar ni eliminar">
-        <partial name="_Iconos" model="@("candado icono-sm")" /> Solo lectura
-    </span>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-recyplast-outline" data-bs-toggle="collapse" data-bs-target="#ayuda-bitacora"
+                aria-expanded="false" aria-controls="ayuda-bitacora">
+            <partial name="_Iconos" model="@("ayuda icono-sm")" /> ¿Cómo usar la bitácora?
+        </button>
+        <span class="badge-solo-lectura" title="Los registros no se pueden modificar ni eliminar">
+            <partial name="_Iconos" model="@("candado icono-sm")" /> Solo lectura
+        </span>
+    </div>
 </div>
+
+@* Inspección de usabilidad HU-004 (H10): ayuda corta ligada a la pantalla; no interrumpe porque se abre solo si la piden. *@
+<section class="collapse" id="ayuda-bitacora" aria-labelledby="t-ayuda-bitacora">
+    <div class="ayuda-bitacora">
+        <h2 id="t-ayuda-bitacora">Cómo usar la bitácora</h2>
+        <ol>
+            <li><strong>Qué se registra:</strong> inicios y cierres de sesión (también los intentos fallidos), altas, bajas, reactivaciones y cambios de rol de cuentas, y cambios de precio del catálogo.</li>
+            <li><strong>Buscar:</strong> elija el tipo de evento, el resultado o un rango de fechas, o escriba el correo de un usuario o el nombre de un producto, y pulse <em>Filtrar</em>. Para quitar un filtro, pulse la <em>X</em> de su etiqueta; <em>Limpiar</em> los quita todos.</li>
+            <li><strong>Ver más:</strong> <em>Ver detalle</em> muestra quién hizo el cambio, desde dónde y el valor anterior y el nuevo. Desde ahí puede ver todos los eventos de esa cuenta o todos los cambios de precio de ese producto.</li>
+            <li><strong>Importante:</strong> las horas están en hora de Costa Rica y los registros no se pueden modificar ni eliminar.</li>
+        </ol>
+    </div>
+</section>
 
 @* Formulario GET: los filtros viajan en la URL (?tipoEvento=...&modulo=...), así la paginación y el detalle los conservan. *@
 <form method="get" asp-action="Index" class="filtros-card" role="search" aria-label="Filtros de la bitácora" data-bloquear-envio>

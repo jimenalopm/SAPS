@@ -16,8 +16,9 @@
     </div>
 </div>
 
-<form asp-action="EditarProducto" method="post" data-bloquear-envio class="form-card">
+<form asp-action="EditarProducto" method="post" data-bloquear-envio data-confirmar-precio class="form-card">
     <input type="hidden" asp-for="IdProducto" />
+    <input type="hidden" asp-for="RowVersion" />
     <partial name="_ProductoCampos" model="Model" />
 
     <div class="form-acciones">

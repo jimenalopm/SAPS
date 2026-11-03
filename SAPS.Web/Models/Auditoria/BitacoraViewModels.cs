@@ -87,8 +87,9 @@ public class BitacoraFilaViewModel
 
             case TiposEventoBitacora.InicioSesion:
             case TiposEventoBitacora.CierreSesion:
-                principal = b.DireccionIp;
-                secundario = PresentacionBitacora.ResumirDispositivo(b.Dispositivo);
+                // Dispositivo y origen en palabras; la IP exacta solo en «Datos técnicos» del detalle.
+                principal = PresentacionBitacora.ResumirDispositivo(b.Dispositivo);
+                secundario = PresentacionBitacora.OrigenConexion(b.DireccionIp);
                 break;
 
             default:
@@ -142,6 +143,9 @@ public class BitacoraDetalleViewModel
     public string? DireccionIp { get; init; }
     public string? Dispositivo { get; init; }
     public string? DispositivoResumen { get; init; }
+
+    /// <summary>De dónde vino la conexión, en palabras (la IP exacta va en «Datos técnicos»).</summary>
+    public string? Origen { get; init; }
     public string? Descripcion { get; init; }
 
     /// <summary>Cuenta afectada (altas, bajas y cambios de rol) o producto (cambios de precio), si aplica.</summary>
@@ -194,6 +198,7 @@ public class BitacoraDetalleViewModel
             DireccionIp = b.DireccionIp,
             Dispositivo = b.Dispositivo,
             DispositivoResumen = PresentacionBitacora.ResumirDispositivo(b.Dispositivo),
+            Origen = PresentacionBitacora.OrigenConexion(b.DireccionIp),
             Descripcion = b.Descripcion,
             CuentaAfectada = PresentacionBitacora.CuentaAfectada(b.Descripcion),
             Producto = esPrecio ? PresentacionBitacora.ProductoDelPrecio(b.Descripcion) : null,
