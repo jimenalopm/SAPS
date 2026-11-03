@@ -20,14 +20,10 @@
         etiquetar();
         const colaborador = !byId('datos-colaborador').classList.contains('d-none');
         const hayArticulos = !byId('tabla-detalle').hidden;
-        const tipo = byId('tipo-comida');
-        const comida = tipo.value ? tipo.options[tipo.selectedIndex].text : '';
-
         byId('resumen-colaborador').textContent = colaborador
             ? byId('nombre-colaborador').textContent + ' · ' + byId('codigo-encontrado').textContent : '—';
-        byId('resumen-comida').textContent = comida || '—';
 
-        const actual = !colaborador ? 1 : (hayArticulos && comida ? 3 : 2);
+        const actual = !colaborador ? 1 : (hayArticulos ? 3 : 2);
         pasos.querySelectorAll('.paso').forEach(paso => {
             const n = Number(paso.dataset.paso);
             paso.classList.toggle('activo', n === actual);
@@ -40,6 +36,5 @@
     observador.observe(byId('datos-colaborador'), { attributes: true, attributeFilter: ['class'] });
     observador.observe(byId('tabla-detalle'), { attributes: true, attributeFilter: ['hidden'] });
     observador.observe(byId('lineas-pedido'), { childList: true });
-    byId('tipo-comida').addEventListener('change', actualizar);
     actualizar();
 })();
