@@ -43,6 +43,7 @@
         menos.addEventListener('click', () => ajustar(-1));
         mas.addEventListener('click', () => ajustar(1));
     }
+    const tipoComidaPedido = () => carrito.find(linea => linea.grupo === 'Comida')?.categoria || (carrito.length ? 'Solo bebidas' : '—');
     const totalCarrito = () => carrito.reduce((suma, l) => suma + BigInt(l.precio) * BigInt(l.cantidad), 0n);
     // Aviso grande y permanente (no se borra con otros mensajes) mientras el total siga fuera de lo razonable.
     let nivelAviso = 0;
@@ -118,7 +119,7 @@
         byId('boton-buscar-colaborador').setAttribute('aria-busy', String(buscando));
         byId('texto-buscar-colaborador').textContent = buscando ? 'Buscando colaborador…' : 'Buscar colaborador';
         byId('busqueda-en-espera').classList.toggle('d-none', !buscando);
-        byId('registrar-pedido').disabled = enviando || confirmando || cargandoCatalogo || (!pendiente && (totalCarrito() > TOTAL_MAXIMO || !colaborador || !carrito.length || !byId('tipo-comida').value || [...app.querySelectorAll('.cantidad-pedido')].some(c => !cantidadValida(c.value))));
+        byId('registrar-pedido').disabled = enviando || confirmando || cargandoCatalogo || (!pendiente && (totalCarrito() > TOTAL_MAXIMO || !colaborador || !carrito.length || [...app.querySelectorAll('.cantidad-pedido')].some(c => !cantidadValida(c.value))));
         byId('registrar-pedido').textContent = enviando ? 'Registrando…' : pendiente ? 'Reintentar registro' : 'Registrar pedido';
         if (!enviando && !confirmando && !pendiente) { byId('agregar').disabled = cargandoCatalogo || byId('articulo').options.length < 2; byId('actualizar-catalogo').disabled = cargandoCatalogo; }
     }
@@ -176,6 +177,7 @@
             acciones.append(quitar);
             fila.append(nombre, precio, celdaCantidad, celdaSubtotal, acciones); cuerpo.append(fila);
         });
+        byId('resumen-comida').textContent = tipoComidaPedido();
         byId('tabla-detalle').hidden = !carrito.length;
         byId('pedido-vacio').hidden = !!carrito.length;
         actualizarTotal();
@@ -315,7 +317,7 @@
     byId('registrar-pedido').addEventListener('click', () => {
         if (enviando || confirmando || byId('registrar-pedido').disabled) return;
         byId('confirmar-colaborador').textContent = colaborador.nombre + ' (' + colaborador.codigo + ')';
-        byId('confirmar-tipo-comida').textContent = pendiente?.tipoComida || byId('tipo-comida').value;
+        byId('confirmar-tipo-comida').textContent = pendiente?.tipoComida || tipoComidaPedido();
         byId('confirmar-total').textContent = byId('total-pedido').textContent;
         byId('aceptar-registro-pedido').disabled = false;
         byId('aceptar-registro-pedido').textContent = pendiente ? 'Sí, reintentar registro' : 'Sí, registrar pedido';
@@ -333,9 +335,9 @@
     async function registrarPedido() {
         if (enviando || cargandoCatalogo || [...app.querySelectorAll('.cantidad-pedido')].some(c => !cantidadValida(c.value))) return;
         if (!pendiente) {
-            if (!colaborador || !carrito.length || !byId('tipo-comida').value) return;
+            if (!colaborador || !carrito.length) return;
             pendiente = {
-                tokenRegistro: token, codigoColaborador: colaborador.codigo, tipoComida: byId('tipo-comida').value,
+                tokenRegistro: token, codigoColaborador: colaborador.codigo, tipoComida: tipoComidaPedido(),
                 observaciones: byId('observaciones').value,
                 lineas: carrito.map(l => ({ clave: l.clave, cantidad: l.cantidad, precioMostrado: l.precio }))
             };
